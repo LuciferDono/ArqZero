@@ -1,0 +1,31 @@
+{
+  "name": "arq-code",
+  "version": "0.1.0",
+  "description": "",
+  "type": "module",
+  "bin": {
+    "arq": "./bin/arq.ts"
+  },
+  "scripts": {
+    "dev": "tsx bin/arq.ts",
+    "build": "tsc",
+    "test": "node --test --experimental-strip-types src/**/*.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "ink": "^6.8.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.2.4",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.3.1",
+    "@types/react": "^19.2.14"
+  }
+}
