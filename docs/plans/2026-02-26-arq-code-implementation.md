@@ -12,6 +12,40 @@
 
 ---
 
+## Key Architectural Decisions
+
+These decisions emerged from design review and must be preserved during implementation:
+
+1. **stream-decoder.ts** must handle compressed frames (flag byte 0x01, gzip), trailer frames (flag byte 0x02, end-of-stream metadata), and partial frames across TCP chunk boundaries. Build a standalone test against recorded frames before wiring into the full stack.
+
+2. **auth.ts** re-reads from Cursor's SQLite DB on HTTP 401, not just at startup. Cross-platform paths:
+   - Windows: `%APPDATA%\Cursor\User\globalStorage\state.vscdb`
+   - macOS: `~/Library/Application Support/Cursor/User/globalStorage/state.vscdb`
+   - Linux: `~/.config/Cursor/User/globalStorage/state.vscdb`
+   - `isAvailable()` must check Cursor installation exists before touching SQLite.
+
+3. **thinking_delta** is a required event type in StreamEvent — for extended thinking output from Opus models. Without it, thinking content is silently dropped or misparsed as text.
+
+4. **system/machine-id.ts** is separate from checksum.ts — machine ID extraction is its own cross-platform problem and must not be buried in the cipher logic.
+
+5. **tools/builtins/index.ts** barrel file is the single import point for engine.ts. No magic self-registration at import time. If a tool file isn't explicitly imported in this barrel, it doesn't exist. This prevents subtle bugs.
+
+6. **ask-user.ts** uses a callback on ToolContext (`ctx.promptUser`), never imports the CLI layer directly. Clean inversion of control.
+
+7. **ToolResult.display.truncated** is functional, not cosmetic — the renderer needs to know if a file read was truncated or it silently shows partial content with no indication.
+
+8. **bash.ts** rejects interactive processes (vim, ssh, python REPL, etc.) by pattern matching rather than hanging. Separate stdout/stderr in results — combined output loses signal.
+
+9. **Compaction** summary call goes through `LLMProvider.chat()` with `intent: 'summarize'` — not a raw API call. This ensures it works across all providers and allows routing to a cheaper model.
+
+10. **Session resume** loads from the last compaction snapshot, not raw message replay. Otherwise a resumed long session starts at 80% context capacity.
+
+11. **config/init.ts** runs on first launch (Phase 1, Task 2) — not polish. Without it, first launch crashes or silently fails.
+
+12. **Permission escalation** does NOT flag `>/dev/null` redirection — it's common and harmless. Only flag destructive writes: `dd if=... of=<real device>`, `rm -rf`, `git push --force`, `DROP TABLE`, etc.
+
+---
+
 ## Phase 1: Project Scaffold + Config + API Adapter
 
 ### Task 1: Initialize Project
@@ -1197,7 +1231,22 @@ Run: `npm install @anthropic-ai/sdk`
 
 **Step 2: Implement Anthropic adapter**
 
-Thin wrapper around `@anthropic-ai/sdk` with streaming and tool use mapping. See design doc Section 1 for the StreamEvent mapping. Maps Anthropic events to provider-agnostic StreamEvent types.
+Thin wrapper around `@anthropic-ai/sdk`. The event mapping is:
+
+| Anthropic Event | StreamEvent |
+|----------------|-------------|
+| `content_block_start` where `content_block.type === 'tool_use'` | `{ type: 'tool_use_start', id: content_block.id, name: content_block.name }` |
+| `content_block_delta` where `delta.type === 'text_delta'` | `{ type: 'text_delta', text: delta.text }` |
+| `content_block_delta` where `delta.type === 'thinking_delta'` | `{ type: 'thinking_delta', text: delta.thinking }` |
+| `content_block_delta` where `delta.type === 'input_json_delta'` | `{ type: 'tool_use_delta', id: <tracked>, input: delta.partial_json }` |
+| `content_block_stop` for tool_use blocks | `{ type: 'tool_use_end', id: <tracked> }` |
+| `message_stop` / finalMessage | `{ type: 'message_end', usage: { inputTokens, outputTokens } }` |
+
+Tool use ID tracking: maintain a `currentBlockId` variable. Set it on `content_block_start`, use it for `tool_use_delta` and `tool_use_end`, clear on `content_block_stop`.
+
+Message format conversion for tool results: Anthropic expects tool results as `{ role: 'user', content: [{ type: 'tool_result', tool_use_id, content }] }`. Map from arq's `{ role: 'tool', toolCallId, content }`.
+
+Use `client.messages.stream()` with AbortController for cancellation. `isAvailable()` calls `client.models.list({ limit: 1 })` to verify the key.
 
 **Step 3: Commit**
 
@@ -1250,7 +1299,32 @@ git commit -m "feat: add basic streaming REPL with Ink UI and provider selection
 - Create: `src/tools/registry.ts`
 - Test: `src/tools/registry.test.ts`
 
-See design doc Section 2 for interfaces. ToolRegistry with `register()`, `get()`, `has()`, `getAll()`, `getDefinitions()`. Test: register, get, duplicate throws, unknown returns undefined, definitions format.
+**Tool interface:**
+```typescript
+interface Tool {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;  // JSON Schema, sent to LLM
+  permissionLevel: 'safe' | 'ask' | 'dangerous';
+  execute(input: unknown, ctx: ToolContext): Promise<ToolResult>;
+}
+
+interface ToolContext {
+  cwd: string;
+  config: AppConfig;
+  promptUser: (request: PermissionRequest) => Promise<PermissionResponse>;
+}
+
+interface ToolResult {
+  content: string;
+  isError?: boolean;
+  display?: { language?: string; truncated?: boolean; lineCount?: number; };
+}
+```
+
+**ToolRegistry:** `register()`, `get()`, `has()`, `getAll()`, `getDefinitions()`. Throws on duplicate registration. `getDefinitions()` returns `{ name, description, input_schema }[]` for the LLM.
+
+**Tests:** register + get, duplicate throws, unknown returns undefined, definitions format matches LLM expectations.
 
 ### Task 12: Read Tool
 
@@ -1268,7 +1342,11 @@ File reading with line numbers (`N\t<content>`), offset/limit support, error han
 - Test: `src/tools/builtins/write.test.ts`
 - Test: `src/tools/builtins/edit.test.ts`
 
-Write: create/overwrite files, mkdir -p for parent dirs. Edit: exact string replacement, uniqueness check, replace_all option. Permission: ask.
+**Write tool:** Creates or overwrites files. `fs.mkdirSync(dirname, { recursive: true })` for parent dirs. Input: `{ file_path: string, content: string }`. Returns character count on success. Permission: ask.
+
+**Edit tool:** Exact string replacement. Input: `{ file_path: string, old_string: string, new_string: string, replace_all?: boolean }`. Fails if `old_string` not found. Fails if `old_string` is not unique and `replace_all` is false (check `indexOf !== lastIndexOf`). Permission: ask.
+
+**Tests for Write:** creates new file, creates parent dirs, has ask permission. **Tests for Edit:** replaces unique string, errors on not found, errors on non-unique without replace_all.
 
 ### Task 14: Bash Tool
 
