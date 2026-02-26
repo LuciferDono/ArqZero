@@ -1,8 +1,6 @@
-# arq-CODE Implementation Plan
+# ArqZero Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
-**Goal:** Build a Claude Code clone (arq-CODE) — a TypeScript CLI with interactive REPL, tool use, permissions, MCP support, and skills, powered by Claude via Cursor's internal API.
+**Goal:** Build a coding CLI tool (ArqZero) inspired by Claude Code — a TypeScript CLI with interactive REPL, tool use, permissions, MCP support, and skills, powered by Claude via Cursor's internal API.
 
 **Architecture:** Monolithic TypeScript/Node.js package with clean module interfaces. Cursor's reverse-engineered gRPC API as primary LLM backend with Anthropic SDK as fallback. Ink (React) for terminal UI. Self-registering tool system with permission escalation.
 
@@ -106,11 +104,11 @@ src/api/cursor/protobuf/generated/
 Add to `package.json`:
 ```jsonc
 {
-  "name": "arq-code",
+  "name": "arqzero",
   "version": "0.1.0",
   "type": "module",
   "bin": {
-    "arq": "./bin/arq.ts"
+    "arqzero": "./bin/arq.ts"
   },
   "scripts": {
     "dev": "tsx bin/arq.ts",
@@ -125,19 +123,19 @@ Add to `package.json`:
 ```typescript
 // bin/arq.ts
 #!/usr/bin/env tsx
-console.log('arq-CODE v0.1.0');
+console.log('ArqZero v0.1.0');
 ```
 
 **Step 6: Verify it runs**
 
 Run: `npm run dev`
-Expected: Prints "arq-CODE v0.1.0"
+Expected: Prints "ArqZero v0.1.0"
 
 **Step 7: Commit**
 
 ```bash
 git add package.json tsconfig.json .gitignore bin/arq.ts package-lock.json
-git commit -m "feat: initialize arq-CODE project scaffold"
+git commit -m "feat: initialize ArqZero project scaffold"
 ```
 
 ---
@@ -258,7 +256,7 @@ import os from 'node:os';
 import { AppConfigSchema, type AppConfig } from './schema.js';
 
 export function getArqDir(): string {
-  return path.join(os.homedir(), '.arq');
+  return path.join(os.homedir(), '.arqzero');
 }
 
 export function getConfigPath(): string {
@@ -659,7 +657,7 @@ export class MockAdapter implements LLMProvider {
   private response: string;
   private aborted = false;
 
-  constructor(response = 'This is a mock response from arq-CODE.') {
+  constructor(response = 'This is a mock response from ArqZero.') {
     this.response = response;
   }
 
@@ -1468,7 +1466,7 @@ Use official SDK for stdio transport. Bridge converts MCP tools to arq Tool inte
 - Create: `src/skills/parser.ts`
 - Create: `src/skills/commands.ts`
 
-Scan `~/.arq/skills/`, parse `skill.json`, register slash commands. Inject `prompt.md` as system message when triggered.
+Scan `~/.arqzero/skills/`, parse `skill.json`, register slash commands. Inject `prompt.md` as system message when triggered.
 
 ---
 

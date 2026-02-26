@@ -1,10 +1,10 @@
 {
-  "name": "arq-code",
+  "name": "arqzero",
   "version": "0.1.0",
   "description": "",
   "type": "module",
   "bin": {
-    "arq": "./bin/arq.ts"
+    "arqzero": "./bin/arq.ts"
   },
   "scripts": {
     "dev": "tsx bin/arq.ts",

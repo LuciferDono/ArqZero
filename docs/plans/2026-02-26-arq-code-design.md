@@ -1,12 +1,12 @@
-# arq-CODE Design Document
+# ArqZero Design Document
 
 **Date:** 2026-02-26
 **Status:** Approved
-**Author:** arq-CODE design session
+**Author:** prana
 
 ## Overview
 
-arq-CODE is a TypeScript/Node.js CLI tool that replicates Claude Code's full feature set — interactive REPL with tool use, permission system, MCP support, and skills/plugins — powered by Claude via Cursor's internal chat API, distributed via npm, for personal/team use.
+ArqZero is a TypeScript/Node.js CLI tool that replicates Claude Code's full feature set — interactive REPL with tool use, permission system, MCP support, and skills/plugins — powered by Claude via Cursor's internal chat API, distributed via npm, for personal/team use.
 
 ## Architecture: Monolithic with Clean Interfaces
 
@@ -15,7 +15,7 @@ Single package, clear internal module boundaries. Every module exports a TypeScr
 ### Project Structure
 
 ```
-arq-code/
+arqzero/
 ├── src/
 │   ├── cli/                 # Terminal UI & REPL
 │   │   ├── renderer.ts           # Ink-based terminal rendering
@@ -76,7 +76,7 @@ arq-code/
 │   │   ├── parser.ts             # Skill file parsing
 │   │   └── commands.ts           # Slash command registration
 │   ├── config/              # Configuration management
-│   │   ├── schema.ts             # Zod schema for ~/.arq/config.json
+│   │   ├── schema.ts             # Zod schema for ~/.arqzero/config.json
 │   │   ├── loader.ts             # Reads, validates, merges with env vars
 │   │   └── init.ts               # First-run config initialization flow
 │   └── system/              # Cross-platform utilities
@@ -272,7 +272,7 @@ Note: `/dev/null` redirection (`2>/dev/null`) is NOT flagged — it's common and
 ### Config-Level Defaults
 
 ```jsonc
-// ~/.arq/config.json
+// ~/.arqzero/config.json
 {
   "permissions": {
     "defaultMode": "ask",
@@ -299,7 +299,7 @@ Config is the floor, session choices override upward.
 ### Session Persistence
 
 ```
-~/.arq/sessions/{session-id}.jsonl
+~/.arqzero/sessions/{session-id}.jsonl
 ```
 
 JSONL format, append-only. Stores **compacted snapshots**, not raw message replay — so resuming a long session starts from the last compaction point, not at 80% capacity.
@@ -336,7 +336,7 @@ Registered via the same registry pattern as tools.
 ### Skill Structure
 
 ```
-~/.arq/skills/<skill-name>/
+~/.arqzero/skills/<skill-name>/
   ├── skill.json    # metadata + trigger rules + slash command
   └── prompt.md     # content injected into context when triggered
 ```
@@ -344,7 +344,7 @@ Registered via the same registry pattern as tools.
 ### MCP Server Config
 
 ```jsonc
-// ~/.arq/config.json
+// ~/.arqzero/config.json
 {
   "mcpServers": {
     "github": {
@@ -360,13 +360,13 @@ Spawned at startup, tools discovered and registered through `mcp/bridge.ts`.
 
 ## Section 7: First-Run Experience
 
-`config/init.ts` runs when no `~/.arq/config.json` exists:
+`config/init.ts` runs when no `~/.arqzero/config.json` exists:
 
 1. Detect Cursor installation — check SQLite path exists
 2. If found: validate token is readable, set Cursor as default provider
 3. If not found: prompt for Anthropic API key
 4. Write initial config with sensible defaults
-5. Create `~/.arq/sessions/` and `~/.arq/skills/` directories
+5. Create `~/.arqzero/sessions/` and `~/.arqzero/skills/` directories
 
 Built in step 1, not as polish.
 

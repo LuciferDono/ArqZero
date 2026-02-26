@@ -1,2 +1,2 @@
 #!/usr/bin/env tsx
-console.log('arq-CODE v0.1.0');
+console.log('ArqZero v0.1.0');
