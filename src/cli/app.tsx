@@ -1,16 +1,23 @@
 // src/cli/app.tsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Box, Text, useApp, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import type { LLMProvider } from '../api/provider.js';
 import type { TokenUsage } from '../api/types.js';
 import type { AppConfig } from '../config/schema.js';
 import type { ToolRegistry } from '../tools/registry.js';
-import type { ToolContext } from '../tools/types.js';
+import type { ToolContext, PermissionRequest, PermissionResponse } from '../tools/types.js';
 import { ConversationEngine } from '../core/engine.js';
 import { PermissionManager } from '../permissions/manager.js';
 import { Session } from '../session/session.js';
 import { ContextWindow } from '../session/context.js';
+import {
+  StatusBar,
+  MessageList,
+  ToolIndicator,
+  PermissionPrompt,
+} from './components/index.js';
+import type { ChatEntry } from './components/index.js';
 
 interface AppProps {
   provider: LLMProvider;
@@ -18,9 +25,9 @@ interface AppProps {
   registry: ToolRegistry;
 }
 
-interface ChatEntry {
-  role: 'user' | 'assistant';
-  content: string;
+interface PendingPermission {
+  request: PermissionRequest;
+  resolve: (response: PermissionResponse) => void;
 }
 
 export default function App({ provider, config, registry }: AppProps) {
@@ -33,6 +40,7 @@ export default function App({ provider, config, registry }: AppProps) {
   const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [contextPercent, setContextPercent] = useState(0);
+  const [pendingPermission, setPendingPermission] = useState<PendingPermission | null>(null);
   const { exit } = useApp();
 
   const engineRef = useRef<ConversationEngine | null>(null);
@@ -46,9 +54,9 @@ export default function App({ provider, config, registry }: AppProps) {
       cwd: process.cwd(),
       config,
       promptUser: async (req) => {
-        // TODO: Show actual permission UI prompt (Phase 8 polish)
-        // For now, auto-approve in the UI layer
-        return { allowed: true };
+        return new Promise<PermissionResponse>((resolve) => {
+          setPendingPermission({ request: req, resolve });
+        });
       },
     };
     engineRef.current = new ConversationEngine({
@@ -62,6 +70,13 @@ export default function App({ provider, config, registry }: AppProps) {
       contextWindow,
     });
   }
+
+  const handlePermissionResponse = useCallback((response: PermissionResponse) => {
+    if (pendingPermission) {
+      pendingPermission.resolve(response);
+      setPendingPermission(null);
+    }
+  }, [pendingPermission]);
 
   useInput((_input, key) => {
     if (key.ctrl && _input === 'c') {
@@ -145,44 +160,30 @@ export default function App({ provider, config, registry }: AppProps) {
     setIsStreaming(false);
   };
 
-  const usageText = tokenUsage
-    ? ` | tokens: ${tokenUsage.inputTokens}in/${tokenUsage.outputTokens}out`
-    : '';
-  const contextText = contextPercent > 0 ? ` | ctx: ${contextPercent}%` : '';
-
   return (
     <Box flexDirection="column" padding={1}>
-      <Box marginBottom={1}>
-        <Text bold color="cyan">ArqZero</Text>
-        <Text color="gray"> v0.1.0 | provider: {provider.name}{usageText}{contextText} | /quit to exit</Text>
-      </Box>
+      <StatusBar
+        modelName={config.model}
+        providerName={provider.name}
+        messageCount={history.length}
+        tokenUsage={tokenUsage}
+        contextPercent={contextPercent}
+      />
 
-      {history.map((entry, i) => (
-        <Box key={i} flexDirection="column" marginBottom={1}>
-          <Text color={entry.role === 'user' ? 'blue' : 'green'} bold>
-            {entry.role === 'user' ? '> ' : ''}
-          </Text>
-          <Text>{entry.content}</Text>
-        </Box>
-      ))}
+      <MessageList
+        messages={history}
+        streamingText={streaming}
+        thinkingText={thinking}
+        isStreaming={isStreaming}
+      />
 
-      {isStreaming && thinking && !streaming && (
-        <Box marginBottom={1}>
-          <Text color="magenta">Thinking...</Text>
-        </Box>
-      )}
+      <ToolIndicator toolName={activeTool} />
 
-      {isStreaming && activeTool && (
-        <Box marginBottom={1}>
-          <Text color="yellow">Running {activeTool}...</Text>
-        </Box>
-      )}
-
-      {isStreaming && streaming && (
-        <Box marginBottom={1}>
-          <Text color="green">{streaming}</Text>
-          <Text color="gray">{'\u258c'}</Text>
-        </Box>
+      {pendingPermission && (
+        <PermissionPrompt
+          request={pendingPermission.request}
+          onRespond={handlePermissionResponse}
+        />
       )}
 
       {errorMsg && (
@@ -191,7 +192,7 @@ export default function App({ provider, config, registry }: AppProps) {
         </Box>
       )}
 
-      {!isStreaming && (
+      {!isStreaming && !pendingPermission && (
         <Box>
           <Text color="blue" bold>{'> '}</Text>
           <TextInput
