@@ -9,6 +9,8 @@ import { configExists, loadConfig } from '../src/config/loader.js';
 import { runInit } from '../src/config/init.js';
 import { createInterface } from 'node:readline';
 import type { LLMProvider } from '../src/api/provider.js';
+import { ToolRegistry } from '../src/tools/registry.js';
+import { builtinTools } from '../src/tools/builtins/index.js';
 
 async function promptUser(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -44,7 +46,12 @@ async function main() {
     provider = new MockAdapter();
   }
 
-  render(React.createElement(App, { provider }));
+  const registry = new ToolRegistry();
+  for (const tool of builtinTools) {
+    registry.register(tool);
+  }
+
+  render(React.createElement(App, { provider, config, registry }));
 }
 
 main().catch((err) => {

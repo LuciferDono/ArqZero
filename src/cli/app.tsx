@@ -1,12 +1,18 @@
 // src/cli/app.tsx
-import React, { useState } from 'react';
-import { Box, Text, useApp } from 'ink';
+import React, { useState, useRef } from 'react';
+import { Box, Text, useApp, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import type { LLMProvider } from '../api/provider.js';
-import type { Message } from '../api/types.js';
+import type { TokenUsage } from '../api/types.js';
+import type { AppConfig } from '../config/schema.js';
+import type { ToolRegistry } from '../tools/registry.js';
+import type { ToolContext } from '../tools/types.js';
+import { ConversationEngine } from '../core/engine.js';
 
 interface AppProps {
   provider: LLMProvider;
+  config: AppConfig;
+  registry: ToolRegistry;
 }
 
 interface ChatEntry {
@@ -14,12 +20,42 @@ interface ChatEntry {
   content: string;
 }
 
-export default function App({ provider }: AppProps) {
+export default function App({ provider, config, registry }: AppProps) {
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<ChatEntry[]>([]);
   const [streaming, setStreaming] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
+  const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [thinking, setThinking] = useState('');
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { exit } = useApp();
+
+  const engineRef = useRef<ConversationEngine | null>(null);
+  if (!engineRef.current) {
+    const toolContext: ToolContext = {
+      cwd: process.cwd(),
+      config,
+      promptUser: async (_req) => {
+        // For now, auto-approve everything (Phase 4 adds real permissions)
+        return { allowed: true };
+      },
+    };
+    engineRef.current = new ConversationEngine({
+      provider,
+      registry,
+      model: config.model,
+      maxTokens: config.maxTokens,
+      toolContext,
+    });
+  }
+
+  useInput((_input, key) => {
+    if (key.ctrl && _input === 'c') {
+      engineRef.current?.abort();
+      exit();
+    }
+  });
 
   const handleSubmit = async (value: string) => {
     if (!value.trim()) return;
@@ -33,39 +69,69 @@ export default function App({ provider }: AppProps) {
     setHistory((h) => [...h, { role: 'user', content: value }]);
     setIsStreaming(true);
     setStreaming('');
-
-    const messages: Message[] = [
-      ...history.map((e) => ({ role: e.role, content: e.content } as Message)),
-      { role: 'user' as const, content: value },
-    ];
+    setThinking('');
+    setErrorMsg(null);
+    setActiveTool(null);
 
     let responseText = '';
 
     try {
-      for await (const event of provider.chat({
-        messages,
-        model: 'default',
-        intent: 'chat',
-      })) {
-        if (event.type === 'text_delta') {
-          responseText += event.text;
+      await engineRef.current!.handleUserMessage(value, {
+        onTextDelta: (text) => {
+          responseText += text;
           setStreaming(responseText);
-        }
-      }
+        },
+        onThinkingDelta: (text) => {
+          setThinking((t) => t + text);
+        },
+        onToolStart: (_id, name) => {
+          setActiveTool(name);
+        },
+        onToolEnd: (_id, _name, _result) => {
+          setActiveTool(null);
+        },
+        onMessageEnd: (usage) => {
+          setTokenUsage(usage);
+        },
+        onError: (err) => {
+          setErrorMsg(err.message);
+        },
+      });
     } catch (err) {
-      responseText = `Error: ${err instanceof Error ? err.message : String(err)}`;
+      setErrorMsg(err instanceof Error ? err.message : String(err));
     }
 
-    setHistory((h) => [...h, { role: 'assistant', content: responseText }]);
+    // Derive display entries from the engine's internal message history
+    const msgs = engineRef.current!.getMessages();
+    const displayEntries: ChatEntry[] = [];
+    for (const msg of msgs) {
+      if (msg.role === 'user' && typeof msg.content === 'string') {
+        displayEntries.push({ role: 'user', content: msg.content });
+      } else if (msg.role === 'assistant') {
+        const text =
+          typeof msg.content === 'string'
+            ? msg.content
+            : (msg.content as any[])
+                .filter((b: any) => b.type === 'text')
+                .map((b: any) => b.text)
+                .join('');
+        if (text) displayEntries.push({ role: 'assistant', content: text });
+      }
+    }
+    setHistory(displayEntries);
     setStreaming('');
     setIsStreaming(false);
   };
+
+  const usageText = tokenUsage
+    ? ` | tokens: ${tokenUsage.inputTokens}in/${tokenUsage.outputTokens}out`
+    : '';
 
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">ArqZero</Text>
-        <Text color="gray"> v0.1.0 | provider: {provider.name} | /quit to exit</Text>
+        <Text color="gray"> v0.1.0 | provider: {provider.name}{usageText} | /quit to exit</Text>
       </Box>
 
       {history.map((entry, i) => (
@@ -77,10 +143,28 @@ export default function App({ provider }: AppProps) {
         </Box>
       ))}
 
+      {isStreaming && thinking && !streaming && (
+        <Box marginBottom={1}>
+          <Text color="magenta">Thinking...</Text>
+        </Box>
+      )}
+
+      {isStreaming && activeTool && (
+        <Box marginBottom={1}>
+          <Text color="yellow">Running {activeTool}...</Text>
+        </Box>
+      )}
+
       {isStreaming && streaming && (
         <Box marginBottom={1}>
           <Text color="green">{streaming}</Text>
           <Text color="gray">{'\u258c'}</Text>
+        </Box>
+      )}
+
+      {errorMsg && (
+        <Box marginBottom={1}>
+          <Text color="red">Error: {errorMsg}</Text>
         </Box>
       )}
 
