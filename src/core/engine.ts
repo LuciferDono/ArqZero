@@ -3,6 +3,10 @@ import type { Message, ContentBlock, TokenUsage } from '../api/types.js';
 import type { ToolContext, ToolResult } from '../tools/types.js';
 import type { ToolRegistry } from '../tools/registry.js';
 import type { PermissionManager } from '../permissions/manager.js';
+import type { ContextWindow } from '../session/context.js';
+import type { Session } from '../session/session.js';
+import type { CompactionResult } from './compaction.js';
+import { compactMessages, buildCompactedMessages } from './compaction.js';
 import { ToolExecutor } from '../tools/executor.js';
 import { userMessage, assistantMessage, toolResultMessage } from './message.js';
 
@@ -12,6 +16,7 @@ export interface EngineCallbacks {
   onToolStart?: (id: string, name: string) => void;
   onToolEnd?: (id: string, name: string, result: ToolResult) => void;
   onMessageEnd?: (usage: TokenUsage) => void;
+  onCompaction?: (result: CompactionResult) => void;
   onError?: (error: Error) => void;
 }
 
@@ -24,6 +29,8 @@ export interface EngineOptions {
   toolContext: ToolContext;
   maxToolRounds?: number;
   permissions?: PermissionManager;
+  contextWindow?: ContextWindow;
+  session?: Session;
 }
 
 export class ConversationEngine {
@@ -44,8 +51,29 @@ export class ConversationEngine {
     text: string,
     callbacks: EngineCallbacks = {},
   ): Promise<void> {
+    this.options.session?.touch();
     this.messages.push(userMessage(text));
     await this.runConversationLoop(callbacks);
+
+    // Check if compaction is needed after conversation completes
+    const { contextWindow } = this.options;
+    if (contextWindow?.needsCompaction()) {
+      const preserveCount = contextWindow.getPreserveCount(this.messages.length);
+      const result = await compactMessages(
+        this.messages,
+        preserveCount,
+        this.options.provider,
+        this.options.model,
+      );
+      if (result.compactedMessageCount > 0) {
+        const preserved = this.messages.slice(
+          this.messages.length - result.preservedMessageCount,
+        );
+        this.messages = buildCompactedMessages(result.summary, preserved);
+        this.options.session?.recordCompaction();
+        callbacks.onCompaction?.(result);
+      }
+    }
   }
 
   private async runConversationLoop(
@@ -134,6 +162,7 @@ export class ConversationEngine {
           }
 
           case 'message_end':
+            this.options.contextWindow?.trackUsage(event.usage);
             callbacks.onMessageEnd?.(event.usage);
             break;
 

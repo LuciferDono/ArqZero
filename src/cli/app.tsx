@@ -9,6 +9,8 @@ import type { ToolRegistry } from '../tools/registry.js';
 import type { ToolContext } from '../tools/types.js';
 import { ConversationEngine } from '../core/engine.js';
 import { PermissionManager } from '../permissions/manager.js';
+import { Session } from '../session/session.js';
+import { ContextWindow } from '../session/context.js';
 
 interface AppProps {
   provider: LLMProvider;
@@ -30,11 +32,16 @@ export default function App({ provider, config, registry }: AppProps) {
   const [thinking, setThinking] = useState('');
   const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [contextPercent, setContextPercent] = useState(0);
   const { exit } = useApp();
 
   const engineRef = useRef<ConversationEngine | null>(null);
+  const contextWindowRef = useRef<ContextWindow | null>(null);
   if (!engineRef.current) {
     const permissionManager = new PermissionManager(config.permissions);
+    const session = new Session();
+    const contextWindow = new ContextWindow();
+    contextWindowRef.current = contextWindow;
     const toolContext: ToolContext = {
       cwd: process.cwd(),
       config,
@@ -51,6 +58,8 @@ export default function App({ provider, config, registry }: AppProps) {
       maxTokens: config.maxTokens,
       toolContext,
       permissions: permissionManager,
+      session,
+      contextWindow,
     });
   }
 
@@ -96,6 +105,15 @@ export default function App({ provider, config, registry }: AppProps) {
         },
         onMessageEnd: (usage) => {
           setTokenUsage(usage);
+          if (contextWindowRef.current) {
+            setContextPercent(contextWindowRef.current.getUsageSummary().percent);
+          }
+        },
+        onCompaction: (result) => {
+          console.log(
+            `[compaction] Summarized ${result.compactedMessageCount} messages, ` +
+            `preserved ${result.preservedMessageCount}`,
+          );
         },
         onError: (err) => {
           setErrorMsg(err.message);
@@ -130,12 +148,13 @@ export default function App({ provider, config, registry }: AppProps) {
   const usageText = tokenUsage
     ? ` | tokens: ${tokenUsage.inputTokens}in/${tokenUsage.outputTokens}out`
     : '';
+  const contextText = contextPercent > 0 ? ` | ctx: ${contextPercent}%` : '';
 
   return (
     <Box flexDirection="column" padding={1}>
       <Box marginBottom={1}>
         <Text bold color="cyan">ArqZero</Text>
-        <Text color="gray"> v0.1.0 | provider: {provider.name}{usageText} | /quit to exit</Text>
+        <Text color="gray"> v0.1.0 | provider: {provider.name}{usageText}{contextText} | /quit to exit</Text>
       </Box>
 
       {history.map((entry, i) => (
