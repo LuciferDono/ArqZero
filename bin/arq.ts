@@ -11,6 +11,8 @@ import { createInterface } from 'node:readline';
 import type { LLMProvider } from '../src/api/provider.js';
 import { ToolRegistry } from '../src/tools/registry.js';
 import { builtinTools } from '../src/tools/builtins/index.js';
+import { McpClientManager } from '../src/mcp/client.js';
+import { registerMcpTools } from '../src/mcp/bridge.js';
 
 async function promptUser(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -50,6 +52,30 @@ async function main() {
   for (const tool of builtinTools) {
     registry.register(tool);
   }
+
+  // Connect to configured MCP servers
+  const mcpManager = new McpClientManager();
+  if (config.mcpServers && Object.keys(config.mcpServers).length > 0) {
+    for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
+      try {
+        const tools = await mcpManager.connect(name, serverConfig);
+        console.log(`MCP: Connected to ${name} (${tools.length} tools)`);
+      } catch (err) {
+        console.error(
+          `MCP: Failed to connect to ${name}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+    const mcpToolCount = registerMcpTools(mcpManager, registry);
+    if (mcpToolCount > 0) {
+      console.log(`MCP: Registered ${mcpToolCount} tools`);
+    }
+  }
+
+  // Cleanup MCP connections on exit
+  process.on('exit', () => {
+    mcpManager.disconnectAll().catch(() => {});
+  });
 
   render(React.createElement(App, { provider, config, registry }));
 }
