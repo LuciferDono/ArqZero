@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { ToolExecutor } from './executor.js';
 import { ToolRegistry } from './registry.js';
+import { PermissionManager } from '../permissions/manager.js';
 import type { Tool, ToolResult, ToolContext } from './types.js';
 
 function createMockTool(
@@ -106,5 +107,52 @@ describe('ToolExecutor', () => {
     assert.equal(result.display.language, 'typescript');
     assert.equal(result.display.truncated, true);
     assert.equal(result.display.lineCount, 42);
+  });
+
+  it('should deny tool when permission manager denies', async () => {
+    const registry = new ToolRegistry();
+    const permissions = new PermissionManager({
+      defaultMode: 'ask',
+      alwaysAllow: [],
+      alwaysDeny: ['blocked_tool'],
+      trustedPatterns: {},
+    });
+    const executor = new ToolExecutor(registry, permissions);
+    registry.register(createMockTool('blocked_tool', async () => ({ content: 'should not run' })));
+
+    const result = await executor.execute('blocked_tool', {}, ctx);
+
+    assert.equal(result.isError, true);
+    assert.ok(result.content.includes('denied'));
+    assert.ok(result.content.includes('blocked_tool'));
+  });
+
+  it('should allow safe tools through permission manager', async () => {
+    const registry = new ToolRegistry();
+    const permissions = new PermissionManager({
+      defaultMode: 'ask',
+      alwaysAllow: [],
+      alwaysDeny: [],
+      trustedPatterns: {},
+    });
+    const executor = new ToolExecutor(registry, permissions);
+    // createMockTool sets permissionLevel to 'safe' by default
+    registry.register(createMockTool('safe_tool', async () => ({ content: 'safe result' })));
+
+    const result = await executor.execute('safe_tool', {}, ctx);
+
+    assert.equal(result.content, 'safe result');
+    assert.equal(result.isError, undefined);
+  });
+
+  it('should work without permission manager (backward compat)', async () => {
+    const registry = new ToolRegistry();
+    const executor = new ToolExecutor(registry);
+    registry.register(createMockTool('any_tool', async () => ({ content: 'works fine' })));
+
+    const result = await executor.execute('any_tool', {}, ctx);
+
+    assert.equal(result.content, 'works fine');
+    assert.equal(result.isError, undefined);
   });
 });

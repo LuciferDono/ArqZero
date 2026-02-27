@@ -2,6 +2,7 @@ import type { LLMProvider } from '../api/provider.js';
 import type { Message, ContentBlock, TokenUsage } from '../api/types.js';
 import type { ToolContext, ToolResult } from '../tools/types.js';
 import type { ToolRegistry } from '../tools/registry.js';
+import type { PermissionManager } from '../permissions/manager.js';
 import { ToolExecutor } from '../tools/executor.js';
 import { userMessage, assistantMessage, toolResultMessage } from './message.js';
 
@@ -22,6 +23,7 @@ export interface EngineOptions {
   maxTokens?: number;
   toolContext: ToolContext;
   maxToolRounds?: number;
+  permissions?: PermissionManager;
 }
 
 export class ConversationEngine {
@@ -31,7 +33,7 @@ export class ConversationEngine {
 
   constructor(options: EngineOptions) {
     this.options = options;
-    this.executor = new ToolExecutor(options.registry);
+    this.executor = new ToolExecutor(options.registry, options.permissions);
   }
 
   getMessages(): Message[] {

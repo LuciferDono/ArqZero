@@ -1,8 +1,16 @@
 import { ToolRegistry } from './registry.js';
 import type { ToolContext, ToolResult } from './types.js';
+import type { PermissionManager } from '../permissions/manager.js';
 
 export class ToolExecutor {
-  constructor(private registry: ToolRegistry) {}
+  private permissions: PermissionManager | null;
+
+  constructor(
+    private registry: ToolRegistry,
+    permissions?: PermissionManager,
+  ) {
+    this.permissions = permissions ?? null;
+  }
 
   async execute(toolName: string, input: unknown, ctx: ToolContext): Promise<ToolResult> {
     // 1. Look up tool in registry
@@ -14,7 +22,23 @@ export class ToolExecutor {
       };
     }
 
-    // 2. Execute with try/catch
+    // 2. Check permissions (if manager is wired)
+    if (this.permissions) {
+      const result = await this.permissions.check(
+        toolName,
+        tool.permissionLevel,
+        input,
+        ctx.promptUser,
+      );
+      if (!result.allowed) {
+        return {
+          content: result.denial ?? `Tool "${toolName}" was denied`,
+          isError: true,
+        };
+      }
+    }
+
+    // 3. Execute with try/catch
     try {
       return await tool.execute(input, ctx);
     } catch (error) {

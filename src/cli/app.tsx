@@ -8,6 +8,7 @@ import type { AppConfig } from '../config/schema.js';
 import type { ToolRegistry } from '../tools/registry.js';
 import type { ToolContext } from '../tools/types.js';
 import { ConversationEngine } from '../core/engine.js';
+import { PermissionManager } from '../permissions/manager.js';
 
 interface AppProps {
   provider: LLMProvider;
@@ -33,11 +34,13 @@ export default function App({ provider, config, registry }: AppProps) {
 
   const engineRef = useRef<ConversationEngine | null>(null);
   if (!engineRef.current) {
+    const permissionManager = new PermissionManager(config.permissions);
     const toolContext: ToolContext = {
       cwd: process.cwd(),
       config,
-      promptUser: async (_req) => {
-        // For now, auto-approve everything (Phase 4 adds real permissions)
+      promptUser: async (req) => {
+        // TODO: Show actual permission UI prompt (Phase 8 polish)
+        // For now, auto-approve in the UI layer
         return { allowed: true };
       },
     };
@@ -47,6 +50,7 @@ export default function App({ provider, config, registry }: AppProps) {
       model: config.model,
       maxTokens: config.maxTokens,
       toolContext,
+      permissions: permissionManager,
     });
   }
 
