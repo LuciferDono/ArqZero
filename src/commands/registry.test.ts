@@ -27,7 +27,7 @@ function createMockCommand(overrides: Partial<SlashCommand> = {}): SlashCommand 
 function createMockConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
     provider: 'fireworks',
-    model: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
+    model: 'accounts/fireworks/models/glm-4p7',
     fireworksApiKey: 'test-key',
     maxTokens: 8192,
     permissions: {
@@ -64,7 +64,7 @@ function createMockSkill(overrides: Partial<LoadedSkill> = {}): LoadedSkill {
       ...overrides.manifest,
     },
     promptContent: overrides.promptContent ?? 'You are a commit message generator.',
-    directory: overrides.directory ?? '/home/user/.arqcode/skills/commit',
+    directory: overrides.directory ?? '/home/user/.arqzero/skills/commit',
   };
 }
 
@@ -233,7 +233,7 @@ describe('Built-in commands', () => {
       const output = await modelCommand.execute('', ctx);
 
       assert.ok(output);
-      assert.ok(output.includes('accounts/fireworks/models/llama-v3p3-70b-instruct'));
+      assert.ok(output.includes('accounts/fireworks/models/glm-4p7'));
     });
 
     it('should call onModelChange when args given', async () => {
@@ -307,7 +307,7 @@ describe('Built-in commands', () => {
 
       assert.ok(output);
       assert.ok(output.includes('fireworks'));
-      assert.ok(output.includes('accounts/fireworks/models/llama-v3p3-70b-instruct'));
+      assert.ok(output.includes('accounts/fireworks/models/glm-4p7'));
     });
 
     it('should show permissions mode', async () => {
@@ -356,7 +356,7 @@ describe('Built-in commands', () => {
           prompt: 'prompt.md',
         },
         promptContent: 'You are a code reviewer.',
-        directory: '/home/user/.arqcode/skills/review',
+        directory: '/home/user/.arqzero/skills/review',
       }));
 
       const ctx = createMockContext({ skillRegistry });

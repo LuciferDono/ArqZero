@@ -32,7 +32,7 @@ export class McpClientManager {
     });
 
     const client = new Client({
-      name: 'arqcode',
+      name: 'arqzero',
       version: '0.1.0',
     });
 

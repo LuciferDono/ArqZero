@@ -1,37 +1,44 @@
 {
-  "name": "arqcode",
+  "name": "arqzero",
   "version": "0.1.0",
   "description": "AI-powered coding assistant CLI built on Claude",
   "type": "module",
   "bin": {
-    "arqcode": "./bin/arqcode.mjs"
+    "arqzero": "./bin/arqzero.mjs"
   },
   "scripts": {
     "dev": "tsx bin/arq.ts",
     "build": "tsc",
     "test": "node --test --experimental-strip-types src/**/*.test.ts"
   },
-  "keywords": ["cli", "ai", "coding-assistant", "claude"],
-  "files": ["bin/", "src/", "!**/*.test.ts"],
+  "keywords": [
+    "cli",
+    "ai",
+    "coding-assistant",
+    "claude"
+  ],
+  "files": [
+    "bin/",
+    "src/",
+    "!**/*.test.ts"
+  ],
   "engines": {
     "node": ">=18.19.0"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
     "@modelcontextprotocol/sdk": "^1.27.1",
-    "better-sqlite3": "^12.6.2",
     "fast-glob": "^3.3.3",
     "ink": "^6.8.0",
     "ink-text-input": "^6.0.0",
+    "openai": "^6.32.0",
     "react": "^19.2.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.3.1",
     "@types/react": "^19.2.14"
   }

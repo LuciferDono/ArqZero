@@ -118,7 +118,7 @@ export const webSearchTool: Tool = {
       const response = await fetch(searchUrl, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'ArqCode/1.0',
+          'User-Agent': 'ArqZero/1.0',
         },
       });
 

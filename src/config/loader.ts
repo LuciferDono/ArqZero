@@ -4,7 +4,7 @@ import os from 'node:os';
 import { AppConfigSchema, type AppConfig } from './schema.js';
 
 export function getArqDir(): string {
-  return path.join(os.homedir(), '.arqcode');
+  return path.join(os.homedir(), '.arqzero');
 }
 
 export function getConfigPath(): string {
@@ -19,7 +19,7 @@ export function loadConfig(): AppConfig {
   const configPath = getConfigPath();
 
   if (!fs.existsSync(configPath)) {
-    throw new Error(`Config not found at ${configPath}. Run 'arqcode' to initialize.`);
+    throw new Error(`Config not found at ${configPath}. Run 'arqzero' to initialize.`);
   }
 
   const raw = fs.readFileSync(configPath, 'utf-8');

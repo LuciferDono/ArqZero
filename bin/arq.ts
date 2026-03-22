@@ -28,9 +28,9 @@ async function promptUser(question: string): Promise<string> {
 
 async function main() {
   if (!configExists()) {
-    console.log('Welcome to ArqCode! Let\'s set up your configuration.\n');
+    console.log('Welcome to ArqZero! Let\'s set up your configuration.\n');
     await runInit(promptUser);
-    console.log('\nConfiguration saved! Starting ArqCode...\n');
+    console.log('\nConfiguration saved! Starting ArqZero...\n');
   }
 
   const config = loadConfig();

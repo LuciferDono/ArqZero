@@ -20,7 +20,7 @@ import type { CompactionSnapshot } from './history.js';
 let tmpDir: string;
 
 beforeEach(() => {
-  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'arqcode-history-test-'));
+  tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'arqzero-history-test-'));
 });
 
 afterEach(() => {

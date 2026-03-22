@@ -13,7 +13,7 @@ import type {
   ChatCompletionTool,
 } from 'openai/resources/chat/completions';
 
-const DEFAULT_MODEL = 'accounts/fireworks/models/llama-v3p3-70b-instruct';
+const DEFAULT_MODEL = 'accounts/fireworks/models/glm-4p7';
 const BASE_URL = 'https://api.fireworks.ai/inference/v1';
 
 export class FireworksAdapter implements LLMProvider {
@@ -116,7 +116,7 @@ export class FireworksAdapter implements LLMProvider {
     return !!this.apiKey;
   }
 
-  /** Convert ArqCode messages to OpenAI format */
+  /** Convert ArqZero messages to OpenAI format */
   convertMessages(params: ChatRequest): ChatCompletionMessageParam[] {
     const result: ChatCompletionMessageParam[] = [];
 
@@ -208,7 +208,7 @@ export class FireworksAdapter implements LLMProvider {
     return result;
   }
 
-  /** Convert ArqCode tool definitions to OpenAI format */
+  /** Convert ArqZero tool definitions to OpenAI format */
   convertTools(tools: ToolDefinition[]): ChatCompletionTool[] {
     return tools.map((t) => ({
       type: 'function' as const,

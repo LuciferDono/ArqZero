@@ -15,7 +15,7 @@ function createMockSkill(overrides: Partial<LoadedSkill> = {}): LoadedSkill {
       ...overrides.manifest,
     },
     promptContent: overrides.promptContent ?? 'You are a commit message generator.',
-    directory: overrides.directory ?? '/home/user/.arqcode/skills/commit',
+    directory: overrides.directory ?? '/home/user/.arqzero/skills/commit',
   };
 }
 
@@ -45,7 +45,7 @@ describe('SkillRegistry', () => {
           prompt: 'prompt.md',
         },
         promptContent: 'You are a code reviewer.',
-        directory: '/home/user/.arqcode/skills/review',
+        directory: '/home/user/.arqzero/skills/review',
       }));
       assert.equal(registry.has('/commit'), true);
       assert.equal(registry.has('/review'), true);
@@ -106,7 +106,7 @@ describe('SkillRegistry', () => {
           prompt: 'prompt.md',
         },
         promptContent: 'Review prompt',
-        directory: '/home/user/.arqcode/skills/review',
+        directory: '/home/user/.arqzero/skills/review',
       }));
 
       const all = registry.getAll();
@@ -146,7 +146,7 @@ describe('SkillRegistry', () => {
           prompt: 'prompt.md',
         },
         promptContent: 'Review prompt',
-        directory: '/home/user/.arqcode/skills/review',
+        directory: '/home/user/.arqzero/skills/review',
       }));
 
       const commands = registry.getCommands();

@@ -16,7 +16,7 @@ export const THEME = {
   info: 'cyan',             // Info/links
 
   // Formatting
-  appName: 'ArqCode',
+  appName: 'ArqZero',
   promptPrefix: '◆ arq ›',
   version: '2.0.0',
 } as const;

@@ -25,7 +25,7 @@ describe('Theme', () => {
   });
 
   it('has app identity', () => {
-    assert.equal(THEME.appName, 'ArqCode');
+    assert.equal(THEME.appName, 'ArqZero');
     assert.equal(THEME.promptPrefix, '◆ arq ›');
     assert.equal(THEME.version, '2.0.0');
   });
