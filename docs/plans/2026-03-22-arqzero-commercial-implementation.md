@@ -9,13 +9,13 @@
 
 ## Overview
 
-43 tasks across 3 systems:
+50 tasks across 3 systems:
 
 | System | Tasks | Description |
 |---|---|---|
-| **Backend** | B1–B15 | Hono API, PostgreSQL, Stripe, Resend |
-| **CLI Auth** | C1–C14 | Login flow, token storage, tier gating, usage tracking |
-| **Website** | W1–W14 | Next.js site, Stripe Checkout, dashboard, docs |
+| **Backend** | B1–B15, B9b–B9d | Hono API, PostgreSQL, Stripe, Resend, team routes |
+| **CLI Auth** | C1–C14, C7b | Login flow, token storage, tier gating, usage tracking, bootstrap |
+| **Website** | W1–W14, W6b–W6c | Next.js site, Stripe Checkout, dashboard, team mgmt, docs |
 
 ## Dependency Graph
 
@@ -27,25 +27,30 @@ B6 (usage route) ◄── B1                                  │
 B7 (Resend) ◄── B2                                       ▼
 B8 (Stripe webhook) ◄── B1, B5                    C1 (auth.json)
 B9 (checkout route) ◄── B8                         C2 (login cmd)
-B10 (JWT utils) ──► B2, B3, B4                     C3 (verify flow)
-B11 (rate limit) ──► B2                            C4 (token refresh)
-B12 (middleware) ──► B5, B6                        C5 (offline grace)
-B13 (machine-id) ──► B6                            C6 (tier type)
-B14 (tests) ◄── B1-B13                            C7 (feature gate)
-B15 (deploy) ◄── B14                              C8 (tool gate)
-                                                    C9 (cmd gate)
-W1 (scaffold) ── independent                       C10 (capability gate)
-W2 (landing) ◄── W1                                C11 (usage tracker)
-W3 (pricing) ◄── W1                                C12 (setup wizard)
-W4 (docs) ◄── W1                                   C13 (status cmd)
-W5 (auth pages) ◄── W1, B2                         C14 (tests)
+B9b (portal route) ◄── B9, B12                     C3 (verify flow)
+B9c (team routes) ◄── B1, B12                      C4 (token refresh)
+B9d (team memory) ◄── B1, B12                      C5 (offline grace)
+B10 (JWT utils) ──► B2, B3, B4                     C6 (tier type)
+B11 (rate limit) ──► B2                            C7 (feature gate)
+B12 (middleware) ──► B5, B6                        C7b (startup bootstrap)
+B13 (machine-id) ──► B6                            C8 (tool gate)
+B14 (tests) ◄── B1-B13, B9b-B9d                   C9 (cmd gate)
+B15 (deploy) ◄── B14                              C10 (capability gate)
+                                                    C11 (usage tracker)
+W1 (scaffold) ── independent                       C12 (setup wizard)
+W2 (landing) ◄── W1                                C13 (status cmd)
+W3 (pricing) ◄── W1                                C14 (tests)
+W4 (docs) ◄── W1
+W5 (auth pages) ◄── W1, B2
 W6 (dashboard) ◄── W5
-W7 (Stripe portal) ◄── W5, B9
+W6b (team mgmt) ◄── W5, B9c
+W6c (account settings) ◄── W5, B2
+W7 (Stripe portal) ◄── W5, B9b
 W8 (blog) ◄── W1
 W9 (SEO) ◄── W1
 W10 (analytics) ◄── W1
 W11 (terminal demo) ◄── W2
-W12 (responsive) ◄── W2-W8
+W12 (responsive) ◄── W2-W8, W6b, W6c
 W13 (OG images) ◄── W1
 W14 (deploy) ◄── W1-W13
 ```
@@ -53,7 +58,7 @@ W14 (deploy) ◄── W1-W13
 **Parallel execution groups:**
 - **Group 1 (no deps):** B1, B10, C1, C6, W1
 - **Group 2 (after Group 1):** B2, B5, B6, B7, B11, B12, B13, C2, C7, W2, W3, W4, W8
-- **Group 3 (after Group 2):** B3, B4, B8, B9, C3, C4, C5, C8, C9, C10, C11, C12, C13, W5, W6, W7, W9, W10, W11, W12, W13
+- **Group 3 (after Group 2):** B3, B4, B8, B9, B9b, B9c, B9d, C3, C4, C5, C7b, C8, C9, C10, C11, C12, C13, W5, W6, W6b, W6c, W7, W9, W10, W11, W12, W13
 - **Group 4 (final):** B14, B15, C14, W14
 
 ---
@@ -125,6 +130,29 @@ CREATE TABLE verification_tokens (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE INDEX idx_vt_email ON verification_tokens(email);
+
+CREATE TABLE team_memberships (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  member_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  invited_email VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'revoked')),
+  invited_at TIMESTAMPTZ DEFAULT NOW(),
+  accepted_at TIMESTAMPTZ
+);
+CREATE INDEX idx_tm_owner ON team_memberships(owner_user_id);
+CREATE INDEX idx_tm_member ON team_memberships(member_user_id);
+
+CREATE TABLE team_memory (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  key VARCHAR(255) NOT NULL,
+  value TEXT NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (owner_user_id, key)
+);
+CREATE INDEX idx_tmem_owner ON team_memory(owner_user_id);
 ```
 
 ```typescript
@@ -180,6 +208,25 @@ export const verificationTokens = pgTable('verification_tokens', {
   used: boolean('used').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
+
+export const teamMemberships = pgTable('team_memberships', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  ownerUserId: uuid('owner_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  memberUserId: uuid('member_user_id').references(() => users.id, { onDelete: 'set null' }),
+  invitedEmail: varchar('invited_email', { length: 255 }).notNull(),
+  role: varchar('role', { length: 20 }).notNull().default('member'),
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  invitedAt: timestamp('invited_at', { withTimezone: true }).defaultNow(),
+  acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+});
+
+export const teamMemory = pgTable('team_memory', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  ownerUserId: uuid('owner_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  key: varchar('key', { length: 255 }).notNull(),
+  value: varchar('value').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+}, (t) => [unique().on(t.ownerUserId, t.key)]);
 ```
 
 ```typescript
@@ -194,7 +241,7 @@ export type Database = typeof db;
 ```
 
 **Dependencies:** None
-**Verification:** `drizzle-kit push` succeeds against a test Supabase instance; all tables exist with correct constraints.
+**Verification:** `drizzle-kit push` succeeds against a test Supabase instance; all 7 tables exist with correct constraints.
 
 ---
 
@@ -355,12 +402,17 @@ authRoutes.post('/verify', async (c) => {
 
 ```typescript
 // POST /auth/refresh
-// Request: { refreshToken: string }
+// Request: { refreshToken: string, machineId?: string }
 // Response: { accessToken: string, expiresIn: 3600 }
-// Error: 401 if token invalid/expired
+// Error: 401 if token invalid/expired, 403 if machineId mismatch
+
+const refreshSchema = z.object({
+  refreshToken: z.string(),
+  machineId: z.string().max(64).optional(),
+});
 
 authRoutes.post('/refresh', async (c) => {
-  const { refreshToken } = z.object({ refreshToken: z.string() }).parse(await c.req.json());
+  const { refreshToken, machineId } = refreshSchema.parse(await c.req.json());
 
   const session = await db.query.sessions.findFirst({
     where: and(
@@ -370,6 +422,11 @@ authRoutes.post('/refresh', async (c) => {
   });
 
   if (!session) return c.json({ error: 'Invalid or expired refresh token' }, 401);
+
+  // Validate machineId against stored session (if session has one)
+  if (session.machineId && machineId && session.machineId !== machineId) {
+    return c.json({ error: 'Machine ID mismatch' }, 403);
+  }
 
   const user = await db.query.users.findFirst({ where: eq(users.id, session.userId) });
   if (!user) return c.json({ error: 'User not found' }, 401);
@@ -398,12 +455,12 @@ authRoutes.post('/refresh', async (c) => {
 ```typescript
 // GET /license
 // Headers: Authorization: Bearer <access_token>
-// Response: { tier: string, status: string, periodEnd: string | null }
+// Response: { tier: string, status: string, periodEnd: string | null, dailyUsage: number, dailyCap: number | null }
 
 import { Hono } from 'hono';
 import { db } from '../db/client.js';
-import { licenses } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+import { licenses, dailyUsage } from '../db/schema.js';
+import { eq, and } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth.js';
 
 export const licenseRoutes = new Hono();
@@ -415,14 +472,20 @@ licenseRoutes.get('/', authMiddleware, async (c) => {
     where: eq(licenses.userId, userId),
   });
 
-  if (!license) {
-    return c.json({ tier: 'free', status: 'active', periodEnd: null });
-  }
+  const tier = license?.tier ?? 'free';
+
+  // Fetch today's usage count
+  const today = new Date().toISOString().slice(0, 10);
+  const usage = await db.query.dailyUsage.findFirst({
+    where: and(eq(dailyUsage.userId, userId), eq(dailyUsage.date, today)),
+  });
 
   return c.json({
-    tier: license.tier,
-    status: license.status,
-    periodEnd: license.periodEnd?.toISOString() ?? null,
+    tier,
+    status: license?.status ?? 'active',
+    periodEnd: license?.periodEnd?.toISOString() ?? null,
+    dailyUsage: usage?.messageCount ?? 0,
+    dailyCap: tier === 'free' ? 50 : null, // null = unlimited
   });
 });
 ```
@@ -676,6 +739,223 @@ checkoutRoutes.post('/session', authMiddleware, async (c) => {
 
 ---
 
+### B9b — Stripe Customer Portal Endpoint
+
+**Files to modify:**
+- `backend/src/routes/checkout.ts` (append)
+
+**Specs:**
+
+```typescript
+// POST /checkout/portal
+// Headers: Authorization: Bearer <access_token>
+// Response: { url: string }
+
+checkoutRoutes.post('/portal', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+
+  const license = await db.query.licenses.findFirst({
+    where: eq(licenses.userId, userId),
+  });
+
+  if (!license?.stripeCustomerId) {
+    return c.json({ error: 'No active subscription found' }, 400);
+  }
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: license.stripeCustomerId,
+    return_url: `${process.env.FRONTEND_URL}/dashboard`,
+  });
+
+  return c.json({ url: session.url });
+});
+```
+
+**CLI client function (add to `src/auth/client.ts`):**
+
+```typescript
+export async function createPortalSession(
+  accessToken: string,
+): Promise<{ url: string }> {
+  const res = await fetch(`${API_BASE}/checkout/portal`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!res.ok) throw new Error('Portal session failed');
+  return res.json();
+}
+```
+
+**Dependencies:** B9, B12
+**Verification:** Authenticated pro/team user gets a valid Stripe billing portal URL. Free user gets 400 error.
+
+---
+
+### B9c — Team Management Routes
+
+**Files to create:**
+- `backend/src/routes/team.ts`
+
+**Specs:**
+
+```typescript
+// GET /team/members — list team members (owner only)
+// POST /team/invite — invite member by email { email, role? }
+// DELETE /team/members/:id — revoke membership
+// POST /team/accept — accept invite { inviteId }
+
+import { Hono } from 'hono';
+import { z } from 'zod';
+import { db } from '../db/client.js';
+import { teamMemberships, users } from '../db/schema.js';
+import { eq, and } from 'drizzle-orm';
+import { authMiddleware } from '../middleware/auth.js';
+
+export const teamRoutes = new Hono();
+
+teamRoutes.get('/members', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const members = await db.query.teamMemberships.findMany({
+    where: eq(teamMemberships.ownerUserId, userId),
+  });
+  return c.json({ members });
+});
+
+const inviteSchema = z.object({
+  email: z.string().email(),
+  role: z.enum(['admin', 'member']).default('member'),
+});
+
+teamRoutes.post('/invite', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const tier = c.get('tier');
+  if (tier !== 'team') return c.json({ error: 'Team tier required' }, 403);
+
+  const body = inviteSchema.parse(await c.req.json());
+
+  const [membership] = await db.insert(teamMemberships).values({
+    ownerUserId: userId,
+    invitedEmail: body.email.toLowerCase(),
+    role: body.role,
+  }).returning();
+
+  return c.json({ membership });
+});
+
+teamRoutes.delete('/members/:id', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const membershipId = c.req.param('id');
+
+  await db.update(teamMemberships).set({ status: 'revoked' }).where(
+    and(eq(teamMemberships.id, membershipId), eq(teamMemberships.ownerUserId, userId)),
+  );
+
+  return c.json({ ok: true });
+});
+
+teamRoutes.post('/accept', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const { inviteId } = z.object({ inviteId: z.string().uuid() }).parse(await c.req.json());
+  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  if (!user) return c.json({ error: 'User not found' }, 404);
+
+  const membership = await db.query.teamMemberships.findFirst({
+    where: and(
+      eq(teamMemberships.id, inviteId),
+      eq(teamMemberships.invitedEmail, user.email),
+      eq(teamMemberships.status, 'pending'),
+    ),
+  });
+
+  if (!membership) return c.json({ error: 'Invite not found' }, 404);
+
+  await db.update(teamMemberships).set({
+    memberUserId: userId,
+    status: 'accepted',
+    acceptedAt: new Date(),
+  }).where(eq(teamMemberships.id, inviteId));
+
+  return c.json({ ok: true });
+});
+```
+
+**Dependencies:** B1, B12
+**Verification:** Team owner can invite, list, and revoke members. Invited user can accept. Non-team users get 403.
+
+---
+
+### B9d — Team Memory Routes
+
+**Files to create:**
+- `backend/src/routes/team-memory.ts`
+
+**Specs:**
+
+```typescript
+// GET /team-memory — list all team memory entries
+// PUT /team-memory/:key — upsert { value }
+// DELETE /team-memory/:key — delete entry
+
+import { Hono } from 'hono';
+import { z } from 'zod';
+import { db } from '../db/client.js';
+import { teamMemory } from '../db/schema.js';
+import { eq, and, sql } from 'drizzle-orm';
+import { authMiddleware } from '../middleware/auth.js';
+
+export const teamMemoryRoutes = new Hono();
+
+teamMemoryRoutes.get('/', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const tier = c.get('tier');
+  if (tier !== 'team') return c.json({ error: 'Team tier required' }, 403);
+
+  const entries = await db.query.teamMemory.findMany({
+    where: eq(teamMemory.ownerUserId, userId),
+  });
+  return c.json({ entries });
+});
+
+teamMemoryRoutes.put('/:key', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const tier = c.get('tier');
+  if (tier !== 'team') return c.json({ error: 'Team tier required' }, 403);
+
+  const key = c.req.param('key');
+  const { value } = z.object({ value: z.string() }).parse(await c.req.json());
+
+  await db.insert(teamMemory).values({
+    ownerUserId: userId,
+    key,
+    value,
+  }).onConflictDoUpdate({
+    target: [teamMemory.ownerUserId, teamMemory.key],
+    set: { value, updatedAt: new Date() },
+  });
+
+  return c.json({ ok: true });
+});
+
+teamMemoryRoutes.delete('/:key', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const key = c.req.param('key');
+
+  await db.delete(teamMemory).where(
+    and(eq(teamMemory.ownerUserId, userId), eq(teamMemory.key, key)),
+  );
+
+  return c.json({ ok: true });
+});
+```
+
+**Dependencies:** B1, B12
+**Verification:** Team user can CRUD memory entries. Non-team users get 403. Key uniqueness is enforced per owner.
+
+---
+
 ### B10 — JWT & Crypto Utilities
 
 **Files to create:**
@@ -862,12 +1142,14 @@ import { licenseRoutes } from './routes/license.js';
 import { usageRoutes } from './routes/usage.js';
 import { checkoutRoutes } from './routes/checkout.js';
 import { webhookRoutes } from './routes/webhooks.js';
+import { teamRoutes } from './routes/team.js';
+import { teamMemoryRoutes } from './routes/team-memory.js';
 
 const app = new Hono();
 
 app.use('*', cors({
   origin: ['https://arqzero.dev', 'http://localhost:3000'],
-  allowMethods: ['GET', 'POST'],
+  allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowHeaders: ['Authorization', 'Content-Type'],
 }));
 
@@ -876,6 +1158,8 @@ app.route('/license', licenseRoutes);
 app.route('/usage', usageRoutes);
 app.route('/checkout', checkoutRoutes);
 app.route('/webhooks', webhookRoutes);
+app.route('/team', teamRoutes);
+app.route('/team-memory', teamMemoryRoutes);
 
 app.get('/health', (c) => c.json({ ok: true, timestamp: new Date().toISOString() }));
 
@@ -923,6 +1207,7 @@ STRIPE_SECRET_KEY=sk_test_xxxxx
 STRIPE_WEBHOOK_SECRET=whsec_xxxxx
 STRIPE_PRO_PRICE_ID=price_xxxxx
 STRIPE_TEAM_PRICE_ID=price_xxxxx
+FRONTEND_URL=https://arqzero.dev
 ```
 
 **Test strategy:** Each test file uses an in-memory mock of the DB (or test transactions with rollback). Tests cover:
@@ -980,6 +1265,7 @@ name = "arqzero-api"
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_PRO_PRICE_ID`
 - `STRIPE_TEAM_PRICE_ID`
+- `FRONTEND_URL`
 
 **Dependencies:** B14
 **Verification:** `railway up` succeeds; `curl https://arqzero-api.up.railway.app/health` returns `{ ok: true }`.
@@ -1164,8 +1450,9 @@ export const loginCommand: SlashCommand = {
     // 2. Call requestLoginCode(email)
     // 3. Prompt for 6-digit code
     // 4. Call verifyLoginCode(email, code, machineId)
-    // 5. Save tokens via saveAuth()
-    // 6. Return "Logged in as {email} (tier: {tier})"
+    // 5. Compute expiresAt: Date.now() + result.expiresIn * 1000
+    // 6. Save tokens via saveAuth({ ...result, email, expiresAt, lastValidated: Date.now() })
+    // 7. Return "Logged in as {email} (tier: {tier})"
   },
 };
 
@@ -1302,17 +1589,76 @@ private async maybeRefreshAuth(): Promise<void> {
 
 **Specs:**
 
-This is handled in C1 and C3. This task validates the full offline flow:
+The full `resolveAuthState` implementation (in `src/auth/refresh.ts`) handles all offline scenarios:
 
+```typescript
+export async function resolveAuthState(): Promise<AuthState> {
+  const auth = loadAuth();
+
+  // 1. No auth file → free tier, not authenticated
+  if (!auth) {
+    return { authenticated: false, tier: 'free', email: null, offline: false };
+  }
+
+  // 2. Access token still valid → use cached tier
+  if (!isAccessTokenExpired(auth)) {
+    return { authenticated: true, tier: auth.tier as Tier, email: auth.email, offline: false };
+  }
+
+  // 3. Access token expired → try refresh
+  try {
+    const result = await refreshAccessToken(auth.refreshToken);
+    const license = await fetchLicense(result.accessToken);
+    const updated: AuthData = {
+      ...auth,
+      accessToken: result.accessToken,
+      tier: license.tier as Tier,
+      expiresAt: Date.now() + result.expiresIn * 1000,
+      lastValidated: Date.now(),
+    };
+    saveAuth(updated);
+    return { authenticated: true, tier: updated.tier, email: updated.email, offline: false };
+  } catch {
+    // 4. Offline → check 7-day grace period
+    if (!isOfflineGraceExpired(auth)) {
+      // Use cached tier — schedule background refresh in 24h
+      scheduleBackgroundRefresh(auth);
+      return { authenticated: true, tier: auth.tier as Tier, email: auth.email, offline: true };
+    }
+    // 5. Grace expired → fall back to free
+    return { authenticated: true, tier: 'free', email: auth.email, offline: true };
+  }
+}
+
+// Background 24h refresh attempt (non-blocking)
+function scheduleBackgroundRefresh(auth: AuthData): void {
+  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+  setTimeout(async () => {
+    try {
+      const result = await refreshAccessToken(auth.refreshToken);
+      const license = await fetchLicense(result.accessToken);
+      saveAuth({
+        ...auth,
+        accessToken: result.accessToken,
+        tier: license.tier as Tier,
+        expiresAt: Date.now() + result.expiresIn * 1000,
+        lastValidated: Date.now(),
+      });
+    } catch { /* silent — will retry on next startup */ }
+  }, TWENTY_FOUR_HOURS).unref();
+}
+```
+
+**Offline flow summary:**
 1. User logs in, gets tokens, auth.json saved with `lastValidated = now`
 2. User goes offline
 3. Access token expires (1 hour) → refresh fails (no network)
-4. Grace check: `lastValidated + 7 days > now` → true → use cached tier
+4. Grace check: `lastValidated + 7 days > now` → true → use cached tier, schedule 24h background retry
 5. After 7 days offline → grace expires → fall back to free tier
 6. User comes back online → next startup refreshes tokens → back to their tier
 
 **Dependencies:** C1, C3
-**Verification:** Simulated offline test with mocked Date.now() verifies all 6 scenarios.
+**Verification:** Simulated offline test with mocked Date.now() verifies all 6 scenarios. Background refresh fires after 24h when grace is still valid.
 
 ---
 
@@ -1400,31 +1746,105 @@ export function getCapabilityLimit(tier: Tier): number {
   return FREE_CAPABILITY_LIMIT;
 }
 
-export function isFeatureAllowed(feature: string, tier: Tier): boolean {
-  if (tier === 'team' || tier === 'pro') return true;
+// Pro features — everything beyond free
+const PRO_FEATURES = new Set([
+  'session-resume', 'checkpoints', 'memory', 'plugins', 'mcp',
+  'hooks', 'worktrees', 'custom-commands', 'shimmer-spinner',
+  'diff-preview', 'capabilities-full', 'subagents',
+  'verification-gates', 'syntax-highlighting',
+]);
 
-  const FREE_FEATURES = new Set([
-    'basic-tools', 'basic-commands', 'headless-mode', 'basic-capabilities',
-    'markdown-rendering',
-  ]);
+// Team features — everything beyond pro
+const TEAM_FEATURES = new Set([
+  'team-memory', 'team-settings', 'usage-dashboard', 'shared-arqzero-md',
+]);
+
+const FREE_FEATURES = new Set([
+  'basic-tools', 'basic-commands', 'headless-mode', 'basic-capabilities',
+  'markdown-rendering',
+]);
+
+export function isFeatureAllowed(feature: string, tier: Tier): boolean {
+  // Team tier gets everything
+  if (tier === 'team') return true;
+
+  // Pro tier gets free + pro features (not team-only)
+  if (tier === 'pro') {
+    return FREE_FEATURES.has(feature) || PRO_FEATURES.has(feature);
+  }
+
+  // Free tier gets only free features
   return FREE_FEATURES.has(feature);
 }
 
 export function getUpgradeMessage(feature: string): string {
+  if (TEAM_FEATURES.has(feature)) {
+    return `This feature requires ArqZero Team ($30/user/mo). Visit https://arqzero.dev/pricing`;
+  }
   return `This feature requires ArqZero Pro ($12/mo). Run /upgrade or visit https://arqzero.dev/pricing`;
 }
 
-// Features that require Team tier
 export function isTeamFeature(feature: string): boolean {
-  const TEAM_FEATURES = new Set([
-    'shared-memory', 'team-settings', 'usage-dashboard',
-  ]);
   return TEAM_FEATURES.has(feature);
 }
 ```
 
 **Dependencies:** C6
 **Verification:** `isToolAllowed('Dispatch', 'free')` returns false. `isToolAllowed('Dispatch', 'pro')` returns true. `isCommandAllowed('/undo', 'free')` returns false.
+
+---
+
+### C7b — Startup Bootstrap (Auth → Engine Wiring)
+
+**Files to modify:**
+- `bin/arq.ts` (main entry point)
+
+**Specs:**
+
+This is the critical wiring task that connects auth → engine → tools → commands at startup.
+
+```typescript
+// In bin/arq.ts, after argument parsing and before engine creation:
+
+import { resolveAuthState } from '../src/auth/refresh.js';
+import { isUsageCapped, getUsageSummary } from '../src/auth/usage.js';
+
+async function bootstrap() {
+  // 1. Resolve current tier from auth state
+  const authState = await resolveAuthState();
+  const tier = authState.tier;
+
+  // 2. Check usage cap (free tier, 50/day)
+  if (tier === 'free' && isUsageCapped()) {
+    const usage = getUsageSummary();
+    console.error(
+      `Daily message limit reached (${usage.count}/${usage.cap}). ` +
+      `Upgrade to Pro for unlimited: arqzero --login then /upgrade`
+    );
+    process.exit(1);
+  }
+
+  // 3. Inject tier into all subsystems
+  //    - ToolExecutor: new ToolExecutor(registry, permissions, checkpoints, tier)
+  //    - CommandRegistry: commandRegistry.setTier(tier)
+  //    - CapabilityMatcher: selectCapabilities(matches, tier)
+  //    - EngineOptions: { ...options, authState }
+
+  // 4. Inject auth state into runtime config
+  //    - config.tier = tier
+  //    - Display tier badge in header
+
+  // 5. If offline, show warning
+  if (authState.offline) {
+    console.warn('⚠ Offline mode — using cached license. Features may be limited after 7 days.');
+  }
+
+  return { authState, tier };
+}
+```
+
+**Dependencies:** C1, C3, C6, C7, C11
+**Verification:** Starting `arqzero` resolves tier, gates tools/commands/capabilities accordingly. Free user hitting 50-message cap sees error and exits. Offline user sees warning but can continue.
 
 ---
 
@@ -1584,8 +2004,11 @@ export function incrementUsage(): { count: number; capped: boolean } {
   if (usage.count - usage.lastSyncedCount >= SYNC_INTERVAL && auth) {
     usage.lastSyncedCount = usage.count;
     saveUsage(usage);
-    // Fire and forget
-    syncUsage(auth.accessToken, usage.date, usage.count, getMachineId()).catch(() => {});
+    // Fire and forget — getMachineId() is async, wrap in IIFE
+    (async () => {
+      const machineId = await getMachineId();
+      syncUsage(auth.accessToken, usage.date, usage.count, machineId).catch(() => {});
+    })();
   }
 
   const capped = cap !== -1 && usage.count >= cap;
@@ -1762,8 +2185,7 @@ Each test file follows the existing pattern: `npx tsx --test <file>`.
     "next": "^15.x",
     "react": "^19.x",
     "react-dom": "^19.x",
-    "tailwindcss": "^4.x",
-    "stripe": "^17.x"
+    "tailwindcss": "^4.x"
   }
 }
 ```
@@ -1944,46 +2366,130 @@ Configuration examples for Fireworks, OpenAI, Together AI, Groq, Ollama.
 **Files to create:**
 - `website/src/app/login/page.tsx`
 - `website/src/app/verify/page.tsx`
-- `website/src/lib/auth.ts`
+- `website/src/app/api/auth/login/route.ts` (server action)
+- `website/src/app/api/auth/verify/route.ts` (server action)
+- `website/src/app/api/auth/logout/route.ts` (server action)
+- `website/src/middleware.ts` (Next.js middleware for /dashboard protection)
 
 **Specs:**
 
+**Security model:** All tokens are stored in httpOnly cookies, never exposed to client JavaScript. The website uses server actions (Next.js API routes) to proxy auth requests to the backend.
+
 **Login page (`/login`):**
 - Email input field
-- "Send Code" button → calls backend `POST /auth/login`
+- "Send Code" button → calls `/api/auth/login` server action
 - Redirects to `/verify?email=...`
 
 **Verify page (`/verify`):**
 - 6-digit code input (6 separate boxes, auto-advance)
-- "Verify" button → calls backend `POST /auth/verify`
-- On success: stores tokens in httpOnly cookie or localStorage, redirects to `/dashboard`
+- "Verify" button → calls `/api/auth/verify` server action
+- Server action stores tokens in httpOnly cookies, redirects to `/dashboard`
 
 ```typescript
-// website/src/lib/auth.ts
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://api.arqzero.dev';
+// website/src/app/api/auth/login/route.ts
+import { NextResponse } from 'next/server';
 
-export async function login(email: string): Promise<void> {
+const API_BASE = process.env.API_URL ?? 'https://api.arqzero.dev';
+
+export async function POST(req: Request) {
+  const { email } = await req.json();
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
   });
-  if (!res.ok) throw new Error('Login failed');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Login failed' }));
+    return NextResponse.json(err, { status: res.status });
+  }
+  return NextResponse.json(await res.json());
 }
+```
 
-export async function verify(email: string, code: string): Promise<{ accessToken: string; tier: string }> {
+```typescript
+// website/src/app/api/auth/verify/route.ts
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+
+const API_BASE = process.env.API_URL ?? 'https://api.arqzero.dev';
+
+export async function POST(req: Request) {
+  const { email, code } = await req.json();
   const res = await fetch(`${API_BASE}/auth/verify`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, code }),
   });
-  if (!res.ok) throw new Error('Verification failed');
-  return res.json();
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Verification failed' }));
+    return NextResponse.json(err, { status: res.status });
+  }
+
+  const data = await res.json();
+  const cookieStore = await cookies();
+
+  // Store tokens in httpOnly cookies — never exposed to client JS
+  cookieStore.set('arq_access_token', data.accessToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 3600, // 1 hour
+  });
+  cookieStore.set('arq_refresh_token', data.refreshToken, {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 90 * 24 * 3600, // 90 days
+  });
+  cookieStore.set('arq_tier', data.tier, {
+    httpOnly: false, // readable by client for UI display
+    secure: true,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 3600,
+  });
+
+  return NextResponse.json({ tier: data.tier, email });
 }
 ```
 
+```typescript
+// website/src/app/api/auth/logout/route.ts
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+
+export async function POST() {
+  const cookieStore = await cookies();
+  cookieStore.delete('arq_access_token');
+  cookieStore.delete('arq_refresh_token');
+  cookieStore.delete('arq_tier');
+  return NextResponse.json({ ok: true });
+}
+```
+
+```typescript
+// website/src/middleware.ts
+import { NextResponse, type NextRequest } from 'next/server';
+
+export function middleware(req: NextRequest) {
+  const token = req.cookies.get('arq_access_token');
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', req.url));
+  }
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ['/dashboard/:path*'],
+};
+```
+
+**Note:** No Supabase client is used on the website. All auth flows go through the Hono backend via server actions. Tokens never touch `localStorage`.
+
 **Dependencies:** W1, B2
-**Verification:** Full login flow on website: enter email → receive code → enter code → redirected to dashboard.
+**Verification:** Full login flow on website: enter email → receive code → enter code → httpOnly cookies set → redirected to dashboard. Directly accessing `/dashboard` without cookies redirects to `/login`.
 
 ---
 
@@ -2015,23 +2521,145 @@ export async function verify(email: string, code: string): Promise<{ accessToken
 
 ---
 
-### W7 — Stripe Billing Portal
+### W6b — Team Management Dashboard Page
 
 **Files to create:**
-- `website/src/app/api/create-checkout/route.ts`
-- `website/src/app/api/create-portal/route.ts`
+- `website/src/app/dashboard/team/page.tsx`
+- `website/src/components/TeamMembers.tsx`
+- `website/src/components/InviteForm.tsx`
 
 **Specs:**
 
+**Team management page (`/dashboard/team`):**
+- Only visible for team-tier users
+- Lists current team members (name, email, role, status, joined date)
+- "Invite Member" form: email input + role dropdown (admin/member) + send button
+- "Revoke" button per member → calls `DELETE /team/members/:id` via server action
+- Pending invites shown with "Pending" badge
+- Uses server actions to proxy all requests (httpOnly cookie auth)
+
 ```typescript
-// website/src/app/api/create-checkout/route.ts
-// Server-side Next.js route that proxies to backend
+// Server action example:
+// website/src/app/api/team/members/route.ts
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+
+const API_BASE = process.env.API_URL ?? 'https://api.arqzero.dev';
+
+export async function GET() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('arq_access_token')?.value;
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const res = await fetch(`${API_BASE}/team/members`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return NextResponse.json(await res.json(), { status: res.status });
+}
+```
+
+**Dependencies:** W5, B9c
+**Verification:** Team-tier user can view members, send invites, and revoke access from the dashboard.
+
+---
+
+### W6c — Account Settings Page
+
+**Files to create:**
+- `website/src/app/dashboard/settings/page.tsx`
+- `website/src/components/AccountSettings.tsx`
+- `website/src/components/SessionList.tsx`
+
+**Backend routes to add (in `backend/src/routes/auth.ts`):**
+
+```typescript
+// GET /users/me — returns current user profile
+authRoutes.get('/users/me', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  if (!user) return c.json({ error: 'Not found' }, 404);
+  return c.json({
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    emailVerified: user.emailVerified,
+    createdAt: user.createdAt,
+  });
+});
+
+// PATCH /users/me — update display name
+authRoutes.patch('/users/me', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const { displayName } = z.object({ displayName: z.string().max(100) }).parse(await c.req.json());
+  await db.update(users).set({ displayName, updatedAt: new Date() }).where(eq(users.id, userId));
+  return c.json({ ok: true });
+});
+
+// GET /sessions — list active sessions for current user
+authRoutes.get('/sessions', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const activeSessions = await db.query.sessions.findMany({
+    where: and(eq(sessions.userId, userId), gt(sessions.expiresAt, new Date())),
+  });
+  return c.json({
+    sessions: activeSessions.map(s => ({
+      id: s.id,
+      machineId: s.machineId,
+      deviceLabel: s.deviceLabel,
+      createdAt: s.createdAt,
+      expiresAt: s.expiresAt,
+    })),
+  });
+});
+
+// DELETE /sessions/:id — revoke a specific session
+authRoutes.delete('/sessions/:id', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const sessionId = c.req.param('id');
+  await db.delete(sessions).where(
+    and(eq(sessions.id, sessionId), eq(sessions.userId, userId)),
+  );
+  return c.json({ ok: true });
+});
+```
+
+**Account settings page shows:**
+- Display name (editable)
+- Email (read-only)
+- Active sessions list with device label, machine ID, created date, "Revoke" button
+- "Delete Account" button (with confirmation modal)
+
+**Dependencies:** W5, B2
+**Verification:** User can update display name, view active sessions, revoke individual sessions, and delete their account.
+
+---
+
+### W7 — Stripe Billing Portal
+
+**Files to create:**
+- `website/src/app/api/checkout/route.ts`
+- `website/src/app/api/portal/route.ts`
+
+**Specs:**
+
+Both routes proxy through the backend using httpOnly cookie auth. No Stripe SDK on the website — all Stripe interactions happen on the backend.
+
+```typescript
+// website/src/app/api/checkout/route.ts
+// Proxies to backend POST /checkout/session
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+
+const API_BASE = process.env.API_URL ?? 'https://api.arqzero.dev';
 
 export async function POST(req: Request) {
-  const { plan, accessToken } = await req.json();
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('arq_access_token')?.value;
+  if (!accessToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const res = await fetch(`${process.env.API_URL}/checkout/session`, {
+  const { plan } = await req.json();
+
+  const res = await fetch(`${API_BASE}/checkout/session`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -2045,32 +2673,40 @@ export async function POST(req: Request) {
   });
 
   const data = await res.json();
-  return NextResponse.json(data);
+  return NextResponse.json(data, { status: res.status });
 }
 ```
 
 ```typescript
-// website/src/app/api/create-portal/route.ts
-// Create Stripe Customer Portal session for managing subscription
-import Stripe from 'stripe';
+// website/src/app/api/portal/route.ts
+// Proxies to backend POST /checkout/portal (B9b)
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const API_BASE = process.env.API_URL ?? 'https://api.arqzero.dev';
 
-export async function POST(req: Request) {
-  const { customerId } = await req.json();
+export async function POST() {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('arq_access_token')?.value;
+  if (!accessToken) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const session = await stripe.billingPortal.sessions.create({
-    customer: customerId,
-    return_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard`,
+  const res = await fetch(`${API_BASE}/checkout/portal`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
   });
 
-  return NextResponse.json({ url: session.url });
+  const data = await res.json();
+  return NextResponse.json(data, { status: res.status });
 }
 ```
 
-**Dependencies:** W5, B9
-**Verification:** Clicking "Upgrade" on dashboard → redirected to Stripe Checkout → complete payment → redirected back with tier updated. "Manage Billing" opens Stripe Customer Portal.
+**Note:** No `stripe` npm package in website dependencies. All Stripe operations go through the backend.
+
+**Dependencies:** W5, B9b
+**Verification:** Clicking "Upgrade" on dashboard → proxied to backend → redirected to Stripe Checkout → complete payment → redirected back with tier updated. "Manage Billing" → proxied to backend → opens Stripe Customer Portal.
 
 ---
 
@@ -2307,7 +2943,6 @@ export async function GET(req: Request) {
   "env": {
     "NEXT_PUBLIC_API_URL": "https://api.arqzero.dev",
     "NEXT_PUBLIC_SITE_URL": "https://arqzero.dev",
-    "STRIPE_SECRET_KEY": "@stripe-secret-key",
     "API_URL": "https://api.arqzero.dev"
   }
 }
@@ -2334,9 +2969,9 @@ export async function GET(req: Request) {
 
 | Week | Tasks | Deliverable |
 |---|---|---|
-| **Week 1** | B1, B10, B11, B12, B13, B7, C1, C6, C7, W1 | DB schema, JWT utils, middleware, auth store, gates, website scaffold |
-| **Week 2** | B2, B3, B4, B5, B6, C2, C3, C5, W2, W3, W4 | Full auth API, CLI login, landing/pricing/docs pages |
-| **Week 3** | B8, B9, C4, C8, C9, C10, C11, C12, C13, W5, W6, W7 | Stripe integration, feature gating, usage tracking, website auth/dashboard |
+| **Week 1** | B1, B10, B11, B12, B13, B7, C1, C6, C7, W1 | DB schema (7 tables), JWT utils, middleware, auth store, gates, website scaffold |
+| **Week 2** | B2, B3, B4, B5, B6, C2, C3, C5, C7b, W2, W3, W4 | Full auth API, CLI login, startup bootstrap, landing/pricing/docs pages |
+| **Week 3** | B8, B9, B9b, B9c, B9d, C4, C8, C9, C10, C11, C12, C13, W5, W6, W6b, W6c, W7 | Stripe + portal, team routes, feature gating, usage tracking, website auth/dashboard/team/settings |
 | **Week 4** | B14, B15, C14, W8, W9, W10, W11, W12, W13, W14 | Tests, deployment, blog, SEO, polish |
 
 ## Environment Variables Summary
@@ -2352,6 +2987,7 @@ export async function GET(req: Request) {
 | `STRIPE_WEBHOOK_SECRET` | `whsec_xxxxx` | Stripe CLI |
 | `STRIPE_PRO_PRICE_ID` | `price_xxxxx` | Stripe product |
 | `STRIPE_TEAM_PRICE_ID` | `price_xxxxx` | Stripe product |
+| `FRONTEND_URL` | `https://arqzero.dev` | Portal return URL |
 
 ### Website (Vercel)
 
@@ -2359,7 +2995,6 @@ export async function GET(req: Request) {
 |---|---|
 | `NEXT_PUBLIC_API_URL` | `https://api.arqzero.dev` |
 | `NEXT_PUBLIC_SITE_URL` | `https://arqzero.dev` |
-| `STRIPE_SECRET_KEY` | `sk_test_xxxxx` |
 | `API_URL` | `https://api.arqzero.dev` |
 
 ### CLI (User's machine)
@@ -2387,6 +3022,7 @@ export async function GET(req: Request) {
 - `next` — Framework
 - `react` + `react-dom` — UI
 - `tailwindcss` — Styling
-- `stripe` — Checkout/portal (server-side)
 - `@vercel/analytics` — Analytics (optional)
 - `@vercel/og` — Dynamic OG images (optional)
+
+**Note:** No `stripe` dependency in website — all Stripe operations are proxied through the backend.
