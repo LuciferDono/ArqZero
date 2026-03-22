@@ -7,7 +7,7 @@ export class MockAdapter implements LLMProvider {
   private response: string;
   private aborted = false;
 
-  constructor(response = 'This is a mock response from ArqZero.') {
+  constructor(response = 'This is a mock response from ArqCode.') {
     this.response = response;
   }
 

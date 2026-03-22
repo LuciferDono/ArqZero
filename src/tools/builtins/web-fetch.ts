@@ -107,7 +107,7 @@ export const webFetchTool: Tool = {
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'ArqZero/1.0',
+          'User-Agent': 'ArqCode/1.0',
         },
       });
 

@@ -16,7 +16,7 @@ export interface CompactionSnapshot {
 }
 
 function getSessionDir(basePath?: string): string {
-  const base = basePath ?? path.join(os.homedir(), '.arqzero');
+  const base = basePath ?? path.join(os.homedir(), '.arqcode');
   return path.join(base, 'sessions');
 }
 

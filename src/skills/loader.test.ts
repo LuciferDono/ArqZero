@@ -6,7 +6,7 @@ import os from 'node:os';
 import { scanSkills, getDefaultSkillsDir } from './loader.js';
 
 function createTempDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'arqzero-test-skills-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'arqcode-test-skills-'));
 }
 
 function createSkill(
@@ -25,7 +25,7 @@ describe('getDefaultSkillsDir', () => {
   it('should return a path under the home directory', () => {
     const dir = getDefaultSkillsDir();
     assert.ok(dir.startsWith(os.homedir()));
-    assert.ok(dir.endsWith(path.join('.arqzero', 'skills')));
+    assert.ok(dir.endsWith(path.join('.arqcode', 'skills')));
   });
 });
 

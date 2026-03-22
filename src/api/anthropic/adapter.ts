@@ -103,7 +103,7 @@ export class AnthropicAdapter implements LLMProvider {
   }
 
   /**
-   * Convert ArqZero messages to Anthropic MessageParam[].
+   * Convert ArqCode messages to Anthropic MessageParam[].
    * Key conversion: role 'tool' messages become role 'user' with tool_result content blocks.
    */
   private convertMessages(messages: Message[]): MessageParam[] {
@@ -184,7 +184,7 @@ export class AnthropicAdapter implements LLMProvider {
   }
 
   /**
-   * Map a single Anthropic stream event to an ArqZero StreamEvent.
+   * Map a single Anthropic stream event to an ArqCode StreamEvent.
    * Returns null for events we don't map.
    */
   private mapEvent(

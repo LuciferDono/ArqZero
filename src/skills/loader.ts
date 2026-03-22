@@ -5,7 +5,7 @@ import { parseManifest } from './parser.js';
 import type { LoadedSkill } from './parser.js';
 
 export function getDefaultSkillsDir(): string {
-  return path.join(os.homedir(), '.arqzero', 'skills');
+  return path.join(os.homedir(), '.arqcode', 'skills');
 }
 
 export async function scanSkills(skillsDir: string): Promise<LoadedSkill[]> {

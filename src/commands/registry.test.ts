@@ -63,7 +63,7 @@ function createMockSkill(overrides: Partial<LoadedSkill> = {}): LoadedSkill {
       ...overrides.manifest,
     },
     promptContent: overrides.promptContent ?? 'You are a commit message generator.',
-    directory: overrides.directory ?? '/home/user/.arqzero/skills/commit',
+    directory: overrides.directory ?? '/home/user/.arqcode/skills/commit',
   };
 }
 
@@ -355,7 +355,7 @@ describe('Built-in commands', () => {
           prompt: 'prompt.md',
         },
         promptContent: 'You are a code reviewer.',
-        directory: '/home/user/.arqzero/skills/review',
+        directory: '/home/user/.arqcode/skills/review',
       }));
 
       const ctx = createMockContext({ skillRegistry });

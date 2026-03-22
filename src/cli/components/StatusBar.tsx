@@ -37,7 +37,7 @@ export function StatusBar({
 
   return (
     <Box marginBottom={1}>
-      <Text bold color="cyan">ArqZero</Text>
+      <Text bold color="cyan">ArqCode</Text>
       <Text color="gray"> v0.1.0 | {parts.join(' | ')} | /quit to exit</Text>
     </Box>
   );

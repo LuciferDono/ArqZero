@@ -1,10 +1,10 @@
 {
-  "name": "arqzero",
+  "name": "arqcode",
   "version": "0.1.0",
   "description": "AI-powered coding assistant CLI built on Claude",
   "type": "module",
   "bin": {
-    "arqzero": "./bin/arqzero.mjs"
+    "arqcode": "./bin/arqcode.mjs"
   },
   "scripts": {
     "dev": "tsx bin/arq.ts",

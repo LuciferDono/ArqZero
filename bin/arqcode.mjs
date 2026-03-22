@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Launcher for arqzero CLI
+// Launcher for arqcode CLI
 // Re-executes with tsx loader if not already loaded
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -22,7 +22,7 @@ const result = spawnSync(
 );
 
 if (result.error) {
-  console.error('Failed to start arqzero:', result.error.message);
+  console.error('Failed to start arqcode:', result.error.message);
   process.exit(1);
 }
 process.exit(result.status ?? 1);

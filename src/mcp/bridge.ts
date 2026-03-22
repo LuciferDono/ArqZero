@@ -3,7 +3,7 @@ import type { ToolRegistry } from '../tools/registry.js';
 import type { McpClientManager, McpToolInfo } from './client.js';
 
 /**
- * Create an ArqZero Tool adapter from an MCP tool.
+ * Create an ArqCode Tool adapter from an MCP tool.
  * Tool name follows Claude Code convention: mcp__<server>__<toolname>
  */
 function createMcpToolAdapter(
