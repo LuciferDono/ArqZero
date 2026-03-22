@@ -9,107 +9,90 @@ export interface SearchResult {
 const MAX_RESULTS = 10;
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
-/**
- * Decode common HTML entities.
- */
 function decodeHtmlEntities(text: string): string {
   return text
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&apos;/g, "'")
-    .replace(/&#x27;/g, "'")
-    .replace(/&#x2F;/g, '/');
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'");
 }
 
-/**
- * Strip HTML tags from a string.
- */
 function stripHtmlTags(html: string): string {
   return html.replace(/<[^>]*>/g, '');
 }
 
 /**
- * Extract the real URL from DuckDuckGo redirect URLs.
+ * Extract real URL from Bing redirect URLs.
+ * Bing wraps links as /ck/a?...&u=a1<base64url>&...
  */
-function cleanDdgUrl(url: string): string {
-  // DDG wraps URLs like //duckduckgo.com/l/?uddg=https%3A%2F%2Fexample.com&...
-  if (url.includes('duckduckgo.com/l/')) {
-    const match = url.match(/[?&]uddg=([^&]+)/);
+function cleanBingUrl(url: string): string {
+  if (url.includes('bing.com/ck/a')) {
+    const match = url.match(/[?&]u=a1([^&]+)/);
     if (match) {
       try {
-        return decodeURIComponent(match[1]);
-      } catch {
-        // fall through
-      }
-    }
-  }
-  // Also handle //duckduckgo.com/y.js?... with u3= param
-  if (url.includes('duckduckgo.com/y.js')) {
-    const match = url.match(/[?&]u3=([^&]+)/);
-    if (match) {
-      try {
-        const decoded = decodeURIComponent(match[1]);
-        // u3 sometimes contains another bing redirect — extract final URL
-        const bingMatch = decoded.match(/[?&]u=a1([^&]+)/i);
-        if (bingMatch) {
-          return decodeURIComponent(bingMatch[1]);
-        }
-        return decoded;
-      } catch {
-        // fall through
-      }
+        // Base64url decode
+        const b64 = match[1].replace(/-/g, '+').replace(/_/g, '/');
+        return Buffer.from(b64, 'base64').toString('utf-8');
+      } catch { /* fall through */ }
     }
   }
   return url;
 }
 
 /**
- * Parse DuckDuckGo HTML search results into structured data.
+ * Search using Bing (primary — reliable, no API key, structured HTML).
+ */
+async function searchWithBing(query: string): Promise<SearchResult[]> {
+  const url = `https://www.bing.com/search?q=${encodeURIComponent(query)}&count=${MAX_RESULTS}`;
+
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': BROWSER_UA,
+      'Accept': 'text/html',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Bing returned ${response.status}`);
+  }
+
+  const html = await response.text();
+  return parseBingResults(html);
+}
+
+/**
+ * Parse Bing search results from HTML.
  * Exported for testing.
  */
-export function parseSearchResults(html: string): SearchResult[] {
+export function parseBingResults(html: string): SearchResult[] {
   const results: SearchResult[] = [];
 
-  // Match each organic result block (skip ads)
-  const resultBlockRegex = /<div\s+class="result results_links results_links_deep web-result\s*"[^>]*>([\s\S]*?)(?=<div\s+class="result |$)/gi;
+  // Bing results are in <li class="b_algo">
+  const blockRegex = /<li class="b_algo"[^>]*>([\s\S]*?)(?=<li class="b_algo"|<\/ol>|$)/gi;
   let blockMatch: RegExpExecArray | null;
 
-  while ((blockMatch = resultBlockRegex.exec(html)) !== null && results.length < MAX_RESULTS) {
+  while ((blockMatch = blockRegex.exec(html)) !== null && results.length < MAX_RESULTS) {
     const block = blockMatch[1];
 
-    // Extract link and title
-    const linkMatch = block.match(/<a\s+[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/i)
-      || block.match(/<a\s+[^>]*href="([^"]*)"[^>]*class="result__a"[^>]*>([\s\S]*?)<\/a>/i);
+    // Extract URL and title from <h2><a href="...">title</a></h2>
+    const linkMatch = block.match(/<h2[^>]*>\s*<a\s+[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/i);
     if (!linkMatch) continue;
 
-    const url = decodeHtmlEntities(linkMatch[1]);
+    const rawUrl = decodeHtmlEntities(linkMatch[1]);
     const title = decodeHtmlEntities(stripHtmlTags(linkMatch[2]).trim());
 
-    // Extract snippet
-    const snippetMatch = block.match(/<a\s+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/i)
-      || block.match(/<div\s+class="result__snippet"[^>]*>([\s\S]*?)<\/div>/i);
+    // Clean Bing redirect URLs: extract real URL from u= param (base64)
+    const url = cleanBingUrl(rawUrl);
+
+    // Extract snippet from <p> or <div class="b_caption">
+    const snippetMatch = block.match(/<div class="b_caption"[^>]*>[\s\S]*?<p[^>]*>([\s\S]*?)<\/p>/i)
+      || block.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
     const snippet = snippetMatch
-      ? decodeHtmlEntities(stripHtmlTags(snippetMatch[1]).trim())
+      ? decodeHtmlEntities(stripHtmlTags(snippetMatch[1]).trim()).slice(0, 200)
       : '';
 
     if (title && url) {
-      results.push({ title, url: cleanDdgUrl(url), snippet });
-    }
-  }
-
-  // Fallback for simpler links (no block structure)
-  if (results.length === 0) {
-    const simpleRegex = /<a\s+[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi;
-    let match: RegExpExecArray | null;
-    while ((match = simpleRegex.exec(html)) !== null && results.length < MAX_RESULTS) {
-      const url = decodeHtmlEntities(match[1]);
-      const title = decodeHtmlEntities(stripHtmlTags(match[2]).trim());
-      if (title && url) {
-        results.push({ title, url: cleanDdgUrl(url), snippet: '' });
-      }
+      results.push({ title, url, snippet });
     }
   }
 
@@ -117,89 +100,78 @@ export function parseSearchResults(html: string): SearchResult[] {
 }
 
 /**
- * Search using Tavily API (if key available).
- */
-async function searchWithTavily(query: string, apiKey: string): Promise<SearchResult[]> {
-  const response = await fetch('https://api.tavily.com/search', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      api_key: apiKey,
-      query,
-      max_results: MAX_RESULTS,
-      include_answer: false,
-    }),
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Tavily API returned ${response.status}`);
-  }
-
-  const data = await response.json() as {
-    results: Array<{ title: string; url: string; content: string }>;
-  };
-
-  return (data.results ?? []).map((r) => ({
-    title: r.title,
-    url: r.url,
-    snippet: r.content?.slice(0, 200) ?? '',
-  }));
-}
-
-/**
- * Search using DuckDuckGo HTML (free, no API key).
+ * Search using DuckDuckGo HTML (fallback).
  */
 async function searchWithDuckDuckGo(query: string): Promise<SearchResult[]> {
-  const encodedQuery = encodeURIComponent(query.trim());
-  const searchUrl = `https://html.duckduckgo.com/html/?q=${encodedQuery}`;
-
-  const response = await fetch(searchUrl, {
+  const response = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
     signal: AbortSignal.timeout(10_000),
-    headers: {
-      'User-Agent': BROWSER_UA,
-    },
+    headers: { 'User-Agent': BROWSER_UA },
   });
 
-  if (!response.ok) {
-    throw new Error(`Search request failed with status ${response.status}`);
+  if (!response.ok || response.status === 202) {
+    throw new Error(`DuckDuckGo returned ${response.status}`);
   }
 
   const html = await response.text();
-  return parseSearchResults(html);
+  return parseDdgResults(html);
 }
 
 /**
- * Format search results into readable text.
+ * Parse DuckDuckGo HTML results. Exported for testing.
  */
-function formatResults(results: SearchResult[], source: string): string {
-  if (results.length === 0) {
-    return 'No search results found.';
+export function parseDdgResults(html: string): SearchResult[] {
+  const results: SearchResult[] = [];
+
+  const blockRegex = /<div\s+class="result results_links results_links_deep web-result\s*"[^>]*>([\s\S]*?)(?=<div\s+class="result |$)/gi;
+  let blockMatch: RegExpExecArray | null;
+
+  while ((blockMatch = blockRegex.exec(html)) !== null && results.length < MAX_RESULTS) {
+    const block = blockMatch[1];
+
+    const linkMatch = block.match(/<a\s+[^>]*class="result__a"[^>]*href="([^"]*)"[^>]*>([\s\S]*?)<\/a>/i)
+      || block.match(/<a\s+[^>]*href="([^"]*)"[^>]*class="result__a"[^>]*>([\s\S]*?)<\/a>/i);
+    if (!linkMatch) continue;
+
+    let url = decodeHtmlEntities(linkMatch[1]);
+    const title = decodeHtmlEntities(stripHtmlTags(linkMatch[2]).trim());
+
+    // Clean DDG redirect URLs
+    if (url.includes('duckduckgo.com/l/')) {
+      const m = url.match(/[?&]uddg=([^&]+)/);
+      if (m) try { url = decodeURIComponent(m[1]); } catch { /* keep original */ }
+    }
+
+    const snippetMatch = block.match(/<a\s+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/i);
+    const snippet = snippetMatch
+      ? decodeHtmlEntities(stripHtmlTags(snippetMatch[1]).trim())
+      : '';
+
+    if (title && url) results.push({ title, url, snippet });
   }
 
-  const header = `Search results (${source}):\n`;
-  const formatted = results
+  return results;
+}
+
+// Keep old export name for test compatibility
+export const parseSearchResults = parseDdgResults;
+
+function formatResults(results: SearchResult[], source: string): string {
+  if (results.length === 0) return 'No search results found.';
+
+  return `Search results (${source}):\n` + results
     .map((r, i) => {
       const parts = [`${i + 1}. ${r.title}`, `   ${r.url}`];
-      if (r.snippet) {
-        parts.push(`   ${r.snippet}`);
-      }
+      if (r.snippet) parts.push(`   ${r.snippet}`);
       return parts.join('\n');
     })
     .join('\n\n');
-
-  return header + formatted;
 }
 
-interface WebSearchInput {
-  query: string;
-}
+interface WebSearchInput { query: string; }
 
 export const webSearchTool: Tool = {
   name: 'WebSearch',
-  description: 'Searches the web and returns results with titles, URLs, and snippets. Uses Tavily API if configured, otherwise DuckDuckGo.',
+  description: 'Searches the web and returns results with titles, URLs, and snippets.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -209,36 +181,29 @@ export const webSearchTool: Tool = {
   },
   permissionLevel: 'ask',
 
-  async execute(input: unknown, ctx: ToolContext): Promise<ToolResult> {
+  async execute(input: unknown, _ctx: ToolContext): Promise<ToolResult> {
     const { query } = (input ?? {}) as Partial<WebSearchInput>;
 
     if (!query || query.trim().length === 0) {
-      return {
-        content: 'Error: query is required and must not be empty.',
-        isError: true,
-      };
+      return { content: 'Error: query is required and must not be empty.', isError: true };
     }
 
-    // Try Tavily first (if API key available via env or config)
-    const tavilyKey = process.env.TAVILY_API_KEY ?? ctx.config.tavilyApiKey;
-    if (tavilyKey) {
-      try {
-        const results = await searchWithTavily(query.trim(), tavilyKey);
-        return { content: formatResults(results, 'Tavily') };
-      } catch (err: any) {
-        // Fall through to DuckDuckGo
+    // Primary: Bing
+    try {
+      const results = await searchWithBing(query.trim());
+      if (results.length > 0) {
+        return { content: formatResults(results, 'Bing') };
       }
-    }
+    } catch { /* fall through */ }
 
-    // Fallback to DuckDuckGo
+    // Fallback: DuckDuckGo
     try {
       const results = await searchWithDuckDuckGo(query.trim());
-      return { content: formatResults(results, 'DuckDuckGo') };
-    } catch (err: any) {
-      const message = err.name === 'AbortError' || err.name === 'TimeoutError'
-        ? 'Error: Search request timed out.'
-        : `Error: Failed to perform search: ${err.message}`;
-      return { content: message, isError: true };
-    }
+      if (results.length > 0) {
+        return { content: formatResults(results, 'DuckDuckGo') };
+      }
+    } catch { /* fall through */ }
+
+    return { content: 'No search results found.' };
   },
 };
