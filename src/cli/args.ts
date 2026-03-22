@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 export interface CliArgs {
+  version?: boolean;
   print?: string;
   continue?: boolean;
   resume?: string;
@@ -44,14 +45,17 @@ export function parseArgs(argv?: string[]): CliArgs {
     .option('--worktree <name>', 'Use a named worktree')
     .exitOverride()
     .configureOutput({
-      writeOut: () => {},
+      writeOut: (str: string) => { process.stdout.write(str); },
       writeErr: () => {},
     });
 
   try {
     program.parse(argv ?? [], { from: 'user' });
-  } catch {
-    // Commander throws on --help/--version; swallow for parse-only usage
+  } catch (err: any) {
+    // Commander throws on --help/--version with exitOverride
+    if (err?.code === 'commander.version' || err?.code === 'commander.helpDisplayed') {
+      process.exit(0);
+    }
     return {};
   }
 

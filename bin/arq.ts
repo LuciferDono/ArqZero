@@ -105,14 +105,22 @@ async function main() {
 
   let provider: LLMProvider;
   if (config.fireworksApiKey) {
-    const adapter = new FireworksAdapter(config.fireworksApiKey);
-    if (await adapter.isAvailable()) {
-      provider = adapter;
-    } else {
-      console.log('Fireworks API key not available. Falling back to mock adapter.');
+    try {
+      const adapter = new FireworksAdapter(config.fireworksApiKey);
+      if (await adapter.isAvailable()) {
+        provider = adapter;
+      } else {
+        console.error('Warning: Fireworks API key is invalid or the API is unreachable.');
+        console.error('Falling back to mock adapter. Run "arqzero --help" or edit ~/.arqzero/config.json to fix.\n');
+        provider = new MockAdapter();
+      }
+    } catch (err) {
+      console.error(`Error connecting to Fireworks API: ${err instanceof Error ? err.message : String(err)}`);
+      console.error('Falling back to mock adapter.\n');
       provider = new MockAdapter();
     }
   } else {
+    console.error('Note: No API key configured. Using mock adapter. Set FIREWORKS_API_KEY or run setup.\n');
     provider = new MockAdapter();
   }
 
@@ -143,6 +151,12 @@ async function main() {
   // Cleanup MCP connections on exit
   process.on('exit', () => {
     mcpManager.disconnectAll().catch(() => {});
+  });
+
+  // Handle SIGINT gracefully (suppress error output on Ctrl+C)
+  process.on('SIGINT', () => {
+    mcpManager.disconnectAll().catch(() => {});
+    process.exit(0);
   });
 
   // Initialize sub-agent system

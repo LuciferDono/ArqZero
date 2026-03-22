@@ -34,6 +34,7 @@ export interface SlashCommandContext {
   onQuit?: () => void;
   onEffortChange?: (level: string) => void;
   onVimToggle?: (enabled: boolean) => void;
+  onSubmit?: (prompt: string) => Promise<void>;
 }
 
 export interface SlashCommand {

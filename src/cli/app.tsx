@@ -12,6 +12,8 @@ import { PermissionManager } from '../permissions/manager.js';
 import { Session } from '../session/session.js';
 import { ContextWindow } from '../session/context.js';
 import type { SlashCommandRegistry, SlashCommandContext } from '../commands/registry.js';
+import { CheckpointStore } from '../checkpoints/store.js';
+import { CronManager } from './cron.js';
 import {
   Header,
   OperationLog,
@@ -106,6 +108,8 @@ export default function App({ provider, config, registry, systemPrompt, commandR
   const engineRef = useRef<ConversationEngine | null>(null);
   const contextWindowRef = useRef<ContextWindow | null>(null);
   const toolStartTimesRef = useRef<Map<string, number>>(new Map());
+  const checkpointStoreRef = useRef<CheckpointStore | null>(null);
+  const cronManagerRef = useRef<CronManager | null>(null);
 
   const sessionRef = useRef<Session | null>(null);
 
@@ -115,6 +119,10 @@ export default function App({ provider, config, registry, systemPrompt, commandR
     sessionRef.current = session;
     const contextWindow = new ContextWindow();
     contextWindowRef.current = contextWindow;
+    const checkpointStore = new CheckpointStore();
+    checkpointStoreRef.current = checkpointStore;
+    const cronManager = new CronManager();
+    cronManagerRef.current = cronManager;
     const toolContext: ToolContext = {
       cwd: process.cwd(),
       config,
@@ -134,6 +142,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
       permissions: permissionManager,
       session,
       contextWindow,
+      checkpointStore,
     });
 
     // Load initial messages for session resume
@@ -144,6 +153,15 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         {
           type: 'system' as const,
           content: `Resumed session ${session.id} (${initialMessages.length} messages)`,
+        },
+      ]);
+    } else {
+      // Welcome message on fresh session
+      setEntries((e) => [
+        ...e,
+        {
+          type: 'system' as const,
+          content: `ArqZero v2.0.0\n  Type a message to start. Use /help for commands.`,
         },
       ]);
     }
@@ -159,6 +177,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
   useInput((_input, key) => {
     if (key.ctrl && _input === 'c') {
       engineRef.current?.abort();
+      cronManagerRef.current?.stopAll();
       exit();
     }
 
@@ -213,8 +232,25 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         const slashContext: SlashCommandContext = {
           config,
           commandRegistry,
+          checkpointStore: checkpointStoreRef.current ?? undefined,
+          contextWindow: contextWindowRef.current ?? undefined,
+          toolRegistry: registry,
+          tokenUsage: tokenUsage ? { inputTokens: tokenUsage.inputTokens, outputTokens: tokenUsage.outputTokens } : undefined,
+          costEstimate,
+          messages: engineRef.current?.getMessages(),
+          cronManager: cronManagerRef.current ?? undefined,
+          onModelChange: (m: string) => { config.model = m; },
           onClear: () => setEntries([]),
-          onQuit: () => exit(),
+          onCompact: () => {
+            setEntries((e) => [...e, { type: 'system', content: 'Manual compaction triggered.' }]);
+          },
+          onQuit: () => {
+            cronManagerRef.current?.stopAll();
+            exit();
+          },
+          onSubmit: async (prompt: string) => {
+            await handleSubmit(prompt);
+          },
         };
         setInput('');
         setEntries((e) => [...e, { type: 'user', content: value }]);

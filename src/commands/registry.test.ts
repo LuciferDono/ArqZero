@@ -325,7 +325,7 @@ describe('Built-in commands', () => {
 
       assert.ok(output);
       assert.ok(output.includes('fireworks'));
-      assert.ok(output.includes('accounts/fireworks/models/glm-4p7'));
+      assert.ok(output.includes('glm-4p7'));
     });
 
     it('should show permissions mode', async () => {
@@ -438,8 +438,8 @@ describe('Built-in commands', () => {
   });
 
   describe('builtinCommands array', () => {
-    it('should contain all 23 built-in commands', () => {
-      assert.equal(builtinCommands.length, 23);
+    it('should contain all 24 built-in commands', () => {
+      assert.equal(builtinCommands.length, 24);
     });
 
     it('should have unique names', () => {

@@ -3,6 +3,7 @@ import type { Message, ContentBlock, TokenUsage } from '../api/types.js';
 import type { ToolContext, ToolResult } from '../tools/types.js';
 import type { ToolRegistry } from '../tools/registry.js';
 import type { PermissionManager } from '../permissions/manager.js';
+import type { CheckpointStore } from '../checkpoints/store.js';
 import type { ContextWindow } from '../session/context.js';
 import type { Session } from '../session/session.js';
 import type { CompactionResult } from './compaction.js';
@@ -37,6 +38,7 @@ export interface EngineOptions {
   toolContext: ToolContext;
   maxToolRounds?: number;
   permissions?: PermissionManager;
+  checkpointStore?: CheckpointStore;
   hooks?: HookRegistry;
   contextWindow?: ContextWindow;
   session?: Session;
@@ -50,7 +52,7 @@ export class ConversationEngine {
 
   constructor(options: EngineOptions) {
     this.options = options;
-    this.executor = new ToolExecutor(options.registry, options.permissions);
+    this.executor = new ToolExecutor(options.registry, options.permissions, options.checkpointStore);
   }
 
   getMessages(): Message[] {

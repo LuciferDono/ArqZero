@@ -68,6 +68,15 @@ export const quitCommand: SlashCommand = {
   },
 };
 
+export const exitCommand: SlashCommand = {
+  name: '/exit',
+  description: 'Exit the CLI (alias for /quit)',
+  async execute(_args: string, ctx: SlashCommandContext): Promise<string | null> {
+    ctx.onQuit?.();
+    return null;
+  },
+};
+
 export const skillCommand: SlashCommand = {
   name: '/skill',
   description: 'List skills or show skill details',
@@ -465,7 +474,9 @@ export const loopCommand: SlashCommand = {
     }
 
     const id = manager.add(ms, prompt, async () => {
-      // In a real implementation, this would send the prompt to the engine
+      if (ctx.onSubmit) {
+        await ctx.onSubmit(prompt);
+      }
     });
 
     return `Loop #${id} created: "${prompt}" every ${intervalStr}`;
@@ -489,6 +500,7 @@ export const builtinCommands: SlashCommand[] = [
   compactCommand,
   configCommand,
   quitCommand,
+  exitCommand,
   skillCommand,
   memoryCommand,
   rewindCommand,
