@@ -426,10 +426,16 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           }
         },
         onCapabilitiesMatched: (matches: MatchResult[]) => {
-          const names = matches.map((m) => m.capability.name).join(', ');
+          if (matches.length === 0) return;
+          const names = matches.map((m) => m.capability.name);
+          const verbs = [
+            'Spinning up', 'Activating', 'Loading', 'Engaging', 'Deploying',
+            'Channeling', 'Tuning into', 'Wiring up', 'Locking onto', 'Dialing in',
+          ];
+          const verb = verbs[Math.floor(Math.random() * verbs.length)];
           setEntries((e) => [
             ...e,
-            { type: 'system', content: `\u25b8 ${names} matched` },
+            { type: 'system', content: `${verb} ${names.join(' + ')}` },
           ]);
         },
         onCompaction: (result) => {

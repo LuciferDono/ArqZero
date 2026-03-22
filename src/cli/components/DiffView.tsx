@@ -24,13 +24,13 @@ function LineNumber({ num, width }: { num?: number; width: number }) {
 function renderSegments(segments: DiffSegment[], lineType: 'added' | 'removed') {
   const baseColor = lineType === 'added' ? THEME.diffAdded : THEME.diffRemoved;
   const highlightColor = lineType === 'added' ? WORD_ADDED : WORD_REMOVED;
+  const bgColor = lineType === 'added' ? '#0a2e1a' : '#2e0a0a';
 
   return segments.map((seg, i) => {
     if (seg.type === 'same') {
-      return <Text key={i} color={baseColor}>{seg.text}</Text>;
+      return <Text key={i} color={baseColor} backgroundColor={bgColor}>{seg.text}</Text>;
     }
-    // Changed word — bold + brighter color
-    return <Text key={i} color={highlightColor} bold>{seg.text}</Text>;
+    return <Text key={i} color={highlightColor} backgroundColor={bgColor} bold>{seg.text}</Text>;
   });
 }
 
@@ -46,15 +46,17 @@ function DiffLineRow({ line, lineNumWidth }: { line: DiffLine; lineNumWidth: num
 
   const prefix = line.type === 'added' ? '+' : '-';
   const baseColor = line.type === 'added' ? THEME.diffAdded : THEME.diffRemoved;
+  // Background tint for full-line color blocks
+  const bgColor = line.type === 'added' ? '#0a2e1a' : '#2e0a0a';
 
   return (
     <Box>
       <LineNumber num={line.lineNumber} width={lineNumWidth} />
-      <Text color={baseColor}>{prefix} </Text>
+      <Text color={baseColor} backgroundColor={bgColor}>{prefix} </Text>
       {line.segments ? (
-        renderSegments(line.segments, line.type)
+        <>{renderSegments(line.segments, line.type)}</>
       ) : (
-        <Text color={baseColor}>{line.content}</Text>
+        <Text color={baseColor} backgroundColor={bgColor}>{line.content}</Text>
       )}
     </Box>
   );

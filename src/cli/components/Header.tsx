@@ -85,7 +85,7 @@ function LogoBlock() {
       {Array.from({ length: lines }, (_, i) => (
         <Box key={i}>
           <Text color={COLORS.brand} bold>{LOGO_ARQ[i]}</Text>
-          <Text color={COLORS.textSecondary} bold>  {LOGO_ZERO[i] ?? ''}</Text>
+          <Text color={COLORS.info} bold>  {LOGO_ZERO[i] ?? ''}</Text>
         </Box>
       ))}
       <Box>
