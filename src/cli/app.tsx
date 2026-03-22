@@ -56,42 +56,64 @@ function estimateCost(usage: TokenUsage): number {
   );
 }
 
-function summarizeToolResult(name: string, result: ToolResult): string {
+function extractPath(input?: Record<string, unknown>): string {
+  if (!input) return '';
+  const p = (input.file_path ?? input.path ?? input.notebook_path ?? '') as string;
+  // Show just filename or last 2 path segments
+  const parts = p.replace(/\\/g, '/').split('/');
+  return parts.length > 2 ? parts.slice(-2).join('/') : p;
+}
+
+function summarizeToolResult(name: string, result: ToolResult, input?: Record<string, unknown>): string {
   const content = result.content;
+  const path = extractPath(input);
 
-  if (name === 'Read') {
-    const lineMatch = content.match(/(\d+)\s*lines?/i);
-    const pathMatch = content.match(/(?:Read|read)\s+(.+?)(?:\s|$)/);
-    if (lineMatch) return `${pathMatch?.[1] ?? ''} (${lineMatch[1]} lines)`.trim();
+  switch (name) {
+    case 'Read': {
+      const lineCount = content.split('\n').length;
+      return path ? `${path} (${lineCount} lines)` : `${lineCount} lines`;
+    }
+    case 'Write':
+      return path ? `${path}` : 'file written';
+    case 'Edit':
+    case 'MultiEdit':
+      return path ? `${path}` : 'file edited';
+    case 'Bash': {
+      const cmd = (input?.command as string) ?? '';
+      const short = cmd.length > 60 ? cmd.slice(0, 57) + '...' : cmd;
+      return short || '(command)';
+    }
+    case 'Glob': {
+      const pattern = (input?.pattern as string) ?? '';
+      const lines = content.trim().split('\n').filter(Boolean);
+      return pattern ? `${pattern} → ${lines.length} files` : `${lines.length} files`;
+    }
+    case 'Grep': {
+      const pattern = (input?.pattern as string) ?? '';
+      const lines = content.trim().split('\n').filter(Boolean);
+      return pattern ? `"${pattern}" → ${lines.length} matches` : `${lines.length} matches`;
+    }
+    case 'LS': {
+      const lines = content.trim().split('\n').filter(Boolean);
+      return path ? `${path} (${lines.length} entries)` : `${lines.length} entries`;
+    }
+    case 'WebSearch':
+      return (input?.query as string) ?? 'search';
+    case 'WebFetch':
+      return (input?.url as string)?.slice(0, 50) ?? 'fetch';
+    case 'Dispatch':
+      return (input?.description as string) ?? 'sub-agent';
+    case 'NotebookRead':
+      return path || 'notebook';
+    case 'NotebookEdit':
+      return path || 'notebook edited';
+    case 'TodoWrite':
+      return 'tasks updated';
+    case 'TodoRead':
+      return 'tasks';
+    default:
+      return content.length > 60 ? content.slice(0, 57) + '...' : content;
   }
-
-  if (name === 'Write') {
-    const pathMatch = content.match(/(?:Wrote|wrote|Written|written)\s+(.+?)(?:\s|$)/);
-    return `Wrote ${pathMatch?.[1] ?? ''}`.trim();
-  }
-
-  if (name === 'Edit') {
-    const pathMatch = content.match(/(?:in|edited)\s+(.+?)(?:\s|$)/i);
-    return `Edited ${pathMatch?.[1] ?? ''}`.trim();
-  }
-
-  if (name === 'Bash') {
-    const firstLine = content.split('\n')[0] ?? '';
-    return firstLine.length > 60 ? firstLine.slice(0, 57) + '...' : firstLine;
-  }
-
-  if (name === 'Glob') {
-    const lines = content.trim().split('\n').filter(Boolean);
-    return `Found ${lines.length} files`;
-  }
-
-  if (name === 'Grep') {
-    const lines = content.trim().split('\n').filter(Boolean);
-    return `Found ${lines.length} matches`;
-  }
-
-  // Fallback
-  return content.length > 60 ? content.slice(0, 57) + '...' : content;
 }
 
 export default function App({ provider, config, registry, systemPrompt, commandRegistry, initialMessages, resumedSessionId }: AppProps) {
@@ -334,13 +356,13 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           toolStartTimesRef.current.set(id, Date.now());
           setActiveOperation({ name, startTime: Date.now() });
         },
-        onToolEnd: (id, name, result) => {
+        onToolEnd: (id, name, result, toolInput) => {
           setActiveOperation(null);
           const startTime = toolStartTimesRef.current.get(id);
           const elapsed = startTime ? Date.now() - startTime : undefined;
           toolStartTimesRef.current.delete(id);
 
-          const summary = summarizeToolResult(name, result);
+          const summary = summarizeToolResult(name, result, toolInput);
           const entry: OperationEntryData = {
             type: 'tool',
             content: summary,

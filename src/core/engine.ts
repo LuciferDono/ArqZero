@@ -22,7 +22,7 @@ export interface EngineCallbacks {
   onTextDelta?: (text: string) => void;
   onThinkingDelta?: (text: string) => void;
   onToolStart?: (id: string, name: string) => void;
-  onToolEnd?: (id: string, name: string, result: ToolResult) => void;
+  onToolEnd?: (id: string, name: string, result: ToolResult, input?: Record<string, unknown>) => void;
   onMessageEnd?: (usage: TokenUsage) => void;
   onCompaction?: (result: CompactionResult) => void;
   onCapabilitiesMatched?: (matches: MatchResult[]) => void;
@@ -263,7 +263,7 @@ export class ConversationEngine {
             content: preResult.message ?? 'Blocked by hook',
             isError: true,
           };
-          callbacks.onToolEnd?.(block.id!, block.name!, errorResult);
+          callbacks.onToolEnd?.(block.id!, block.name!, errorResult, block.input as Record<string, unknown>);
           const deniedMsg = toolResultMessage(block.id!, block.name!, errorResult.content, true);
           this.messages.push(deniedMsg);
           if (this.options.session) {
@@ -294,7 +294,7 @@ export class ConversationEngine {
       });
 
       // Notify UI
-      callbacks.onToolEnd?.(block.id!, block.name!, result);
+      callbacks.onToolEnd?.(block.id!, block.name!, result, block.input as Record<string, unknown>);
 
       // Add tool result to messages
       const toolMsg = toolResultMessage(block.id!, block.name!, result.content, result.isError);
