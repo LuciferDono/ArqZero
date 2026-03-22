@@ -1,0 +1,112 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+#game-container {
+    position: relative;
+    background: #000;
+    border: 4px solid #8b4513;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(139, 69, 19, 0.5), inset 0 0 60px rgba(0, 0, 0, 0.8);
+}
+
+#game-header {
+    display: flex;
+    justify-content: space-around;
+    background: linear-gradient(180deg, #87ceeb 0%, #98d8c8 100%);
+    padding: 10px 20px;
+    border-bottom: 3px solid #5d4037;
+}
+
+#score-display,
+#lives-display,
+#level-display {
+    color: #fff;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+#game-canvas {
+    display: block;
+    background: linear-gradient(180deg, #87ceeb 0%, #b0e0e6 50%, #e0f7fa 100%);
+}
+
+#controls-info {
+    display: flex;
+    justify-content: space-around;
+    background: #2d2d2d;
+    padding: 8px;
+    border-top: 3px solid #5d4037;
+    font-size: 11px;
+}
+
+#controls-info span {
+    color: #ffd700;
+    text-shadow: 1px 1px 0 #000;
+    letter-spacing: 1px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#game-over,
+#level-complete {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    padding: 40px 60px;
+    border-radius: 10px;
+    text-align: center;
+    border: 4px solid #ffd700;
+    z-index: 10;
+}
+
+#game-over h1,
+#level-complete h1 {
+    color: #ff4444;
+    font-size: 28px;
+    margin-bottom: 20px;
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #ffd700;
+}
+
+#level-complete h1 {
+    color: #44ff44;
+}
+
+#game-over p,
+#level-complete p {
+    color: #fff;
+    font-size: 14px;
+    text-shadow: 2px 2px 0 #000;
+}
+
+#game-over-title.victory {
+    color: #44ff44 !important;
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #ffd700;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+#game-over p {
+    animation: pulse 1.5s infinite;
+}

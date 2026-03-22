@@ -251,29 +251,40 @@ describe('Built-in commands', () => {
       const output = await modelCommand.execute('', ctx);
 
       assert.ok(output);
-      assert.ok(output.includes('accounts/fireworks/models/glm-4p7'));
+      assert.ok(output.includes('PRIMUS'));
     });
 
-    it('should call onModelChange when args given', async () => {
+    it('should call onModelChange when valid model given', async () => {
       let changedTo = '';
       const ctx = createMockContext({
         onModelChange: (model: string) => { changedTo = model; },
       });
 
-      const output = await modelCommand.execute('claude-4-opus', ctx);
+      const output = await modelCommand.execute('primus', ctx);
 
-      assert.equal(changedTo, 'claude-4-opus');
+      assert.equal(changedTo, 'accounts/fireworks/models/glm-5');
       assert.ok(output);
-      assert.ok(output.includes('claude-4-opus'));
+      assert.ok(output.includes('PRIMUS'));
     });
 
-    it('should indicate no callback when onModelChange not provided', async () => {
+    it('should reject unknown model names', async () => {
       const ctx = createMockContext();
-      const output = await modelCommand.execute('claude-4-opus', ctx);
+      const output = await modelCommand.execute('nonexistent-model', ctx);
 
       assert.ok(output);
-      // Should still report the model name even without callback
-      assert.ok(output.includes('claude-4-opus'));
+      assert.ok(output.includes('Unknown model'));
+    });
+
+    it('should ignore trailing text after model name', async () => {
+      let changedTo = '';
+      const ctx = createMockContext({
+        onModelChange: (model: string) => { changedTo = model; },
+      });
+
+      const output = await modelCommand.execute('enso how good are you', ctx);
+
+      assert.equal(changedTo, 'accounts/fireworks/models/glm-4p7');
+      assert.ok(output.includes('Enso'));
     });
   });
 

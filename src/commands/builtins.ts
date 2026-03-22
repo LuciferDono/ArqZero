@@ -7,6 +7,8 @@ import { rewindToCheckpoint, formatCheckpointList } from '../checkpoints/rewind.
 import { formatSettingsDisplay } from '../cli/components/settings-display.js';
 import { parseDuration } from '../cli/cron.js';
 import { pluginCommands } from './plugin-commands.js';
+import { MODELS, getModelByName } from '../config/model-router.js';
+import { listSessionsWithInfo, listSessions, loadSession, deleteSession } from '../session/history.js';
 
 export const helpCommand: SlashCommand = {
   name: '/help',
@@ -26,10 +28,34 @@ export const modelCommand: SlashCommand = {
   description: 'Show or change current model',
   async execute(args: string, ctx: SlashCommandContext): Promise<string> {
     if (!args) {
-      return `Current model: ${ctx.config.model}`;
+      const current = ctx.config.model;
+      const lines = ['Available models:'];
+      for (const m of MODELS) {
+        const active = m.id === current ? ' (active)' : '';
+        lines.push(`  ${m.displayName} [${m.tier}] — ${m.description}${active}`);
+      }
+      lines.push('');
+      lines.push('Auto-routing: strong tasks auto-upgrade to PRIMUS');
+      lines.push('Usage: /model <name>  (e.g. /model primus)');
+      return lines.join('\n');
     }
-    ctx.onModelChange?.(args);
-    return `Model set to: ${args}`;
+
+    const input = args.trim();
+
+    // Try exact match first, then match first word (ignore trailing text)
+    let model = getModelByName(input);
+    if (!model) {
+      const firstWord = input.split(/\s+/)[0];
+      model = getModelByName(firstWord);
+    }
+
+    if (!model) {
+      const names = MODELS.map(m => m.displayName.toLowerCase()).join(', ');
+      return `Unknown model "${input}". Available: ${names}`;
+    }
+
+    ctx.onModelChange?.(model.id);
+    return `Model set to: ${model.displayName} [${model.tier}]`;
   },
 };
 
@@ -493,6 +519,68 @@ export const vimCommand: SlashCommand = {
   },
 };
 
+export const sessionCommand: SlashCommand = {
+  name: '/session',
+  description: 'Manage sessions — list, resume, delete',
+  async execute(args: string, ctx: SlashCommandContext): Promise<string> {
+    const parts = args.trim().split(/\s+/);
+    const subcommand = parts[0]?.toLowerCase() ?? '';
+    const sessionArg = parts[1] ?? '';
+
+    // /session or /session list
+    if (!subcommand || subcommand === 'list') {
+      const sessions = listSessionsWithInfo();
+      if (sessions.length === 0) return 'No saved sessions.';
+
+      const lines = ['Sessions (newest first):'];
+      for (const s of sessions.slice(0, 20)) {
+        const date = s.lastModified.toLocaleDateString();
+        const time = s.lastModified.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        const size = s.sizeBytes < 1024 ? `${s.sizeBytes}B` : `${(s.sizeBytes / 1024).toFixed(1)}KB`;
+        const compacted = s.hasCompaction ? ' [compacted]' : '';
+        lines.push(`  ${s.id.slice(0, 8)}  ${date} ${time}  ${s.messageCount} msgs  ${size}${compacted}`);
+      }
+      if (sessions.length > 20) lines.push(`  ... and ${sessions.length - 20} more`);
+      lines.push('');
+      lines.push('Usage: /session resume <id>  |  /session delete <id>');
+      return lines.join('\n');
+    }
+
+    // /session resume <id>
+    if (subcommand === 'resume') {
+      if (!sessionArg) return 'Usage: /session resume <session-id>';
+      const sessions = listSessions();
+      const match = sessions.find(s => s.startsWith(sessionArg));
+      if (!match) return `Session "${sessionArg}" not found.`;
+
+      const messages = loadSession(match);
+      if (!messages || messages.length === 0) return `Session "${match}" is empty.`;
+
+      return `To resume session ${match.slice(0, 8)}, restart with:\n  arqzero --resume ${match}`;
+    }
+
+    // /session delete <id>
+    if (subcommand === 'delete') {
+      if (!sessionArg) return 'Usage: /session delete <session-id>';
+      const sessions = listSessions();
+      const match = sessions.find(s => s.startsWith(sessionArg));
+      if (!match) return `Session "${sessionArg}" not found.`;
+
+      const deleted = deleteSession(match);
+      return deleted ? `Session ${match.slice(0, 8)} deleted.` : `Failed to delete session.`;
+    }
+
+    // /session current
+    if (subcommand === 'current') {
+      const id = ctx.sessionId ?? 'unknown';
+      const msgs = ctx.messages?.length ?? 0;
+      return `Current session: ${id.slice(0, 8)}\nMessages: ${msgs}`;
+    }
+
+    return `Unknown subcommand "${subcommand}". Try: list, resume, delete, current`;
+  },
+};
+
 export const builtinCommands: SlashCommand[] = [
   helpCommand,
   modelCommand,
@@ -516,5 +604,6 @@ export const builtinCommands: SlashCommand[] = [
   agentsCommand,
   loopCommand,
   vimCommand,
+  sessionCommand,
   ...pluginCommands,
 ];

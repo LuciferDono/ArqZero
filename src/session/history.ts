@@ -135,3 +135,64 @@ export function listSessions(basePath?: string): string[] {
     .filter(f => f.endsWith('.jsonl'))
     .map(f => f.replace('.jsonl', ''));
 }
+
+/**
+ * Delete a session file. Returns true if deleted, false if not found.
+ */
+export function deleteSession(sessionId: string, basePath?: string): boolean {
+  const filePath = getSessionPath(sessionId, basePath);
+  if (!fs.existsSync(filePath)) return false;
+  fs.unlinkSync(filePath);
+  return true;
+}
+
+export interface SessionSummary {
+  id: string;
+  messageCount: number;
+  lastModified: Date;
+  sizeBytes: number;
+  hasCompaction: boolean;
+}
+
+/**
+ * Get detailed info about a single session.
+ */
+export function getSessionInfo(sessionId: string, basePath?: string): SessionSummary | null {
+  const filePath = getSessionPath(sessionId, basePath);
+  if (!fs.existsSync(filePath)) return null;
+
+  const stat = fs.statSync(filePath);
+  const raw = fs.readFileSync(filePath, 'utf-8').trim();
+  const lines = raw.split('\n').filter(l => l);
+
+  let messageCount = 0;
+  let hasCompaction = false;
+  for (const line of lines) {
+    try {
+      const entry = JSON.parse(line);
+      if (entry.type === 'message') messageCount++;
+      if (entry.type === 'compaction') hasCompaction = true;
+    } catch {}
+  }
+
+  return {
+    id: sessionId,
+    messageCount,
+    lastModified: stat.mtime,
+    sizeBytes: stat.size,
+    hasCompaction,
+  };
+}
+
+/**
+ * List all sessions with detailed info, sorted by last modified (newest first).
+ */
+export function listSessionsWithInfo(basePath?: string): SessionSummary[] {
+  const ids = listSessions(basePath);
+  const summaries: SessionSummary[] = [];
+  for (const id of ids) {
+    const info = getSessionInfo(id, basePath);
+    if (info) summaries.push(info);
+  }
+  return summaries.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime());
+}

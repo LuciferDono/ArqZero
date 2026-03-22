@@ -26,6 +26,7 @@ export interface SlashCommandContext {
   cronManager?: CronManager;
   pluginManager?: PluginManager;
   pluginLoader?: PluginLoader;
+  sessionId?: string;
   effort?: string;
   vimMode?: boolean;
   onModelChange?: (model: string) => void;

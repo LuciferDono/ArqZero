@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Mario - 3 Level Adventure</title>
+    <link rel="stylesheet" href="mario.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-header">
+            <div id="score-display">SCORE: <span id="score">0</span></div>
+            <div id="lives-display">LIVES: <span id="lives">3</span></div>
+            <div id="level-display">LEVEL: <span id="level">1</span></div>
+        </div>
+        <canvas id="game-canvas" width="800" height="500"></canvas>
+        <div id="controls-info">
+            <span>← → MOVE</span>
+            <span>↑ SPACE JUMP</span>
+            <span>R RESTART</span>
+        </div>
+        <div id="game-over" class="hidden">
+            <h1 id="game-over-title">GAME OVER</h1>
+            <p id="game-over-message">Press R to restart</p>
+        </div>
+        <div id="level-complete" class="hidden">
+            <h1>LEVEL COMPLETE!</h1>
+            <p>Press SPACE to continue</p>
+        </div>
+    </div>
+    <script src="mario.js"></script>
+</body>
+</html>

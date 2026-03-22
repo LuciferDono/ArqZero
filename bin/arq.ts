@@ -185,6 +185,7 @@ async function main() {
   let resumedSessionId: string | undefined;
 
   if (args.resume) {
+    // Explicit --resume <id>
     if (!sessionExists(args.resume)) {
       console.error(`Error: session "${args.resume}" not found.`);
       process.exit(1);
@@ -195,33 +196,52 @@ async function main() {
       resumedSessionId = args.resume;
     }
   } else if (args.continue) {
-    const sessions = listSessions();
+    // -c: auto-resume latest session
+    const { listSessionsWithInfo } = await import('../src/session/history.js');
+    const sessions = listSessionsWithInfo();
     if (sessions.length === 0) {
       console.error('Error: no sessions to continue.');
       process.exit(1);
     }
-    // listSessions returns file names; pick the most recent by file mtime
-    const fs = await import('node:fs');
-    const pathMod = await import('node:path');
-    const os = await import('node:os');
-    const sessDir = pathMod.default.join(os.default.homedir(), '.arqzero', 'sessions');
-    let latestId = sessions[0];
-    let latestTime = 0;
-    for (const sid of sessions) {
-      try {
-        const stat = fs.default.statSync(pathMod.default.join(sessDir, `${sid}.jsonl`));
-        if (stat.mtimeMs > latestTime) {
-          latestTime = stat.mtimeMs;
-          latestId = sid;
-        }
-      } catch {
-        // skip
-      }
-    }
-    const msgs = loadSession(latestId);
+    const latest = sessions[0]; // already sorted newest first
+    const msgs = loadSession(latest.id);
     if (msgs && msgs.length > 0) {
       initialMessages = msgs;
-      resumedSessionId = latestId;
+      resumedSessionId = latest.id;
+    }
+  } else if (!args.print) {
+    // Interactive mode — show session picker if sessions exist
+    const { listSessionsWithInfo } = await import('../src/session/history.js');
+    const sessions = listSessionsWithInfo();
+
+    if (sessions.length > 0) {
+      console.log('\n  \x1b[36m◆ ArqZero\x1b[0m\n');
+      console.log('  \x1b[90mExisting sessions:\x1b[0m\n');
+
+      const display = sessions.slice(0, 10);
+      display.forEach((s, i) => {
+        const date = s.lastModified.toLocaleDateString();
+        const time = s.lastModified.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        const compacted = s.hasCompaction ? ' [compacted]' : '';
+        console.log(`  \x1b[36m${i + 1}.\x1b[0m ${s.id.slice(0, 8)}  \x1b[90m${date} ${time}  ${s.messageCount} msgs${compacted}\x1b[0m`);
+      });
+
+      console.log(`\n  \x1b[36m0.\x1b[0m Start new session\n`);
+
+      const answer = await promptUser('  Choose (0-' + display.length + '): ');
+      const choice = parseInt(answer.trim());
+
+      if (choice > 0 && choice <= display.length) {
+        const chosen = display[choice - 1];
+        const msgs = loadSession(chosen.id);
+        if (msgs && msgs.length > 0) {
+          initialMessages = msgs;
+          resumedSessionId = chosen.id;
+          console.log(`\n  Resuming session ${chosen.id.slice(0, 8)}...\n`);
+        }
+      } else {
+        console.log('\n  Starting new session...\n');
+      }
     }
   }
 
