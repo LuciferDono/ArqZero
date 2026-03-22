@@ -8,6 +8,11 @@ export interface HookDefinition {
 }
 
 export interface Settings {
+  model?: string;
+  maxTokens?: number;
+  reducedMotion?: boolean;
+  syntaxHighlightingDisabled?: boolean;
+  theme?: 'dark' | 'light';
   permissions?: {
     allow?: string[];
     deny?: string[];
@@ -30,6 +35,13 @@ function loadSettingsFile(filePath: string): Settings | null {
 
 function mergeSettings(user: Settings, project: Settings): Settings {
   const merged: Settings = {};
+
+  // Scalar settings: project overrides user
+  merged.model = project.model ?? user.model;
+  merged.maxTokens = project.maxTokens ?? user.maxTokens;
+  merged.reducedMotion = project.reducedMotion ?? user.reducedMotion;
+  merged.syntaxHighlightingDisabled = project.syntaxHighlightingDisabled ?? user.syntaxHighlightingDisabled;
+  merged.theme = project.theme ?? user.theme;
 
   // Merge permissions: project overrides user, but deny is always merged (union)
   if (user.permissions || project.permissions) {

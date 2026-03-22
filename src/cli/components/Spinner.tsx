@@ -48,6 +48,17 @@ export function ShimmerSpinner({ isActive = true }: { isActive: boolean }) {
 
   const fullText = `${verb}...`;
 
+  // Reduced motion: static text, no animation
+  if (runtime.reducedMotion) {
+    const elapsedStr = elapsed > 0 ? ` ${elapsed}s` : '';
+    return (
+      <Box>
+        <Text color={THEME.primary}>{THEME.dot} {fullText}</Text>
+        <Text color={THEME.dim}>{elapsedStr}</Text>
+      </Box>
+    );
+  }
+
   // Render each character with shimmer color
   const chars = fullText.split('').map((char, i) => {
     const distance = Math.abs(i - glimmerIndex);

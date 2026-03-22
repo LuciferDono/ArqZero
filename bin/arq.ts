@@ -20,6 +20,12 @@ import { runHeadless } from '../src/cli/headless.js';
 import { AgentRunner } from '../src/agents/runner.js';
 import { setAgentRunner } from '../src/tools/builtins/task.js';
 import { WorktreeManager } from '../src/worktrees/manager.js';
+import { loadCustomCommands } from '../src/commands/custom-loader.js';
+import { listSessions, loadSession, sessionExists } from '../src/session/history.js';
+import type { Message } from '../src/api/types.js';
+import { loadSettings } from '../src/config/settings.js';
+import { loadEnvOverrides } from '../src/config/env.js';
+import { initRuntime } from '../src/config/runtime.js';
 
 async function promptUser(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -64,10 +70,38 @@ async function main() {
 
   const config = loadConfig();
 
-  // Apply CLI overrides
+  // Load settings (user + project) and env overrides
+  const settings = loadSettings(process.cwd());
+  const envOverrides = loadEnvOverrides();
+
+  // Apply settings env vars to process.env
+  if (settings.env) {
+    Object.assign(process.env, settings.env);
+  }
+
+  // Apply settings to config (settings override config defaults)
+  if (settings.model) config.model = settings.model;
+  if (settings.maxTokens) config.maxTokens = settings.maxTokens;
+
+  // Apply env overrides (env vars override settings)
+  if (envOverrides.model) config.model = envOverrides.model;
+  if (envOverrides.maxTokens) config.maxTokens = envOverrides.maxTokens;
+  if (envOverrides.apiKey && !config.fireworksApiKey) {
+    config.fireworksApiKey = envOverrides.apiKey;
+  }
+
+  // Apply CLI overrides (highest priority)
   if (args.model) {
     config.model = args.model;
   }
+
+  // Initialize runtime config for components
+  initRuntime({
+    reducedMotion: envOverrides.reducedMotion || settings.reducedMotion || false,
+    syntaxHighlightingDisabled: envOverrides.syntaxHighlightingDisabled || settings.syntaxHighlightingDisabled || false,
+    verbose: envOverrides.verbose || false,
+    theme: settings.theme ?? 'dark',
+  });
 
   let provider: LLMProvider;
   if (config.fireworksApiKey) {
@@ -122,6 +156,51 @@ async function main() {
 
   const systemPrompt = buildSystemPrompt(process.cwd());
 
+  // Session resume
+  let initialMessages: Message[] | undefined;
+  let resumedSessionId: string | undefined;
+
+  if (args.resume) {
+    if (!sessionExists(args.resume)) {
+      console.error(`Error: session "${args.resume}" not found.`);
+      process.exit(1);
+    }
+    const msgs = loadSession(args.resume);
+    if (msgs && msgs.length > 0) {
+      initialMessages = msgs;
+      resumedSessionId = args.resume;
+    }
+  } else if (args.continue) {
+    const sessions = listSessions();
+    if (sessions.length === 0) {
+      console.error('Error: no sessions to continue.');
+      process.exit(1);
+    }
+    // listSessions returns file names; pick the most recent by file mtime
+    const fs = await import('node:fs');
+    const pathMod = await import('node:path');
+    const os = await import('node:os');
+    const sessDir = pathMod.default.join(os.default.homedir(), '.arqzero', 'sessions');
+    let latestId = sessions[0];
+    let latestTime = 0;
+    for (const sid of sessions) {
+      try {
+        const stat = fs.default.statSync(pathMod.default.join(sessDir, `${sid}.jsonl`));
+        if (stat.mtimeMs > latestTime) {
+          latestTime = stat.mtimeMs;
+          latestId = sid;
+        }
+      } catch {
+        // skip
+      }
+    }
+    const msgs = loadSession(latestId);
+    if (msgs && msgs.length > 0) {
+      initialMessages = msgs;
+      resumedSessionId = latestId;
+    }
+  }
+
   // Headless mode: -p / --print
   if (args.print) {
     const outputFormat = args.outputFormat ?? 'text';
@@ -142,7 +221,21 @@ async function main() {
     commandRegistry.register(cmd);
   }
 
-  render(React.createElement(App, { provider, config, registry, systemPrompt, commandRegistry }));
+  // Register custom commands
+  const customCommands = loadCustomCommands(process.cwd());
+  for (const cmd of customCommands) {
+    commandRegistry.register(cmd);
+  }
+
+  render(React.createElement(App, {
+    provider,
+    config,
+    registry,
+    systemPrompt,
+    commandRegistry,
+    initialMessages,
+    resumedSessionId,
+  }));
 }
 
 main().catch((err) => {

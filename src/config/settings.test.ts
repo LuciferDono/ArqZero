@@ -111,4 +111,53 @@ describe('loadSettings', () => {
     // Deny from user is preserved (deny always wins)
     assert.ok(settings.permissions?.deny?.includes('DangerousTool'));
   });
+
+  it('loads scalar settings from user file', () => {
+    fs.mkdirSync(userDir, { recursive: true });
+    const userSettings: Settings = {
+      model: 'user-model',
+      maxTokens: 2048,
+      reducedMotion: true,
+      theme: 'light',
+    };
+    fs.writeFileSync(path.join(userDir, 'settings.json'), JSON.stringify(userSettings));
+
+    const cwd = path.join(tmpDir, 'project');
+    const settings = loadSettings(cwd);
+    assert.equal(settings.model, 'user-model');
+    assert.equal(settings.maxTokens, 2048);
+    assert.equal(settings.reducedMotion, true);
+    assert.equal(settings.theme, 'light');
+  });
+
+  it('project scalar settings override user', () => {
+    fs.mkdirSync(userDir, { recursive: true });
+    fs.mkdirSync(projectDir, { recursive: true });
+
+    const userSettings: Settings = {
+      model: 'user-model',
+      maxTokens: 2048,
+      reducedMotion: false,
+      theme: 'light',
+    };
+    const projSettings: Settings = {
+      model: 'project-model',
+      syntaxHighlightingDisabled: true,
+    };
+
+    fs.writeFileSync(path.join(userDir, 'settings.json'), JSON.stringify(userSettings));
+    fs.writeFileSync(path.join(projectDir, 'settings.json'), JSON.stringify(projSettings));
+
+    const cwd = path.join(tmpDir, 'project');
+    const settings = loadSettings(cwd);
+
+    // Project overrides user for model
+    assert.equal(settings.model, 'project-model');
+    // User value preserved when project doesn't set it
+    assert.equal(settings.maxTokens, 2048);
+    assert.equal(settings.reducedMotion, false);
+    assert.equal(settings.theme, 'light');
+    // Project-only setting
+    assert.equal(settings.syntaxHighlightingDisabled, true);
+  });
 });
