@@ -6,6 +6,9 @@ import { licenseRoutes } from './routes/license.js';
 import { usageRoutes } from './routes/usage.js';
 import { checkoutRoutes } from './routes/checkout.js';
 import { webhookRoutes } from './routes/webhook.js';
+import { teamRoutes } from './routes/team.js';
+import { teamMemoryRoutes } from './routes/team-memory.js';
+import { userRoutes } from './routes/users.js';
 
 const app = new Hono();
 
@@ -21,6 +24,9 @@ app.route('/license', licenseRoutes);
 app.route('/usage', usageRoutes);
 app.route('/checkout', checkoutRoutes);
 app.route('/webhooks', webhookRoutes);
+app.route('/team', teamRoutes);
+app.route('/team-memory', teamMemoryRoutes);
+app.route('/users', userRoutes);
 
 const port = parseInt(process.env.PORT ?? '3001');
 console.log(`ArqZero API running on port ${port}`);
