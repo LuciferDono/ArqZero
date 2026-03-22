@@ -17,6 +17,7 @@ import {
   OperationLog,
   CommandInput,
   PermissionInline,
+  TranscriptView,
 } from './components/index.js';
 import type { OperationEntryData } from './components/index.js';
 import { useInputHistory } from './hooks/useInputHistory.js';
@@ -98,6 +99,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
   const [costEstimate, setCostEstimate] = useState(0);
   const [contextPercent, setContextPercent] = useState(0);
   const [pendingPermission, setPendingPermission] = useState<PendingPermission | null>(null);
+  const [transcriptMode, setTranscriptMode] = useState(false);
   const { exit } = useApp();
   const history = useInputHistory();
 
@@ -163,6 +165,12 @@ export default function App({ provider, config, registry, systemPrompt, commandR
     // Ctrl+L: clear entries
     if (key.ctrl && _input === 'l') {
       setEntries([]);
+      return;
+    }
+
+    // Ctrl+O: toggle transcript view
+    if (key.ctrl && _input === 'o') {
+      setTranscriptMode((m) => !m);
       return;
     }
 
@@ -265,6 +273,14 @@ export default function App({ provider, config, registry, systemPrompt, commandR
             elapsed,
           };
 
+          // Attach diff metadata from Edit/Write tools
+          if (result.metadata) {
+            entry.filePath = result.metadata.filePath;
+            entry.oldContent = result.metadata.oldContent;
+            entry.newContent = result.metadata.newContent;
+            entry.diffOperation = result.metadata.diffOperation;
+          }
+
           setEntries((e) => [...e, entry]);
         },
         onMessageEnd: (usage) => {
@@ -315,11 +331,15 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         contextPercent={contextPercent}
       />
 
-      <OperationLog
-        entries={entries}
-        activeOperation={activeOperation}
-        streamingText={isStreaming ? streamingText : undefined}
-      />
+      {transcriptMode ? (
+        <TranscriptView messages={engineRef.current?.getMessages() ?? []} />
+      ) : (
+        <OperationLog
+          entries={entries}
+          activeOperation={activeOperation}
+          streamingText={isStreaming ? streamingText : undefined}
+        />
+      )}
 
       {pendingPermission && (
         <PermissionInline

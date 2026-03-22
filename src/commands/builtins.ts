@@ -4,6 +4,7 @@ import os from 'node:os';
 import type { SlashCommand, SlashCommandContext } from './registry.js';
 import { MemoryStore } from '../memory/store.js';
 import { rewindToCheckpoint, formatCheckpointList } from '../checkpoints/rewind.js';
+import { formatSettingsDisplay } from '../cli/components/settings-display.js';
 import { parseDuration } from '../cli/cron.js';
 import { pluginCommands } from './plugin-commands.js';
 
@@ -54,14 +55,7 @@ export const configCommand: SlashCommand = {
   name: '/config',
   description: 'Show current configuration',
   async execute(_args: string, ctx: SlashCommandContext): Promise<string> {
-    const { config } = ctx;
-    const lines = [
-      `Provider:     ${config.provider}`,
-      `Model:        ${config.model}`,
-      `Permissions:  ${config.permissions.defaultMode}`,
-      `Max tokens:   ${config.maxTokens}`,
-    ];
-    return lines.join('\n');
+    return formatSettingsDisplay(ctx.config);
   },
 };
 
@@ -153,13 +147,38 @@ export const rewindCommand: SlashCommand = {
       return 'Checkpoint store not available.';
     }
 
+    const all = store.getAll();
+
     if (!args) {
-      return formatCheckpointList(store.getAll());
+      if (all.length === 0) {
+        return 'No checkpoints in this session.';
+      }
+      const header = `Checkpoints (${all.length}):`;
+      const list = all.map((cp) => {
+        const time = new Date(cp.timestamp).toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+        return `  [${cp.id}]  ${time}  ${cp.toolName} ${cp.filePath}`;
+      }).join('\n');
+      return `${header}\n${list}\n\nUsage: /undo <number> or /undo last`;
     }
 
-    const targetId = parseInt(args.trim(), 10);
-    if (isNaN(targetId)) {
-      return `Invalid checkpoint id: "${args.trim()}". Usage: /undo <id>`;
+    const trimmed = args.trim();
+    let targetId: number;
+
+    if (trimmed === 'last') {
+      if (all.length === 0) {
+        return 'No checkpoints to undo.';
+      }
+      targetId = all[all.length - 1].id;
+    } else {
+      targetId = parseInt(trimmed, 10);
+      if (isNaN(targetId)) {
+        return `Invalid checkpoint id: "${trimmed}". Usage: /undo <number> or /undo last`;
+      }
     }
 
     const cp = store.getById(targetId);
@@ -168,7 +187,7 @@ export const rewindCommand: SlashCommand = {
     }
 
     const result = rewindToCheckpoint(store, targetId);
-    const fileList = result.restoredFiles.map((f) => `  • ${f}`).join('\n');
+    const fileList = result.restoredFiles.map((f) => `  \u2022 ${f}`).join('\n');
     return `Rewound ${result.checkpointsRewound} checkpoint(s). Restored files:\n${fileList}`;
   },
 };
