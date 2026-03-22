@@ -13,7 +13,14 @@ export interface HeaderProps {
   sessionId?: string;
 }
 
+// Display name mapping — visual alias for models
+const MODEL_DISPLAY_NAMES: Record<string, string> = {
+  'accounts/fireworks/models/glm-4p7': 'PRIMUS',
+  'glm-4p7': 'PRIMUS',
+};
+
 function shortModelName(name: string): string {
+  if (MODEL_DISPLAY_NAMES[name]) return MODEL_DISPLAY_NAMES[name];
   const prefixes = ['accounts/fireworks/models/', 'accounts/', 'models/'];
   let short = name;
   for (const prefix of prefixes) {
@@ -21,7 +28,7 @@ function shortModelName(name: string): string {
       short = short.slice(prefix.length);
     }
   }
-  return short;
+  return MODEL_DISPLAY_NAMES[short] ?? short;
 }
 
 function formatTokens(usage: TokenUsage): string {
