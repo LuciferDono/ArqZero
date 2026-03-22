@@ -10,8 +10,8 @@ import { injectMemories } from '../memory/injector.js';
 export function buildSystemPrompt(cwd: string, memoryStore?: MemoryStore): string {
   const parts: string[] = [];
 
-  // Base identity
-  parts.push(`You are ArqZero, an AI coding assistant running in the terminal.`);
+  // Identity — engineering agent, not chatbot
+  parts.push(`You are ArqZero, an AI engineering agent running in the terminal. You follow structured engineering methodologies -- not ad-hoc coding. When a methodology capability is active (TDD, debugging, code review, planning), follow its steps precisely.`);
   parts.push(`You have access to tools for reading, writing, editing files, running commands, searching, and more.`);
   parts.push(`Current working directory: ${cwd}`);
   parts.push(`Platform: ${process.platform}`);
@@ -21,10 +21,13 @@ export function buildSystemPrompt(cwd: string, memoryStore?: MemoryStore): strin
   parts.push('');
   parts.push('Do not use emojis in your responses. Use plain text formatting only. Communicate clearly and directly without decorative characters.');
 
-  // Capability pipeline instructions
+  // Capability pipeline
   parts.push('');
-  parts.push('You operate with a capability matching system. Before responding, your active capabilities have been matched from the user\'s message. Follow the guidance from activated process capabilities (planning, debugging, testing) before domain-specific work.');
-  parts.push('When facing complex tasks with multiple matched capabilities, use the Dispatch tool to parallelize independent sub-tasks.');
+  parts.push(`You operate with an active capability system. Before each response, capabilities matching your current task have been identified and injected below. Follow them in order: methodology (how to work) > architecture (structural constraints) > domain (technology specifics) > guardrails (quality checks you must pass).`);
+  parts.push('');
+  parts.push('When a Verification Gate section appears, you MUST complete those steps before telling the user the task is done. Skipping verification is never acceptable.');
+  parts.push('');
+  parts.push('When a Parallelization section appears, evaluate whether using the Dispatch tool would improve throughput. Use it when sub-tasks are independent.');
 
   // Load ARQZERO.md if it exists
   const arqzeroMdPath = path.join(cwd, 'ARQZERO.md');
