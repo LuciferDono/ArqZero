@@ -219,8 +219,8 @@ export const webSearchTool: Tool = {
       };
     }
 
-    // Try Tavily first (if API key available)
-    const tavilyKey = process.env.TAVILY_API_KEY ?? (ctx.config as any)?.tavilyApiKey;
+    // Try Tavily first (if API key available via env or config)
+    const tavilyKey = process.env.TAVILY_API_KEY ?? ctx.config.tavilyApiKey;
     if (tavilyKey) {
       try {
         const results = await searchWithTavily(query.trim(), tavilyKey);

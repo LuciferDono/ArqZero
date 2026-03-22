@@ -17,6 +17,7 @@ export const AppConfigSchema = z.object({
   provider: z.literal('fireworks'),
   model: z.string().default('accounts/fireworks/models/glm-4p7'),
   fireworksApiKey: z.string(),
+  tavilyApiKey: z.string().optional(),
   maxTokens: z.number().default(8192),
   permissions: PermissionsSchema.default({
     defaultMode: 'ask',
