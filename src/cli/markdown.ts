@@ -42,6 +42,13 @@ export function renderMarkdown(text: string): string {
     let rendered = marked.parse(text, { async: false }) as string;
     // Clean up excessive newlines
     rendered = rendered.replace(/\n{3,}/g, '\n\n').replace(/\n+$/, '');
+    // Fix: marked-terminal doesn't handle **bold** inside list items
+    // Convert remaining raw **text** to ANSI bold
+    rendered = rendered.replace(/\*\*([^*]+)\*\*/g, '\x1b[1m$1\x1b[22m');
+    // Convert remaining raw *text* to ANSI italic
+    rendered = rendered.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, '\x1b[3m$1\x1b[23m');
+    // Clean up raw * list markers that marked-terminal missed
+    rendered = rendered.replace(/^(\s*)\* /gm, '$1• ');
     return rendered;
   } catch {
     return text;
