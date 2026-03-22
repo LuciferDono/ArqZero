@@ -54,6 +54,35 @@ function getCwd(): string {
   return cwd.replace(/\\/g, '/');
 }
 
+// Gradient ASCII art logo — each line is a single string for alignment
+const LOGO_LINES = [
+  '   ▄▀▀▄ █▀▀▄ █▀▀█ ▀▀█ █▀▀ █▀▀▄ █▀▀█',
+  '   █▀▀█ █▄▄▀ █ ▄▀  ▄▀ █▀▀ █▄▄▀ █  █',
+  '   ▀  ▀ ▀ ▀▀  ▀▀▀ █▄▄ ▀▀▀ ▀ ▀▀ ▀▀▀▀',
+];
+
+// Color each character with a gradient sweep
+function Logo() {
+  const colors = ['#FF6B00', '#FF8C00', '#FFB800', '#FFD54F', '#FFF176', '#FFD54F', '#FFB800', '#FF8C00'];
+
+  return (
+    <Box flexDirection="column">
+      {LOGO_LINES.map((line, lineIdx) => (
+        <Box key={lineIdx}>
+          {line.split('').map((char, i) => {
+            const colorIdx = Math.floor((i / line.length) * colors.length);
+            return (
+              <Text key={i} color={colors[colorIdx]} bold>
+                {char}
+              </Text>
+            );
+          })}
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
 export function Header({ modelName, tokenUsage, costEstimate, contextPercent, sessionId }: HeaderProps) {
   const user = getUsername();
   const model = shortModelName(modelName);
@@ -68,33 +97,42 @@ export function Header({ modelName, tokenUsage, costEstimate, contextPercent, se
     stats.push(formatCost(costEstimate));
   }
   if (contextPercent > 0) {
-    const ctxColor = contextPercent > 80 ? 'red' : contextPercent > 60 ? 'yellow' : 'green';
     stats.push(`ctx ${contextPercent}%`);
   }
 
   return (
     <Box flexDirection="column" marginBottom={1}>
-      {/* Top bar: brand + model + stats */}
+      {/* Logo */}
       <Box>
         <Box flexGrow={1}>
-          <Text color={THEME.primary} bold>{THEME.diamond} {THEME.appName}</Text>
-          <Text color={THEME.dim}> v{THEME.version}</Text>
-          <Text color={THEME.dim}>  {THEME.pipe} </Text>
-          <Text color={THEME.info}>{model}</Text>
-          <Text color={THEME.dim}>  {THEME.pipe} </Text>
-          <Text color={THEME.dim}>{user}@</Text>
-          <Text color={THEME.text}>{cwd}</Text>
+          <Logo />
         </Box>
-        {stats.length > 0 && (
+        {/* Right-aligned info panel next to logo */}
+        <Box flexDirection="column" alignItems="flex-end" justifyContent="flex-end">
           <Box>
-            <Text color={THEME.dim}>{stats.join(' │ ')}</Text>
+            <Text color={THEME.dim}>{user}</Text>
+            <Text color={THEME.primary}> @ </Text>
+            <Text color={THEME.text}>{cwd}</Text>
           </Box>
-        )}
+          <Box>
+            <Text color={THEME.dim}>model </Text>
+            <Text color={THEME.info} bold>{model}</Text>
+          </Box>
+          {stats.length > 0 && (
+            <Box>
+              <Text color={THEME.dim}>{stats.join('  │  ')}</Text>
+            </Box>
+          )}
+        </Box>
       </Box>
 
       {/* Separator */}
       <Box>
-        <Text color={THEME.dim}>{'━'.repeat(Math.min(process.stdout.columns || 80, 120))}</Text>
+        <Text color="#FF8C00">{'━'}</Text>
+        <Text color="#FFB800">{'━━'}</Text>
+        <Text color="#FFD54F">{'━━━'}</Text>
+        <Text color="#FFF176">{'━━━━'}</Text>
+        <Text color={THEME.dim}>{'━'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 10))}</Text>
       </Box>
     </Box>
   );
