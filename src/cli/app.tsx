@@ -335,6 +335,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           toolRegistry: registry,
           tokenUsage: tokenUsage ? { inputTokens: tokenUsage.inputTokens, outputTokens: tokenUsage.outputTokens } : undefined,
           costEstimate,
+          sessionId: sessionRef.current?.id,
           messages: engineRef.current?.getMessages(),
           cronManager: cronManagerRef.current ?? undefined,
           onModelChange: (m: string) => { config.model = m; setModelName(m); },

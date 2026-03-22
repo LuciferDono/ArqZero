@@ -10,6 +10,9 @@ import {
   loadSession,
   sessionExists,
   listSessions,
+  deleteSession,
+  getSessionInfo,
+  listSessionsWithInfo,
 } from './history.js';
 import type { CompactionSnapshot } from './history.js';
 
@@ -138,5 +141,70 @@ describe('Session History', () => {
 
     appendMessage('exists', { role: 'user', content: 'Hi' }, tmpDir);
     assert.equal(sessionExists('exists', tmpDir), true);
+  });
+
+  it('should delete an existing session', () => {
+    appendMessage('to-delete', { role: 'user', content: 'Hi' }, tmpDir);
+    assert.equal(sessionExists('to-delete', tmpDir), true);
+
+    const result = deleteSession('to-delete', tmpDir);
+    assert.equal(result, true);
+    assert.equal(sessionExists('to-delete', tmpDir), false);
+  });
+
+  it('should return false when deleting non-existent session', () => {
+    const result = deleteSession('does-not-exist', tmpDir);
+    assert.equal(result, false);
+  });
+
+  it('should get session info with message count and size', () => {
+    appendMessage('info-test', { role: 'user', content: 'Hello' }, tmpDir);
+    appendMessage('info-test', { role: 'assistant', content: 'Hi!' }, tmpDir);
+    appendMessage('info-test', { role: 'user', content: 'How are you?' }, tmpDir);
+
+    const info = getSessionInfo('info-test', tmpDir);
+    assert.ok(info, 'getSessionInfo should return info');
+    assert.equal(info!.id, 'info-test');
+    assert.equal(info!.messageCount, 3);
+    assert.equal(info!.hasCompaction, false);
+    assert.ok(info!.sizeBytes > 0, 'sizeBytes should be positive');
+    assert.ok(info!.lastModified instanceof Date, 'lastModified should be a Date');
+  });
+
+  it('should detect compaction in session info', () => {
+    appendMessage('compact-info', { role: 'user', content: 'A' }, tmpDir);
+    const snapshot: CompactionSnapshot = {
+      summary: 'Summary',
+      preservedMessages: [{ role: 'user', content: 'A' }],
+      compactedCount: 1,
+    };
+    appendCompaction('compact-info', snapshot, tmpDir);
+
+    const info = getSessionInfo('compact-info', tmpDir);
+    assert.ok(info);
+    assert.equal(info!.hasCompaction, true);
+    assert.equal(info!.messageCount, 1);
+  });
+
+  it('should return null for non-existent session info', () => {
+    const info = getSessionInfo('no-such-session', tmpDir);
+    assert.equal(info, null);
+  });
+
+  it('should list sessions with info sorted by date', () => {
+    appendMessage('older', { role: 'user', content: 'Old' }, tmpDir);
+    // Small delay to ensure different mtime
+    const sessionsDir = path.join(tmpDir, 'sessions');
+    const olderPath = path.join(sessionsDir, 'older.jsonl');
+    const pastDate = new Date(Date.now() - 60000);
+    fs.utimesSync(olderPath, pastDate, pastDate);
+
+    appendMessage('newer', { role: 'user', content: 'New' }, tmpDir);
+
+    const summaries = listSessionsWithInfo(tmpDir);
+    assert.equal(summaries.length, 2);
+    // Newest first
+    assert.equal(summaries[0].id, 'newer');
+    assert.equal(summaries[1].id, 'older');
   });
 });
