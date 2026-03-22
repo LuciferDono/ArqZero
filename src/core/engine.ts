@@ -12,7 +12,7 @@ import { compactMessages, buildCompactedMessages } from './compaction.js';
 import { ToolExecutor } from '../tools/executor.js';
 import { userMessage, assistantMessage, toolResultMessage } from './message.js';
 import { CAPABILITIES } from '../registry/capabilities.js';
-import { matchCapabilities, selectCapabilities } from '../registry/matcher.js';
+import { matchCapabilities, selectCapabilities, resolveDependencies } from '../registry/matcher.js';
 import type { MatchResult } from '../registry/matcher.js';
 import { buildCapabilityContext } from '../registry/injector.js';
 import { appendMessage, appendCompaction } from '../session/history.js';
@@ -67,7 +67,8 @@ export class ConversationEngine {
 
     // Match capabilities from user message
     const allMatches = matchCapabilities(text, CAPABILITIES);
-    const selected = selectCapabilities(allMatches);
+    const capped = selectCapabilities(allMatches);
+    const selected = resolveDependencies(capped, CAPABILITIES, 8);
     this.activeCapabilityContext = buildCapabilityContext(selected);
     if (selected.length > 0) {
       callbacks.onCapabilitiesMatched?.(selected);
