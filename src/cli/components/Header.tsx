@@ -61,16 +61,10 @@ function getCwd(): string {
   return cwd.replace(/\\/g, '/');
 }
 
-// Large-format block pixel art logo — retro LCD/terminal style
-// Only "ARQ" rendered large, dominant. Hollow interior segments.
+// Smooth compact logo — modern, minimal half-block style
 const LOGO_LINES = [
-  ' ╔═══╗   ╔═══╗   ╔═══╗  ',
-  ' ║   ║   ║   ║   ║   ║  ',
-  ' ║   ║   ║   ║   ║   ║  ',
-  ' ╠═══╣   ╠═══╝   ║   ║  ',
-  ' ║   ║   ║  ╚╗   ║  ╔╝  ',
-  ' ║   ║   ║   ║   ╚══╝▄  ',
-  ' ╚═══╝   ╚═══╝    ▀▀▀   ',
+  ' ▄▀█ █▀█ █▀█ ▀█ █▀▀ █▀█ █▀█',
+  ' █▀█ █▀▄ ▀▀█ █▄ ██▄ █▀▄ █▄█',
 ];
 
 const LOGO_COLOR = '#00d4aa';
@@ -150,8 +144,8 @@ export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: 
 
       {/* Separator */}
       <Box>
-        <Text color={LOGO_COLOR}>{'━━━━━'}</Text>
-        <Text color="#0a3d32">{'━'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 5))}</Text>
+        <Text color={LOGO_COLOR}>{'─'}</Text>
+        <Text color="#0a3d32">{'─'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 1))}</Text>
       </Box>
     </Box>
   );
