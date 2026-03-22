@@ -21,15 +21,39 @@ export const helpCommand: SlashCommand = {
   },
 };
 
+// Available models — display name → full model ID
+const AVAILABLE_MODELS: Record<string, string> = {
+  'primus':      'accounts/fireworks/models/glm-4p7',
+  'primus edge': 'accounts/fireworks/models/glm-5',
+  'glm-4p7':     'accounts/fireworks/models/glm-4p7',
+  'glm-5':       'accounts/fireworks/models/glm-5',
+};
+
+const MODEL_LIST = [
+  { id: 'accounts/fireworks/models/glm-4p7', name: 'PRIMUS', desc: 'GLM-4.7 (400B MoE, 200K ctx)' },
+  { id: 'accounts/fireworks/models/glm-5', name: 'PRIMUS Edge', desc: 'GLM-5 (latest, enhanced reasoning)' },
+];
+
 export const modelCommand: SlashCommand = {
   name: '/model',
   description: 'Show or change current model',
   async execute(args: string, ctx: SlashCommandContext): Promise<string> {
     if (!args) {
-      return `Current model: ${ctx.config.model}`;
+      const current = ctx.config.model;
+      const lines = ['Available models:'];
+      for (const m of MODEL_LIST) {
+        const active = m.id === current ? ' (active)' : '';
+        lines.push(`  ${m.name} — ${m.desc}${active}`);
+      }
+      lines.push('');
+      lines.push('Usage: /model <name>  (e.g. /model primus edge)');
+      return lines.join('\n');
     }
-    ctx.onModelChange?.(args);
-    return `Model set to: ${args}`;
+    const key = args.trim().toLowerCase();
+    const modelId = AVAILABLE_MODELS[key] ?? args.trim();
+    ctx.onModelChange?.(modelId);
+    const displayName = MODEL_LIST.find(m => m.id === modelId)?.name ?? modelId;
+    return `Model set to: ${displayName}`;
   },
 };
 

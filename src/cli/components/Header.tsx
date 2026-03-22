@@ -17,6 +17,8 @@ export interface HeaderProps {
 const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'accounts/fireworks/models/glm-4p7': 'PRIMUS',
   'glm-4p7': 'PRIMUS',
+  'accounts/fireworks/models/glm-5': 'PRIMUS Edge',
+  'glm-5': 'PRIMUS Edge',
 };
 
 function shortModelName(name: string): string {

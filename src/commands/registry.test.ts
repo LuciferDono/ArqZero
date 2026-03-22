@@ -251,7 +251,7 @@ describe('Built-in commands', () => {
       const output = await modelCommand.execute('', ctx);
 
       assert.ok(output);
-      assert.ok(output.includes('accounts/fireworks/models/glm-4p7'));
+      assert.ok(output.includes('PRIMUS'));
     });
 
     it('should call onModelChange when args given', async () => {
