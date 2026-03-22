@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { Tool, ToolContext, ToolResult } from '../types.js';
+import { guardPath } from '../path-guard.js';
 
 interface WriteInput {
   file_path: string;
@@ -20,26 +21,33 @@ export const writeTool: Tool = {
   },
   permissionLevel: 'ask',
 
-  async execute(input: unknown, _ctx: ToolContext): Promise<ToolResult> {
+  async execute(input: unknown, ctx: ToolContext): Promise<ToolResult> {
     const { file_path, content } = input as WriteInput;
+
+    let resolvedPath: string;
+    try {
+      resolvedPath = guardPath(file_path, ctx.cwd);
+    } catch (err: any) {
+      return { content: err.message, isError: true };
+    }
 
     // Capture old content for diff display
     let oldContent = '';
-    if (existsSync(file_path)) {
+    if (existsSync(resolvedPath)) {
       try {
-        oldContent = readFileSync(file_path, 'utf-8');
+        oldContent = readFileSync(resolvedPath, 'utf-8');
       } catch {
         // File exists but unreadable — treat as new
       }
     }
 
-    mkdirSync(dirname(file_path), { recursive: true });
-    writeFileSync(file_path, content, 'utf-8');
+    mkdirSync(dirname(resolvedPath), { recursive: true });
+    writeFileSync(resolvedPath, content, 'utf-8');
 
     return {
-      content: `Wrote ${content.length} characters to ${file_path}`,
+      content: `Wrote ${content.length} characters to ${resolvedPath}`,
       metadata: {
-        filePath: file_path,
+        filePath: resolvedPath,
         oldContent,
         newContent: content,
         diffOperation: 'write',
