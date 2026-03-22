@@ -1,7 +1,7 @@
 // src/cli/components/OperationEntry.tsx
 import React from 'react';
 import { Box, Text } from 'ink';
-import { THEME } from '../theme.js';
+import { THEME, COLORS } from '../theme.js';
 import { renderMarkdown } from '../markdown.js';
 import { DiffView } from './DiffView.js';
 
@@ -49,10 +49,13 @@ export function OperationEntry({ entry }: OperationEntryProps) {
       const summary = entry.content;
       const elapsedStr = entry.elapsed != null ? formatElapsed(entry.elapsed) : '';
       const isSuccess = entry.success !== false;
+      const isDispatch = entry.toolName === 'Dispatch';
       const dotColor = isSuccess ? THEME.success : THEME.error;
-      const dotChar = isSuccess ? THEME.successDot : THEME.failureMark;
+      const dotChar = isDispatch
+        ? (isSuccess ? '\u25C9' : '\u25D0')   // ◉ completed, ◐ running
+        : (isSuccess ? THEME.successDot : THEME.failureMark);
       const isBash = entry.toolName === 'Bash';
-      const borderColor = isBash ? THEME.bashBorder : THEME.toolBorder;
+      const borderColor = isDispatch ? COLORS.info : isBash ? THEME.bashBorder : THEME.toolBorder;
 
       return (
         <Box flexDirection="column" marginBottom={1}>

@@ -26,6 +26,7 @@ export interface EngineCallbacks {
   onMessageEnd?: (usage: TokenUsage) => void;
   onCompaction?: (result: CompactionResult) => void;
   onCapabilitiesMatched?: (matches: MatchResult[]) => void;
+  onContextWarning?: (percent: number, action: 'warning' | 'compacting' | 'compacted') => void;
   onError?: (error: Error) => void;
 }
 
@@ -84,34 +85,49 @@ export class ConversationEngine {
 
     await this.runConversationLoop(callbacks);
 
-    // Check if compaction is needed after conversation completes
+    // Check context health after conversation completes
     const { contextWindow } = this.options;
-    if (contextWindow?.needsCompaction()) {
-      const preserveCount = contextWindow.getPreserveCount(this.messages.length);
-      const result = await compactMessages(
-        this.messages,
-        preserveCount,
-        this.options.provider,
-        this.options.model,
-      );
-      if (result.compactedMessageCount > 0) {
-        const preserved = this.messages.slice(
-          this.messages.length - result.preservedMessageCount,
+    if (contextWindow) {
+      const usage = contextWindow.getUsageSummary();
+
+      // Warn at 90% (critical)
+      if (contextWindow.isCritical() && !contextWindow.needsCompaction()) {
+        callbacks.onContextWarning?.(usage.percent, 'warning');
+      }
+
+      // Compact at 95%
+      if (contextWindow.needsCompaction()) {
+        callbacks.onContextWarning?.(usage.percent, 'compacting');
+
+        const preserveCount = contextWindow.getPreserveCount(this.messages.length);
+        const result = await compactMessages(
+          this.messages,
+          preserveCount,
+          this.options.provider,
+          this.options.model,
         );
-        this.messages = buildCompactedMessages(result.summary, preserved);
-        this.options.session?.recordCompaction();
+        if (result.compactedMessageCount > 0) {
+          const preserved = this.messages.slice(
+            this.messages.length - result.preservedMessageCount,
+          );
+          this.messages = buildCompactedMessages(result.summary, preserved);
+          this.options.session?.recordCompaction();
 
-        // Persist compaction
-        if (this.options.session) {
-          const snapshot: CompactionSnapshot = {
-            summary: result.summary,
-            preservedMessages: preserved,
-            compactedCount: result.compactedMessageCount,
-          };
-          appendCompaction(this.options.session.id, snapshot);
+          // Persist compaction
+          if (this.options.session) {
+            const snapshot: CompactionSnapshot = {
+              summary: result.summary,
+              preservedMessages: preserved,
+              compactedCount: result.compactedMessageCount,
+            };
+            appendCompaction(this.options.session.id, snapshot);
+          }
+
+          // Report post-compaction state
+          const postUsage = contextWindow.getUsageSummary();
+          callbacks.onContextWarning?.(postUsage.percent, 'compacted');
+          callbacks.onCompaction?.(result);
         }
-
-        callbacks.onCompaction?.(result);
       }
     }
   }

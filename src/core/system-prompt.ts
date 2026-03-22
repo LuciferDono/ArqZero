@@ -29,6 +29,24 @@ export function buildSystemPrompt(cwd: string, memoryStore?: MemoryStore): strin
   parts.push('');
   parts.push('When a Parallelization section appears, evaluate whether using the Dispatch tool would improve throughput. Use it when sub-tasks are independent.');
 
+  // Subagent dispatch guidance
+  parts.push('');
+  parts.push('## Subagent Dispatch');
+  parts.push('');
+  parts.push('You can spawn autonomous sub-agents using the Dispatch tool for parallel work. Use it when:');
+  parts.push('- The task involves 3+ independent files or modules');
+  parts.push('- The user asks you to work on multiple things simultaneously');
+  parts.push("- An orchestration capability's Parallelization section recommends it");
+  parts.push('- You need to research and implement at the same time');
+  parts.push('');
+  parts.push('When dispatching, create detailed task-specific prompts for each agent. Include:');
+  parts.push('- The specific files to read/modify');
+  parts.push('- The exact changes to make');
+  parts.push('- Test commands to verify the work');
+  parts.push('- Context from the current conversation that the sub-agent needs');
+  parts.push('');
+  parts.push('Show each agent\'s purpose briefly before dispatching. After all agents complete, verify the combined result.');
+
   // Load ARQZERO.md if it exists
   const arqzeroMdPath = path.join(cwd, 'ARQZERO.md');
   if (fs.existsSync(arqzeroMdPath)) {

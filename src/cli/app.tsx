@@ -394,6 +394,11 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           }
           toolStartTimesRef.current.set(id, Date.now());
           setActiveOperation({ name, startTime: Date.now() });
+
+          // Dispatch: show dispatching entry immediately
+          if (name === 'Dispatch') {
+            setEntries((e) => [...e, { type: 'system', content: 'Dispatching sub-agent...' }]);
+          }
         },
         onToolEnd: (id, name, result, toolInput) => {
           setActiveOperation(null);
@@ -404,7 +409,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           const summary = summarizeToolResult(name, result, toolInput);
           const entry: OperationEntryData = {
             type: 'tool',
-            content: summary,
+            content: name === 'Dispatch' ? `Agent complete: ${summary}` : summary,
             toolName: name,
             elapsed,
           };
@@ -438,6 +443,24 @@ export default function App({ provider, config, registry, systemPrompt, commandR
             ...e,
             { type: 'system', content: `${verb} ${names.join(' + ')}` },
           ]);
+        },
+        onContextWarning: (percent, action) => {
+          if (action === 'warning') {
+            setEntries((e) => [...e, {
+              type: 'system',
+              content: `Context at ${percent}% -- approaching limit`,
+            }]);
+          } else if (action === 'compacting') {
+            setEntries((e) => [...e, {
+              type: 'system',
+              content: `Context full -- saving session and compacting...`,
+            }]);
+          } else if (action === 'compacted') {
+            setEntries((e) => [...e, {
+              type: 'system',
+              content: `Context compacted to ${percent}%. Session preserved.`,
+            }]);
+          }
         },
         onCompaction: (result) => {
           setEntries((e) => [...e, {
