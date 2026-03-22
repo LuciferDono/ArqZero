@@ -61,7 +61,7 @@ function createMockTool(
 
 const testToolContext: ToolContext = {
   cwd: process.cwd(),
-  config: { provider: 'cursor' } as any,
+  config: { provider: 'fireworks' } as any,
   promptUser: async () => ({ allowed: true }),
 };
 

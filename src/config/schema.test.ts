@@ -5,34 +5,38 @@ import { AppConfigSchema } from './schema.js';
 describe('AppConfigSchema', () => {
   it('should validate a minimal config', () => {
     const result = AppConfigSchema.safeParse({
-      provider: 'cursor',
+      provider: 'fireworks',
+      fireworksApiKey: 'test-key',
     });
     assert.strictEqual(result.success, true);
   });
 
   it('should apply defaults for missing optional fields', () => {
     const result = AppConfigSchema.safeParse({
-      provider: 'cursor',
+      provider: 'fireworks',
+      fireworksApiKey: 'test-key',
     });
     assert.strictEqual(result.success, true);
     if (result.success) {
       assert.strictEqual(result.data.permissions.defaultMode, 'ask');
       assert.deepStrictEqual(result.data.permissions.alwaysAllow, ['Read', 'Glob', 'Grep']);
-      assert.strictEqual(result.data.model, 'claude-4-sonnet');
+      assert.strictEqual(result.data.model, 'accounts/fireworks/models/llama-v3p3-70b-instruct');
     }
   });
 
   it('should reject invalid provider', () => {
     const result = AppConfigSchema.safeParse({
       provider: 'invalid',
+      fireworksApiKey: 'test-key',
     });
     assert.strictEqual(result.success, false);
   });
 
   it('should validate full config with MCP servers', () => {
     const result = AppConfigSchema.safeParse({
-      provider: 'cursor',
-      model: 'claude-4.5-opus-high',
+      provider: 'fireworks',
+      fireworksApiKey: 'test-key',
+      model: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
       mcpServers: {
         github: {
           command: 'npx',

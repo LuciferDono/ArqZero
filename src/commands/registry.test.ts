@@ -26,8 +26,9 @@ function createMockCommand(overrides: Partial<SlashCommand> = {}): SlashCommand 
 
 function createMockConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
-    provider: 'anthropic',
-    model: 'claude-4-sonnet',
+    provider: 'fireworks',
+    model: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
+    fireworksApiKey: 'test-key',
     maxTokens: 8192,
     permissions: {
       defaultMode: 'ask',
@@ -232,7 +233,7 @@ describe('Built-in commands', () => {
       const output = await modelCommand.execute('', ctx);
 
       assert.ok(output);
-      assert.ok(output.includes('claude-4-sonnet'));
+      assert.ok(output.includes('accounts/fireworks/models/llama-v3p3-70b-instruct'));
     });
 
     it('should call onModelChange when args given', async () => {
@@ -305,8 +306,8 @@ describe('Built-in commands', () => {
       const output = await configCommand.execute('', ctx);
 
       assert.ok(output);
-      assert.ok(output.includes('anthropic'));
-      assert.ok(output.includes('claude-4-sonnet'));
+      assert.ok(output.includes('fireworks'));
+      assert.ok(output.includes('accounts/fireworks/models/llama-v3p3-70b-instruct'));
     });
 
     it('should show permissions mode', async () => {

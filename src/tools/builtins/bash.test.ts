@@ -7,7 +7,7 @@ import type { ToolContext } from '../types.js';
 const ctx: ToolContext = {
   cwd: process.cwd(),
   config: {
-    provider: 'cursor',
+    provider: 'fireworks',
     bash: { defaultTimeout: 30000, maxTimeout: 600000 },
   } as any,
   promptUser: async () => ({ allowed: true }),

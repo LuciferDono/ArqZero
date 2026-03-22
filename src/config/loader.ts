@@ -39,8 +39,8 @@ export function loadConfig(): AppConfig {
   }
 
   // Merge env var overrides
-  if (process.env.ANTHROPIC_API_KEY && !result.data.anthropicApiKey) {
-    result.data.anthropicApiKey = process.env.ANTHROPIC_API_KEY;
+  if (process.env.FIREWORKS_API_KEY && !result.data.fireworksApiKey) {
+    result.data.fireworksApiKey = process.env.FIREWORKS_API_KEY;
   }
 
   return result.data;

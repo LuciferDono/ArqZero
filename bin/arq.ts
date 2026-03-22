@@ -3,8 +3,7 @@ import React from 'react';
 import { render } from 'ink';
 import App from '../src/cli/app.js';
 import { MockAdapter } from '../src/api/mock/adapter.js';
-import { AnthropicAdapter } from '../src/api/anthropic/adapter.js';
-import { CursorAdapter } from '../src/api/cursor/adapter.js';
+import { FireworksAdapter } from '../src/api/fireworks/adapter.js';
 import { configExists, loadConfig } from '../src/config/loader.js';
 import { runInit } from '../src/config/init.js';
 import { createInterface } from 'node:readline';
@@ -34,16 +33,14 @@ async function main() {
   const config = loadConfig();
 
   let provider: LLMProvider;
-  if (config.provider === 'cursor') {
-    const adapter = new CursorAdapter();
+  if (config.fireworksApiKey) {
+    const adapter = new FireworksAdapter(config.fireworksApiKey);
     if (await adapter.isAvailable()) {
       provider = adapter;
     } else {
-      console.log('Cursor not available. Falling back to mock adapter.');
+      console.log('Fireworks API key not available. Falling back to mock adapter.');
       provider = new MockAdapter();
     }
-  } else if (config.provider === 'anthropic' && config.anthropicApiKey) {
-    provider = new AnthropicAdapter(config.anthropicApiKey);
   } else {
     provider = new MockAdapter();
   }

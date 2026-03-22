@@ -12,7 +12,7 @@ const tmpDir = join(tmpdir(), `glob-test-${randomUUID()}`);
 
 const ctx: ToolContext = {
   cwd: tmpDir,
-  config: { provider: 'cursor' } as any,
+  config: { provider: 'fireworks' } as any,
   promptUser: async () => ({ allowed: true }),
 };
 

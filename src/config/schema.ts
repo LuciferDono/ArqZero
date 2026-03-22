@@ -14,9 +14,9 @@ export const PermissionsSchema = z.object({
 });
 
 export const AppConfigSchema = z.object({
-  provider: z.enum(['cursor', 'anthropic']),
-  model: z.string().default('claude-4-sonnet'),
-  anthropicApiKey: z.string().optional(),
+  provider: z.literal('fireworks'),
+  model: z.string().default('accounts/fireworks/models/llama-v3p3-70b-instruct'),
+  fireworksApiKey: z.string(),
   maxTokens: z.number().default(8192),
   permissions: PermissionsSchema.default({
     defaultMode: 'ask',
