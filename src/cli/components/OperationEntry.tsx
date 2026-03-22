@@ -2,6 +2,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { THEME } from '../theme.js';
+import { renderMarkdown } from '../markdown.js';
 
 export type EntryType = 'user' | 'text' | 'tool' | 'error' | 'system';
 
@@ -34,7 +35,7 @@ export function OperationEntry({ entry }: OperationEntryProps) {
     case 'text':
       return (
         <Box marginBottom={1} flexDirection="column">
-          <Text color={THEME.text}>{entry.content}</Text>
+          <Text color={THEME.text}>{renderMarkdown(entry.content)}</Text>
         </Box>
       );
 
