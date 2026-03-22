@@ -1,11 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import type { MemoryStore } from '../memory/store.js';
+import { injectMemories } from '../memory/injector.js';
 
 /**
  * Build the system prompt by loading ARQZERO.md from the current working directory
  * (like CLAUDE.md in Claude Code).
  */
-export function buildSystemPrompt(cwd: string): string {
+export function buildSystemPrompt(cwd: string, memoryStore?: MemoryStore): string {
   const parts: string[] = [];
 
   // Base identity
@@ -48,5 +50,11 @@ export function buildSystemPrompt(cwd: string): string {
     dir = parent;
   }
 
-  return parts.join('\n');
+  let prompt = parts.join('\n');
+
+  if (memoryStore) {
+    prompt = injectMemories(prompt, memoryStore);
+  }
+
+  return prompt;
 }

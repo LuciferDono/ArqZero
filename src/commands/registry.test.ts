@@ -420,8 +420,8 @@ describe('Built-in commands', () => {
   });
 
   describe('builtinCommands array', () => {
-    it('should contain all 7 built-in commands', () => {
-      assert.equal(builtinCommands.length, 7);
+    it('should contain all 8 built-in commands', () => {
+      assert.equal(builtinCommands.length, 8);
     });
 
     it('should have unique names', () => {

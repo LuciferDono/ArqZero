@@ -1,4 +1,5 @@
 import type { SlashCommand, SlashCommandContext } from './registry.js';
+import { MemoryStore } from '../memory/store.js';
 
 export const helpCommand: SlashCommand = {
   name: '/help',
@@ -107,6 +108,36 @@ export const skillCommand: SlashCommand = {
   },
 };
 
+export const memoryCommand: SlashCommand = {
+  name: '/memory',
+  description: 'List memories or show a specific memory',
+  async execute(args: string, _ctx: SlashCommandContext): Promise<string> {
+    const store = new MemoryStore();
+
+    if (!args) {
+      const all = store.loadAll();
+      if (all.length === 0) {
+        return 'No memories stored.';
+      }
+      const lines = all.map((m) => `  ${m.name} (${m.type}): ${m.description}`);
+      return `Stored memories:\n${lines.join('\n')}`;
+    }
+
+    const mem = store.load(args.trim());
+    if (!mem) {
+      return `Memory "${args.trim()}" not found.`;
+    }
+
+    return [
+      `Name:        ${mem.name}`,
+      `Type:        ${mem.type}`,
+      `Description: ${mem.description}`,
+      ``,
+      mem.content,
+    ].join('\n');
+  },
+};
+
 export const builtinCommands: SlashCommand[] = [
   helpCommand,
   modelCommand,
@@ -115,4 +146,5 @@ export const builtinCommands: SlashCommand[] = [
   configCommand,
   quitCommand,
   skillCommand,
+  memoryCommand,
 ];
