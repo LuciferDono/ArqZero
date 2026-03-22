@@ -61,7 +61,7 @@ function getCwd(): string {
   return cwd.replace(/\\/g, '/');
 }
 
-// ARQ + ZERO side by side, ZERO scaled to match ARQ's 5-row height
+// ARQ + ZERO side by side, proper spacing for Z and E
 const LOGO_ARQ = [
   ' ░█████╗░██████╗░░██████╗░',
   ' ██╔══██╗██╔══██╗██╔═══██╗',
@@ -71,15 +71,15 @@ const LOGO_ARQ = [
 ];
 
 const LOGO_ZERO = [
-  '░████╗░███╗░██████╗░█████╗░',
-  '╚══██║██╔═╝ ██╔══██╗██╔══██╗',
-  '  ██╔╝████╗ ██████╔╝██║  ██║',
-  ' ██╔╝ ██╔═╝ ██╔══██╗╚█████╔╝',
-  '████║ ████╗ ╚═╝  ╚═╝ ╚════╝',
+  '░█████╗ ██████╗ ██████╗░ ░█████╗░',
+  '╚══███║ ██╔═══╝ ██╔══██╗ ██╔══██╗',
+  '  ███╔╝ █████╗  ██████╔╝ ██║  ██║',
+  ' ███╔╝  ██╔══╝  ██╔══██╗ ╚█████╔╝',
+  '███████╗██████╗ ╚═╝  ╚═╝  ╚════╝ ',
 ];
 
-const COLOR_CYAN = '#00e5c0';
-const COLOR_PURPLE = '#a78bfa';
+// Claude's orange
+const COLOR_LOGO = '#D77757';
 const COLOR_MUTED = '#2d3a55';
 
 function LogoBlock() {
@@ -88,14 +88,13 @@ function LogoBlock() {
     <Box flexDirection="column">
       {Array.from({ length: lines }, (_, i) => (
         <Box key={i}>
-          <Text color={COLOR_CYAN} bold>{LOGO_ARQ[i]}</Text>
-          <Text color={COLOR_CYAN} bold>  {LOGO_ZERO[i] ?? ''}</Text>
+          <Text color={COLOR_LOGO} bold>{LOGO_ARQ[i]}</Text>
+          <Text color={COLOR_LOGO} bold>  {LOGO_ZERO[i] ?? ''}</Text>
         </Box>
       ))}
       <Box>
-        <Text color={COLOR_CYAN}> ─────── </Text>
-        <Text color={COLOR_PURPLE}>ArqZero</Text>
-        <Text color={COLOR_MUTED}> v{THEME.version}</Text>
+        <Text color={COLOR_LOGO}> ─────── </Text>
+        <Text color={COLOR_MUTED}>v{THEME.version}</Text>
       </Box>
     </Box>
   );
@@ -132,12 +131,12 @@ export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: 
       <Box>
         <Box flexGrow={1}>
           <Text color="#888888">{user}</Text>
-          <Text color={COLOR_CYAN}> ◈ </Text>
+          <Text color={COLOR_LOGO}> ◈ </Text>
           <Text color={THEME.text}>{cwd}</Text>
         </Box>
         <Box>
           <Text color="#444444">▐</Text>
-          <Text color="#1a1a1a" backgroundColor={COLOR_CYAN} bold> {model} </Text>
+          <Text color="#1a1a1a" backgroundColor={COLOR_LOGO} bold> {model} </Text>
           <Text color="#444444">▌</Text>
           {tokenUsage && (
             <Text color={THEME.dim}>  {formatTokens(tokenUsage)} tok</Text>
@@ -153,7 +152,7 @@ export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: 
 
       {/* Separator */}
       <Box>
-        <Text color={COLOR_CYAN}>{'─'}</Text>
+        <Text color={COLOR_LOGO}>{'─'}</Text>
         <Text color={COLOR_MUTED}>{'─'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 1))}</Text>
       </Box>
     </Box>
