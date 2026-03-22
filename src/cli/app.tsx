@@ -10,6 +10,7 @@ import { ConversationEngine } from '../core/engine.js';
 import { PermissionManager } from '../permissions/manager.js';
 import { Session } from '../session/session.js';
 import { ContextWindow } from '../session/context.js';
+import type { SlashCommandRegistry, SlashCommandContext } from '../commands/registry.js';
 import {
   Header,
   OperationLog,
@@ -17,11 +18,14 @@ import {
   PermissionInline,
 } from './components/index.js';
 import type { OperationEntryData } from './components/index.js';
+import { useInputHistory } from './hooks/useInputHistory.js';
 
 interface AppProps {
   provider: LLMProvider;
   config: AppConfig;
   registry: ToolRegistry;
+  systemPrompt?: string;
+  commandRegistry?: SlashCommandRegistry;
 }
 
 interface PendingPermission {
@@ -78,7 +82,7 @@ function summarizeToolResult(name: string, result: ToolResult): string {
   return content.length > 60 ? content.slice(0, 57) + '...' : content;
 }
 
-export default function App({ provider, config, registry }: AppProps) {
+export default function App({ provider, config, registry, systemPrompt, commandRegistry }: AppProps) {
   const [input, setInput] = useState('');
   const [entries, setEntries] = useState<OperationEntryData[]>([]);
   const [streamingText, setStreamingText] = useState('');
@@ -89,6 +93,7 @@ export default function App({ provider, config, registry }: AppProps) {
   const [contextPercent, setContextPercent] = useState(0);
   const [pendingPermission, setPendingPermission] = useState<PendingPermission | null>(null);
   const { exit } = useApp();
+  const history = useInputHistory();
 
   const engineRef = useRef<ConversationEngine | null>(null);
   const contextWindowRef = useRef<ContextWindow | null>(null);
@@ -112,6 +117,7 @@ export default function App({ provider, config, registry }: AppProps) {
       provider,
       registry,
       model: config.model,
+      systemPrompt,
       maxTokens: config.maxTokens,
       toolContext,
       permissions: permissionManager,
@@ -132,14 +138,68 @@ export default function App({ provider, config, registry }: AppProps) {
       engineRef.current?.abort();
       exit();
     }
+
+    // Ctrl+L: clear entries
+    if (key.ctrl && _input === 'l') {
+      setEntries([]);
+      return;
+    }
+
+    // Escape: cancel current input or abort streaming
+    if (key.escape) {
+      if (isStreaming) {
+        engineRef.current?.abort();
+      } else {
+        setInput('');
+      }
+      return;
+    }
+
+    // Up arrow: navigate history
+    if (key.upArrow && !isStreaming && !pendingPermission) {
+      const prev = history.navigateUp(input);
+      setInput(prev);
+      return;
+    }
+
+    // Down arrow: navigate history
+    if (key.downArrow && !isStreaming && !pendingPermission) {
+      const next = history.navigateDown();
+      setInput(next);
+      return;
+    }
   });
 
   const handleSubmit = async (value: string) => {
     if (!value.trim()) return;
 
-    if (value === '/quit' || value === '/exit') {
-      exit();
-      return;
+    // Push to history before processing
+    history.push(value);
+
+    // Check if it's a slash command
+    if (commandRegistry && commandRegistry.isSlashCommand(value)) {
+      const { name, args } = commandRegistry.parse(value);
+      const cmd = commandRegistry.get(name);
+      if (cmd) {
+        const slashContext: SlashCommandContext = {
+          config,
+          commandRegistry,
+          onClear: () => setEntries([]),
+          onQuit: () => exit(),
+        };
+        setInput('');
+        setEntries((e) => [...e, { type: 'user', content: value }]);
+        try {
+          const result = await cmd.execute(args, slashContext);
+          if (result) {
+            setEntries((e) => [...e, { type: 'system', content: result }]);
+          }
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          setEntries((e) => [...e, { type: 'error', content: msg }]);
+        }
+        return;
+      }
     }
 
     setInput('');

@@ -12,6 +12,9 @@ import { ToolRegistry } from '../src/tools/registry.js';
 import { builtinTools } from '../src/tools/builtins/index.js';
 import { McpClientManager } from '../src/mcp/client.js';
 import { registerMcpTools } from '../src/mcp/bridge.js';
+import { buildSystemPrompt } from '../src/core/system-prompt.js';
+import { SlashCommandRegistry } from '../src/commands/registry.js';
+import { builtinCommands } from '../src/commands/builtins.js';
 
 async function promptUser(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -74,7 +77,14 @@ async function main() {
     mcpManager.disconnectAll().catch(() => {});
   });
 
-  render(React.createElement(App, { provider, config, registry }));
+  const systemPrompt = buildSystemPrompt(process.cwd());
+
+  const commandRegistry = new SlashCommandRegistry();
+  for (const cmd of builtinCommands) {
+    commandRegistry.register(cmd);
+  }
+
+  render(React.createElement(App, { provider, config, registry, systemPrompt, commandRegistry }));
 }
 
 main().catch((err) => {
