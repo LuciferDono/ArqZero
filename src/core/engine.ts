@@ -18,6 +18,7 @@ import { buildCapabilityContext } from '../registry/injector.js';
 import { appendMessage, appendCompaction } from '../session/history.js';
 import type { CompactionSnapshot } from '../session/history.js';
 import { routeModel } from '../config/model-router.js';
+import { incrementUsage } from '../auth/usage.js';
 
 export interface EngineCallbacks {
   onTextDelta?: (text: string) => void;
@@ -93,6 +94,9 @@ export class ConversationEngine {
     if (routing.model !== this.options.model) {
       callbacks.onModelRouted?.(routing.model, routing.reason);
     }
+
+    // Track usage for rate limiting
+    incrementUsage();
 
     const userMsg = userMessage(text);
     this.messages.push(userMsg);

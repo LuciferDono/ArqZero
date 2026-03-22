@@ -263,17 +263,18 @@ describe('selectCapabilities', () => {
     assert.equal(selected.length, 2);
   });
 
-  it('defaults to max 8', () => {
-    const many: Capability[] = Array.from({ length: 12 }, (_, i) => ({
+  it('defaults to tier-based limit (free = 10)', () => {
+    const many: Capability[] = Array.from({ length: 15 }, (_, i) => ({
       name: `cap-${i}`,
       description: `Cap ${i}`,
       triggers: [`kw${i}`],
       category: 'tool' as const,
     }));
-    const msg = Array.from({ length: 12 }, (_, i) => `kw${i}`).join(' ');
+    const msg = Array.from({ length: 15 }, (_, i) => `kw${i}`).join(' ');
     const matches = matchCapabilities(msg, many);
     const selected = selectCapabilities(matches);
-    assert.ok(selected.length <= 8);
+    assert.ok(selected.length <= 10);
+    assert.equal(selected.length, 10);
   });
 
   it('returns all if fewer than max', () => {

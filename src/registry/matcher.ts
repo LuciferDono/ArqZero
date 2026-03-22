@@ -1,4 +1,6 @@
 import type { Capability, CapabilityCategory } from './capabilities.js';
+import { getCapabilityLimit } from '../auth/gates.js';
+import { runtime } from '../config/runtime.js';
 
 export interface MatchResult {
   capability: Capability;
@@ -136,10 +138,11 @@ export function resolveDependencies(
   return result;
 }
 
-/** Max 8 capabilities per message to avoid context bloat */
+/** Cap capabilities per message based on tier */
 export function selectCapabilities(
   matches: MatchResult[],
-  max = 8,
+  max?: number,
 ): MatchResult[] {
-  return matches.slice(0, max);
+  const limit = max ?? getCapabilityLimit(runtime.tier ?? 'free');
+  return matches.slice(0, limit);
 }

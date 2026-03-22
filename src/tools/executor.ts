@@ -3,6 +3,8 @@ import { ToolRegistry } from './registry.js';
 import type { ToolContext, ToolResult } from './types.js';
 import type { PermissionManager } from '../permissions/manager.js';
 import type { CheckpointStore } from '../checkpoints/store.js';
+import { isToolAllowed, getUpgradeMessage } from '../auth/gates.js';
+import { runtime } from '../config/runtime.js';
 
 const FILE_MUTATING_TOOLS = new Set(['Write', 'Edit', 'MultiEdit']);
 
@@ -29,7 +31,15 @@ export class ToolExecutor {
       };
     }
 
-    // 2. Check permissions (if manager is wired)
+    // 2. Check tier gating
+    if (!isToolAllowed(toolName, runtime.tier ?? 'free')) {
+      return {
+        content: getUpgradeMessage(toolName),
+        isError: true,
+      };
+    }
+
+    // 3. Check permissions (if manager is wired)
     if (this.permissions) {
       const result = await this.permissions.check(
         toolName,
@@ -45,7 +55,7 @@ export class ToolExecutor {
       }
     }
 
-    // 3. Capture before-content for file-mutating tools
+    // 4. Capture before-content for file-mutating tools
     let beforeContent: string | null = null;
     let filePath: string | undefined;
     if (this.checkpointStore && FILE_MUTATING_TOOLS.has(toolName)) {
@@ -59,11 +69,11 @@ export class ToolExecutor {
       }
     }
 
-    // 4. Execute with try/catch
+    // 5. Execute with try/catch
     try {
       const result = await tool.execute(input, ctx);
 
-      // 5. Capture checkpoint after successful file mutation
+      // 6. Capture checkpoint after successful file mutation
       if (this.checkpointStore && filePath && !result.isError) {
         try {
           const afterContent = fs.readFileSync(filePath, 'utf-8');

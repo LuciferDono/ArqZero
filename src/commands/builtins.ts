@@ -9,6 +9,8 @@ import { parseDuration } from '../cli/cron.js';
 import { pluginCommands } from './plugin-commands.js';
 import { MODELS, getModelByName } from '../config/model-router.js';
 import { listSessionsWithInfo, listSessions, loadSession, deleteSession } from '../session/history.js';
+import { logout as logoutApi, getCheckoutUrl } from '../auth/client.js';
+import { loadAuth, clearAuth } from '../auth/store.js';
 
 export const helpCommand: SlashCommand = {
   name: '/help',
@@ -581,6 +583,53 @@ export const sessionCommand: SlashCommand = {
   },
 };
 
+export const loginCommand: SlashCommand = {
+  name: '/login',
+  description: 'Log in to ArqZero',
+  async execute(_args: string, _ctx: SlashCommandContext): Promise<string> {
+    return 'Run `arqzero login` from your terminal to log in.';
+  },
+};
+
+export const logoutCommand: SlashCommand = {
+  name: '/logout',
+  description: 'Log out of ArqZero',
+  async execute(_args: string, _ctx: SlashCommandContext): Promise<string> {
+    const auth = loadAuth();
+    if (!auth) return 'Not logged in.';
+    await logoutApi(auth.refreshToken);
+    clearAuth();
+    return 'Logged out successfully.';
+  },
+};
+
+export const upgradeCommand: SlashCommand = {
+  name: '/upgrade',
+  description: 'Upgrade to ArqZero Pro',
+  async execute(args: string, _ctx: SlashCommandContext): Promise<string> {
+    const auth = loadAuth();
+    if (!auth) return 'Log in first: arqzero login';
+    if (auth.tier === 'pro') return 'Already on Pro.';
+    if (auth.tier === 'team') return 'Already on Team (includes Pro).';
+
+    try {
+      const tier = (args.trim().toLowerCase() === 'team' ? 'team' : 'pro') as 'pro' | 'team';
+      const url = await getCheckoutUrl(auth.accessToken, tier);
+      const { execFile } = await import('node:child_process');
+      if (process.platform === 'win32') {
+        execFile('cmd', ['/c', 'start', '', url]);
+      } else if (process.platform === 'darwin') {
+        execFile('open', [url]);
+      } else {
+        execFile('xdg-open', [url]);
+      }
+      return `Opening checkout in browser...\nIf it doesn't open: ${url}`;
+    } catch (err: any) {
+      return `Upgrade failed: ${err.message}\nVisit https://arqzero.dev/pricing`;
+    }
+  },
+};
+
 export const builtinCommands: SlashCommand[] = [
   helpCommand,
   modelCommand,
@@ -605,5 +654,8 @@ export const builtinCommands: SlashCommand[] = [
   loopCommand,
   vimCommand,
   sessionCommand,
+  loginCommand,
+  logoutCommand,
+  upgradeCommand,
   ...pluginCommands,
 ];

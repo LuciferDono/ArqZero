@@ -4,6 +4,7 @@ export const runtime = {
   syntaxHighlightingDisabled: false,
   verbose: false,
   theme: 'dark' as 'dark' | 'light',
+  tier: 'free' as 'free' | 'pro' | 'team',
 };
 
 export function initRuntime(overrides: Partial<typeof runtime>): void {

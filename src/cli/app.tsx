@@ -28,6 +28,9 @@ import { SlashSuggestions, filterSuggestions } from './components/SlashSuggestio
 import type { SlashSuggestion } from './components/SlashSuggestions.js';
 import type { Message } from '../api/types.js';
 import { getModelCost, getModelByName } from '../config/model-router.js';
+import { loadAuth } from '../auth/store.js';
+import { isCommandAllowed, getUpgradeMessage } from '../auth/gates.js';
+import { runtime } from '../config/runtime.js';
 
 interface AppProps {
   provider: LLMProvider;
@@ -201,11 +204,19 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         },
       ]);
     } else {
+      const auth = loadAuth();
+      let welcomeContent: string;
+      if (!auth) {
+        welcomeContent = 'ArqZero v2.0.0 (Free)\n  Log in for Pro features: /login\n  Type a message to start.';
+      } else {
+        const tierLabel = auth.tier.charAt(0).toUpperCase() + auth.tier.slice(1);
+        welcomeContent = `ArqZero v2.0.0 (${tierLabel})\n  Type a message to start. Use /help for commands.`;
+      }
       setEntries((e) => [
         ...e,
         {
           type: 'system' as const,
-          content: `ArqZero v2.0.0\n  Type a message to start. Use /help for commands.`,
+          content: welcomeContent,
         },
       ]);
     }
@@ -353,6 +364,13 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         };
         setInput('');
         setEntries((e) => [...e, { type: 'user', content: value }]);
+
+        // Check tier gating for pro/team commands
+        if (!isCommandAllowed(name, runtime.tier ?? 'free')) {
+          setEntries((e) => [...e, { type: 'system', content: getUpgradeMessage(name) }]);
+          return;
+        }
+
         try {
           const result = await cmd.execute(args, slashContext);
           if (result) {

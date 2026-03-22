@@ -27,6 +27,7 @@ import type { Message } from '../src/api/types.js';
 import { loadSettings } from '../src/config/settings.js';
 import { loadEnvOverrides } from '../src/config/env.js';
 import { initRuntime } from '../src/config/runtime.js';
+import { resolveAuthState } from '../src/auth/license.js';
 
 async function promptUser(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -96,12 +97,16 @@ async function main() {
     config.model = args.model;
   }
 
+  // Resolve auth state (tier + email)
+  const { tier: authTier } = await resolveAuthState();
+
   // Initialize runtime config for components
   initRuntime({
     reducedMotion: envOverrides.reducedMotion || settings.reducedMotion || false,
     syntaxHighlightingDisabled: envOverrides.syntaxHighlightingDisabled || settings.syntaxHighlightingDisabled || false,
     verbose: envOverrides.verbose || false,
     theme: settings.theme ?? 'dark',
+    tier: authTier,
   });
 
   let provider: LLMProvider;
