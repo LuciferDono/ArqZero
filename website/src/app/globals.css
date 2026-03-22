@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+:root {
+  --brand: #00D4AA;
+  --brand-deep: #00A886;
+  --brand-light: #4EECD0;
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --border: #262626;
+  --text: #d4d4d4;
+  --text-dim: #6b7280;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
