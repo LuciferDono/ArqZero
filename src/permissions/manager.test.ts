@@ -44,13 +44,46 @@ describe('PermissionManager', () => {
     assert.equal(spy.getCalls(), 0);
   });
 
-  it('should allow tools in alwaysAllow', async () => {
+  it('should allow non-ALWAYS_ASK tools in alwaysAllow without prompting', async () => {
     const manager = new PermissionManager(defaultPermissions);
     const spy = createPromptSpy({ allowed: true });
 
     const result = await manager.check('Glob', 'ask', { pattern: '**/*.ts' }, spy.fn);
 
     assert.equal(result.allowed, true);
+    assert.equal(spy.getCalls(), 0);
+  });
+
+  it('should prompt ALWAYS_ASK tools even when in alwaysAllow', async () => {
+    const perms = {
+      ...defaultPermissions,
+      alwaysAllow: ['Read', 'Glob', 'Grep', 'Write', 'Edit', 'MultiEdit', 'Bash'],
+    };
+    const manager = new PermissionManager(perms);
+    const spy = createPromptSpy({ allowed: true });
+
+    // Write is in alwaysAllow but is an ALWAYS_ASK tool — must still prompt
+    const result = await manager.check('Write', 'ask', { file_path: '/tmp/test.txt' }, spy.fn);
+    assert.equal(result.allowed, true);
+    assert.equal(spy.getCalls(), 1);
+  });
+
+  it('should prompt ALWAYS_ASK tools even in trust mode', async () => {
+    const manager = new PermissionManager({ ...defaultPermissions, defaultMode: 'trust' });
+    const spy = createPromptSpy({ allowed: true });
+
+    const result = await manager.check('Edit', 'ask', { file_path: '/tmp/test.txt' }, spy.fn);
+    assert.equal(result.allowed, true);
+    assert.equal(spy.getCalls(), 1);
+  });
+
+  it('should deny ALWAYS_ASK tools in locked mode without prompting', async () => {
+    const manager = new PermissionManager({ ...defaultPermissions, defaultMode: 'locked' });
+    const spy = createPromptSpy({ allowed: true });
+
+    const result = await manager.check('Bash', 'ask', { command: 'ls' }, spy.fn);
+    assert.equal(result.allowed, false);
+    assert.ok(result.denial?.includes('locked mode'));
     assert.equal(spy.getCalls(), 0);
   });
 
@@ -65,7 +98,7 @@ describe('PermissionManager', () => {
     assert.equal(spy.getLastRequest()?.tool, 'Write');
   });
 
-  it('should remember session allow', async () => {
+  it('should remember session allow for ALWAYS_ASK tools', async () => {
     const manager = new PermissionManager(defaultPermissions);
     const spy = createPromptSpy({ allowed: true, remember: 'session' });
 
@@ -73,7 +106,7 @@ describe('PermissionManager', () => {
     await manager.check('Write', 'ask', { file_path: '/tmp/a.txt' }, spy.fn);
     assert.equal(spy.getCalls(), 1);
 
-    // Second call should NOT prompt
+    // Second call should NOT prompt (session remember works)
     const result = await manager.check('Write', 'ask', { file_path: '/tmp/b.txt' }, spy.fn);
     assert.equal(result.allowed, true);
     assert.equal(spy.getCalls(), 1); // still 1, not 2
@@ -89,52 +122,54 @@ describe('PermissionManager', () => {
     assert.ok(result.denial?.includes('denied by user'));
   });
 
-  it('should auto-approve in trust mode', async () => {
+  it('should auto-approve non-ALWAYS_ASK tools in trust mode', async () => {
     const manager = new PermissionManager({ ...defaultPermissions, defaultMode: 'trust' });
     const spy = createPromptSpy({ allowed: true });
 
-    const result = await manager.check('Write', 'ask', { file_path: '/tmp/test.txt' }, spy.fn);
+    const result = await manager.check('WebSearch', 'ask', { query: 'test' }, spy.fn);
 
     assert.equal(result.allowed, true);
     assert.equal(spy.getCalls(), 0);
   });
 
-  it('should deny without prompting in locked mode', async () => {
+  it('should deny non-ALWAYS_ASK tools without prompting in locked mode', async () => {
     const manager = new PermissionManager({ ...defaultPermissions, defaultMode: 'locked' });
     const spy = createPromptSpy({ allowed: true });
 
-    const result = await manager.check('Write', 'ask', { file_path: '/tmp/test.txt' }, spy.fn);
+    const result = await manager.check('WebSearch', 'ask', { query: 'test' }, spy.fn);
 
     assert.equal(result.allowed, false);
     assert.ok(result.denial?.includes('locked mode'));
     assert.equal(spy.getCalls(), 0);
   });
 
-  it('should allow via config trusted patterns', async () => {
+  it('should prompt Bash even with matching trusted patterns (ALWAYS_ASK)', async () => {
     const manager = new PermissionManager(defaultPermissions);
     const spy = createPromptSpy({ allowed: true });
 
+    // Bash is ALWAYS_ASK — trusted patterns are skipped, user is prompted
     const result = await manager.check('Bash', 'ask', { command: 'npm test' }, spy.fn);
 
     assert.equal(result.allowed, true);
-    assert.equal(spy.getCalls(), 0);
+    assert.equal(spy.getCalls(), 1);
   });
 
-  it('should match glob patterns', async () => {
-    const manager = new PermissionManager(defaultPermissions);
+  it('should allow non-ALWAYS_ASK tools via config trusted patterns', async () => {
+    const perms = {
+      ...defaultPermissions,
+      trustedPatterns: { WebFetch: ['https://example.com/*'] },
+    };
+    const manager = new PermissionManager(perms);
     const spy = createPromptSpy({ allowed: true });
 
-    const result = await manager.check('Bash', 'ask', { command: 'npm run dev' }, spy.fn);
+    const result = await manager.check('WebFetch', 'ask', { command: 'https://example.com/api' }, spy.fn);
 
     assert.equal(result.allowed, true);
     assert.equal(spy.getCalls(), 0);
   });
 
-  it('should escalate Bash and still prompt', async () => {
-    const manager = new PermissionManager({
-      ...defaultPermissions,
-      trustedPatterns: {},  // no trusted patterns so we reach the prompt
-    });
+  it('should escalate Bash to dangerous and still prompt', async () => {
+    const manager = new PermissionManager(defaultPermissions);
     const spy = createPromptSpy({ allowed: true });
 
     const result = await manager.check('Bash', 'ask', { command: 'rm -rf /tmp/stuff' }, spy.fn);

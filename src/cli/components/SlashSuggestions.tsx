@@ -14,20 +14,37 @@ export interface SlashSuggestionsProps {
   visible: boolean;
 }
 
+const WINDOW_SIZE = 8;
+
 export function SlashSuggestions({ suggestions, selectedIndex, visible }: SlashSuggestionsProps) {
   if (!visible || suggestions.length === 0) return null;
 
-  // Show max 8 suggestions
-  const maxVisible = 8;
-  const display = suggestions.slice(0, maxVisible);
+  // Sliding window: keep selectedIndex visible
+  let windowStart = 0;
+  if (suggestions.length > WINDOW_SIZE) {
+    // Center the selection in the window when possible
+    windowStart = Math.max(0, Math.min(
+      selectedIndex - Math.floor(WINDOW_SIZE / 2),
+      suggestions.length - WINDOW_SIZE,
+    ));
+  }
+  const windowEnd = Math.min(windowStart + WINDOW_SIZE, suggestions.length);
+  const display = suggestions.slice(windowStart, windowEnd);
+
+  const hasAbove = windowStart > 0;
+  const hasBelow = windowEnd < suggestions.length;
 
   return (
     <Box flexDirection="column" marginLeft={2} marginBottom={1}>
       <Box marginBottom={0}>
         <Text color={THEME.dim}>{'─'.repeat(40)}</Text>
       </Box>
+      {hasAbove && (
+        <Text color={THEME.dim}>  ↑ {windowStart} more</Text>
+      )}
       {display.map((s, i) => {
-        const isSelected = i === selectedIndex;
+        const actualIndex = windowStart + i;
+        const isSelected = actualIndex === selectedIndex;
         return (
           <Box key={s.name}>
             <Text color={isSelected ? THEME.primary : THEME.dim}>
@@ -40,8 +57,8 @@ export function SlashSuggestions({ suggestions, selectedIndex, visible }: SlashS
           </Box>
         );
       })}
-      {suggestions.length > maxVisible && (
-        <Text color={THEME.dim}>  ... {suggestions.length - maxVisible} more</Text>
+      {hasBelow && (
+        <Text color={THEME.dim}>  ↓ {suggestions.length - windowEnd} more</Text>
       )}
     </Box>
   );

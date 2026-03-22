@@ -2,8 +2,11 @@ import type { Tool, ToolContext } from '../types.js';
 import type { AgentRunner } from '../../agents/runner.js';
 import type { AgentDefinition } from '../../agents/types.js';
 
+// NOTE: Global mutable singleton kept for backward compatibility.
+// Prefer passing agentRunner via ToolContext.agentRunner instead.
 let agentRunner: AgentRunner | null = null;
 
+/** @deprecated Pass agentRunner via ToolContext.agentRunner instead. */
 export function setAgentRunner(runner: AgentRunner | null): void {
   agentRunner = runner;
 }
@@ -35,8 +38,9 @@ export const taskTool: Tool = {
     required: ['prompt'],
   },
   permissionLevel: 'ask',
-  async execute(input: unknown, _ctx: ToolContext) {
-    if (!agentRunner) {
+  async execute(input: unknown, ctx: ToolContext) {
+    const runner = ctx.agentRunner ?? agentRunner;
+    if (!runner) {
       return {
         content: 'Agent runner is not configured. Cannot launch sub-agent.',
         isError: true,
@@ -63,7 +67,7 @@ export const taskTool: Tool = {
     }
 
     try {
-      const result = await agentRunner.run({ prompt, definition, model });
+      const result = await runner.run({ prompt, definition, model });
       return { content: result };
     } catch (err) {
       return {

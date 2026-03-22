@@ -3,7 +3,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import os from 'node:os';
 import type { TokenUsage } from '../../api/types.js';
-import { THEME } from '../theme.js';
+import { THEME, COLORS } from '../theme.js';
 
 export interface HeaderProps {
   modelName: string;
@@ -61,85 +61,95 @@ function getCwd(): string {
   return cwd.replace(/\\/g, '/');
 }
 
-// Gradient ASCII art logo — each line is a single string for alignment
-const LOGO_LINES = [
-  '   ▄▀▀▄ █▀▀▄ █▀▀█ ▀▀█ █▀▀ █▀▀▄ █▀▀█',
-  '   █▀▀█ █▄▄▀ █ ▄▀  ▄▀ █▀▀ █▄▄▀ █  █',
-  '   ▀  ▀ ▀ ▀▀  ▀▀▀ █▄▄ ▀▀▀ ▀ ▀▀ ▀▀▀▀',
+// ARQ + ZERO side by side, proper spacing for Z and E
+const LOGO_ARQ = [
+  ' ░█████╗░██████╗░░██████╗░',
+  ' ██╔══██╗██╔══██╗██╔═══██╗',
+  ' ███████║██████╔╝██║██╗██║',
+  ' ██╔══██║██╔══██╗╚██████╔╝',
+  ' ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═══╝╚═╝',
 ];
 
-// Color each character with a gradient sweep
-function Logo() {
-  const colors = ['#FF6B00', '#FF8C00', '#FFB800', '#FFD54F', '#FFF176', '#FFD54F', '#FFB800', '#FF8C00'];
+const LOGO_ZERO = [
+  '███████╗ ██████╗ ██████╗░ ░█████╗░',
+  '╚══███╔╝ ██╔═══╝ ██╔══██╗ ██╔══██╗',
+  '  ███╔╝  █████╗  ██████╔╝ ██║  ██║',
+  ' ███╔╝   ██╔══╝  ██╔══██╗ ╚█████╔╝',
+  '███████╗ ██████╗ ╚═╝  ╚═╝  ╚════╝ ',
+];
 
+function LogoBlock() {
+  const lines = LOGO_ARQ.length;
   return (
     <Box flexDirection="column">
-      {LOGO_LINES.map((line, lineIdx) => (
-        <Box key={lineIdx}>
-          {line.split('').map((char, i) => {
-            const colorIdx = Math.floor((i / line.length) * colors.length);
-            return (
-              <Text key={i} color={colors[colorIdx]} bold>
-                {char}
-              </Text>
-            );
-          })}
+      {Array.from({ length: lines }, (_, i) => (
+        <Box key={i}>
+          <Text color={COLORS.brand} bold>{LOGO_ARQ[i]}</Text>
+          <Text color="#8BBBD4" bold>  {LOGO_ZERO[i] ?? ''}</Text>
         </Box>
       ))}
+      <Box>
+        <Text color={COLORS.brand}> ─────── </Text>
+        <Text color={COLORS.info} bold>v{THEME.version}</Text>
+      </Box>
     </Box>
   );
 }
 
-export function Header({ modelName, tokenUsage, costEstimate, contextPercent, sessionId }: HeaderProps) {
+// Context meter — visual bar
+function ContextMeter({ percent }: { percent: number }) {
+  if (percent <= 0) return null;
+  const width = 12;
+  const filled = Math.round(width * percent / 100);
+  const empty = width - filled;
+  const color = percent > 80 ? COLORS.ctxCritical : percent > 60 ? COLORS.ctxCaution : COLORS.ctxHealthy;
+  return (
+    <Box>
+      <Text color={THEME.dim}>ctx </Text>
+      <Text color={color}>{'█'.repeat(filled)}</Text>
+      <Text color={COLORS.ctxTrack}>{'░'.repeat(empty)}</Text>
+      <Text color={THEME.dim}> {percent}%</Text>
+    </Box>
+  );
+}
+
+export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: HeaderProps) {
   const user = getUsername();
   const model = shortModelName(modelName);
   const cwd = getCwd();
 
-  // Right side stats
-  const stats: string[] = [];
-  if (tokenUsage) {
-    stats.push(`${formatTokens(tokenUsage)} tok`);
-  }
-  if (costEstimate > 0) {
-    stats.push(formatCost(costEstimate));
-  }
-  if (contextPercent > 0) {
-    stats.push(`ctx ${contextPercent}%`);
-  }
-
   return (
-    <Box flexDirection="column" marginBottom={1}>
-      {/* Logo */}
+    <Box flexDirection="column" marginBottom={0}>
+      {/* Logo — full width */}
+      <LogoBlock />
+
+      {/* Info bar */}
       <Box>
         <Box flexGrow={1}>
-          <Logo />
+          <Text color={COLORS.username}>{user}</Text>
+          <Text color={COLORS.brand}> ◈ </Text>
+          <Text color={THEME.text}>{cwd}</Text>
         </Box>
-        {/* Right-aligned info panel next to logo */}
-        <Box flexDirection="column" alignItems="flex-end" justifyContent="flex-end">
-          <Box>
-            <Text color={THEME.dim}>{user}</Text>
-            <Text color={THEME.primary}> @ </Text>
-            <Text color={THEME.text}>{cwd}</Text>
-          </Box>
-          <Box>
-            <Text color={THEME.dim}>model </Text>
-            <Text color={THEME.info} bold>{model}</Text>
-          </Box>
-          {stats.length > 0 && (
-            <Box>
-              <Text color={THEME.dim}>{stats.join('  │  ')}</Text>
-            </Box>
+        <Box>
+          <Text color={COLORS.structural}>▐</Text>
+          <Text color={COLORS.badgeBg} backgroundColor={COLORS.brand} bold> {model} </Text>
+          <Text color={COLORS.structural}>▌</Text>
+          {tokenUsage && (
+            <Text color={THEME.dim}>  {formatTokens(tokenUsage)} tok</Text>
+          )}
+          {costEstimate > 0 && (
+            <Text color={THEME.dim}> │ {formatCost(costEstimate)}</Text>
+          )}
+          {contextPercent > 0 && (
+            <Text color={THEME.dim}> │ ctx {contextPercent}%</Text>
           )}
         </Box>
       </Box>
 
       {/* Separator */}
       <Box>
-        <Text color="#FF8C00">{'━'}</Text>
-        <Text color="#FFB800">{'━━'}</Text>
-        <Text color="#FFD54F">{'━━━'}</Text>
-        <Text color="#FFF176">{'━━━━'}</Text>
-        <Text color={THEME.dim}>{'━'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 10))}</Text>
+        <Text color={COLORS.brand}>{'─'}</Text>
+        <Text color={COLORS.structural}>{'─'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 1))}</Text>
       </Box>
     </Box>
   );

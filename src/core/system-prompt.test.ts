@@ -25,6 +25,13 @@ describe('buildSystemPrompt', () => {
     assert.ok(prompt.includes('Date:'));
   });
 
+  it('includes no-emoji instruction', () => {
+    const prompt = buildSystemPrompt(tmpDir);
+
+    assert.ok(prompt.includes('Do not use emojis in your responses'));
+    assert.ok(prompt.includes('plain text formatting only'));
+  });
+
   it('loads ARQZERO.md when present', () => {
     const content = '# My Project\nAlways use TypeScript.';
     fs.writeFileSync(path.join(tmpDir, 'ARQZERO.md'), content, 'utf-8');

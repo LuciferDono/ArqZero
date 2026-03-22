@@ -73,7 +73,9 @@ export function loadSession(sessionId: string, basePath?: string): Message[] | n
   if (!raw) return [];
 
   const lines = raw.split('\n').filter(l => l);
-  const entries: HistoryEntry[] = lines.map(line => JSON.parse(line));
+  const entries: HistoryEntry[] = lines.flatMap(line => {
+    try { return [JSON.parse(line)]; } catch { return []; }
+  });
 
   // Find last compaction
   let lastCompactionIdx = -1;

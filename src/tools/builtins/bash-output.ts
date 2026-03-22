@@ -18,6 +18,6 @@ export const bashOutputTool: Tool = {
 
   async execute(input: unknown, _ctx: ToolContext): Promise<ToolResult> {
     const { process_id: _processId } = input as BashOutputInput;
-    return { content: 'Process tracking not yet implemented' };
+    return { content: 'Process tracking not yet implemented', isError: true };
   },
 };

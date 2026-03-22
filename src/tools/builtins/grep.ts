@@ -30,8 +30,21 @@ export const grepTool: Tool = {
 
   async execute(input: unknown, ctx: ToolContext): Promise<ToolResult> {
     const { pattern, path, glob: globPattern, output_mode } = input as GrepInput;
+
+    // Limit pattern length to prevent ReDoS
+    if (pattern.length > 500) {
+      return { content: 'Error: Pattern too long (max 500 chars)', isError: true };
+    }
+
+    // Validate regex before using it
+    let regex: RegExp;
+    try {
+      regex = new RegExp(pattern, 'gm');
+    } catch {
+      return { content: `Error: Invalid regex pattern: ${pattern}`, isError: true };
+    }
+
     const mode = output_mode ?? 'files_with_matches';
-    const regex = new RegExp(pattern, 'gm');
     const ignore = ['**/node_modules/**', '**/.git/**'];
 
     let files: string[];

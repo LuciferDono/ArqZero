@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import type { Tool, ToolContext, ToolResult } from '../types.js';
+import { guardPath } from '../path-guard.js';
 
 interface EditInput {
   file_path: string;
@@ -23,10 +24,17 @@ export const editTool: Tool = {
   },
   permissionLevel: 'ask',
 
-  async execute(input: unknown, _ctx: ToolContext): Promise<ToolResult> {
+  async execute(input: unknown, ctx: ToolContext): Promise<ToolResult> {
     const { file_path, old_string, new_string, replace_all } = input as EditInput;
 
-    const file = readFileSync(file_path, 'utf-8');
+    let resolvedPath: string;
+    try {
+      resolvedPath = guardPath(file_path, ctx.cwd);
+    } catch (err: any) {
+      return { content: err.message, isError: true };
+    }
+
+    const file = readFileSync(resolvedPath, 'utf-8');
 
     if (!file.includes(old_string)) {
       return {
@@ -54,12 +62,12 @@ export const editTool: Tool = {
       updated = file.replace(old_string, new_string);
     }
 
-    writeFileSync(file_path, updated, 'utf-8');
+    writeFileSync(resolvedPath, updated, 'utf-8');
 
     return {
-      content: `Edited ${file_path}: replaced ${count} occurrence(s)`,
+      content: `Edited ${resolvedPath}: replaced ${count} occurrence(s)`,
       metadata: {
-        filePath: file_path,
+        filePath: resolvedPath,
         oldContent: file,
         newContent: updated,
         diffOperation: 'edit',

@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import type { Tool, ToolContext, ToolResult } from '../types.js';
+import { guardPath } from '../path-guard.js';
 
 interface EditOp {
   old_string: string;
@@ -35,14 +36,21 @@ export const multiEditTool: Tool = {
   },
   permissionLevel: 'ask',
 
-  async execute(input: unknown, _ctx: ToolContext): Promise<ToolResult> {
+  async execute(input: unknown, ctx: ToolContext): Promise<ToolResult> {
     const { file_path, edits } = input as MultiEditInput;
 
     if (!edits || edits.length === 0) {
       return { content: 'No edits provided', isError: true };
     }
 
-    const originalContent = readFileSync(file_path, 'utf-8');
+    let resolvedPath: string;
+    try {
+      resolvedPath = guardPath(file_path, ctx.cwd);
+    } catch (err: any) {
+      return { content: err.message, isError: true };
+    }
+
+    const originalContent = readFileSync(resolvedPath, 'utf-8');
     let content = originalContent;
 
     for (let i = 0; i < edits.length; i++) {
@@ -65,12 +73,12 @@ export const multiEditTool: Tool = {
       content = content.replace(old_string, new_string);
     }
 
-    writeFileSync(file_path, content, 'utf-8');
+    writeFileSync(resolvedPath, content, 'utf-8');
 
     return {
-      content: `Applied ${edits.length} edit(s) to ${file_path}`,
+      content: `Applied ${edits.length} edit(s) to ${resolvedPath}`,
       metadata: {
-        filePath: file_path,
+        filePath: resolvedPath,
         oldContent: originalContent,
         newContent: content,
         diffOperation: 'edit',

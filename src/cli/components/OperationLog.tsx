@@ -5,6 +5,7 @@ import { OperationEntry } from './OperationEntry.js';
 import { GroupedOperationEntry } from './GroupedOperationEntry.js';
 import { ShimmerSpinner } from './Spinner.js';
 import { THEME } from '../theme.js';
+import { renderMarkdown } from '../markdown.js';
 import type { OperationEntryData } from './OperationEntry.js';
 
 export interface GroupedEntry {
@@ -24,7 +25,6 @@ export function groupConsecutiveTools(entries: OperationEntryData[]): DisplayEnt
     const entry = entries[i];
 
     if (entry.type === 'tool' && entry.toolName) {
-      // Look ahead for consecutive entries with the same tool name
       let j = i + 1;
       while (
         j < entries.length &&
@@ -60,23 +60,24 @@ export interface OperationLogProps {
   entries: OperationEntryData[];
   activeOperation?: { name: string; startTime: number } | null;
   streamingText?: string;
+  expanded?: boolean;
 }
 
-export function OperationLog({ entries, activeOperation, streamingText }: OperationLogProps) {
+export function OperationLog({ entries, activeOperation, streamingText, expanded = false }: OperationLogProps) {
   const displayEntries = groupConsecutiveTools(entries);
 
   return (
     <Box flexDirection="column">
       {displayEntries.map((entry, i) => {
         if (entry.type === 'grouped') {
-          return <GroupedOperationEntry key={i} group={entry} />;
+          return <GroupedOperationEntry key={i} group={entry} expanded={expanded} />;
         }
-        return <OperationEntry key={i} entry={entry} />;
+        return <OperationEntry key={i} entry={entry as OperationEntryData} />;
       })}
 
       {streamingText && (
-        <Box marginBottom={1}>
-          <Text color={THEME.text}>{streamingText}</Text>
+        <Box marginBottom={1} flexDirection="column">
+          <Text color={THEME.text}>{renderMarkdown(streamingText)}</Text>
           <Text color={THEME.dim}>{'\u258C'}</Text>
         </Box>
       )}

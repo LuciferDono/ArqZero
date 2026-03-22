@@ -8,7 +8,7 @@ export interface ContextWindowConfig {
 
 const DEFAULT_CONFIG: ContextWindowConfig = {
   maxContextTokens: 200000,
-  compactionThreshold: 0.85,
+  compactionThreshold: 0.95,
   preserveRatio: 0.2,
 };
 
@@ -25,8 +25,8 @@ export class ContextWindow {
    * Update token counts from a message_end event.
    */
   trackUsage(usage: TokenUsage): void {
-    this.totalInputTokens = usage.inputTokens;
-    this.totalOutputTokens = usage.outputTokens;
+    this.totalInputTokens += usage.inputTokens;
+    this.totalOutputTokens += usage.outputTokens;
   }
 
   /**
@@ -43,6 +43,20 @@ export class ContextWindow {
   needsCompaction(): boolean {
     const threshold = this.config.maxContextTokens * this.config.compactionThreshold;
     return this.totalInputTokens >= threshold;
+  }
+
+  /**
+   * Returns true when usage exceeds 90% — approaching the compaction threshold.
+   */
+  isCritical(): boolean {
+    return this.totalInputTokens >= this.config.maxContextTokens * 0.9;
+  }
+
+  /**
+   * Returns the number of tokens remaining before hitting maxContextTokens.
+   */
+  getTokenBudgetRemaining(): number {
+    return Math.max(0, this.config.maxContextTokens - this.totalInputTokens);
   }
 
   /**

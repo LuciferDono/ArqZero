@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 // Import theme and types to verify they're well-formed
-import { THEME, SPINNER_VERBS } from './theme.js';
+import { THEME, COLORS, SPINNER_VERBS } from './theme.js';
 import type { OperationEntryData, EntryType } from './components/index.js';
 
 describe('Theme', () => {
@@ -19,18 +19,18 @@ describe('Theme', () => {
   });
 
   it('has all required colors', () => {
-    assert.equal(THEME.primary, '#FFB800');
-    assert.equal(THEME.primaryShimmer, '#FFD54F');
-    assert.equal(THEME.text, 'white');
-    assert.equal(THEME.dim, 'gray');
-    assert.equal(THEME.success, 'green');
-    assert.equal(THEME.error, 'red');
-    assert.equal(THEME.warning, 'yellow');
-    assert.equal(THEME.info, 'cyan');
-    assert.equal(THEME.toolBorder, '#5769F7');
-    assert.equal(THEME.bashBorder, '#FF0087');
-    assert.equal(THEME.diffAdded, '#69DB7C');
-    assert.equal(THEME.diffRemoved, '#FFA8B4');
+    assert.equal(THEME.primary, COLORS.brand);
+    assert.equal(THEME.primaryShimmer, COLORS.brandLight);
+    assert.equal(THEME.text, COLORS.textPrimary);
+    assert.equal(THEME.dim, COLORS.textSecondary);
+    assert.equal(THEME.success, COLORS.success);
+    assert.equal(THEME.error, COLORS.error);
+    assert.equal(THEME.warning, COLORS.warning);
+    assert.equal(THEME.info, COLORS.info);
+    assert.equal(THEME.toolBorder, COLORS.toolFile);
+    assert.equal(THEME.bashBorder, COLORS.toolBash);
+    assert.equal(THEME.diffAdded, COLORS.diffLineAdd);
+    assert.equal(THEME.diffRemoved, COLORS.diffLineRemove);
   });
 
   it('has app identity', () => {

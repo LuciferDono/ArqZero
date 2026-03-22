@@ -60,4 +60,49 @@ describe('ContextWindow', () => {
     ctx.trackUsage({ inputTokens: 46000, outputTokens: 500 });
     assert.equal(ctx.needsCompaction(), true);
   });
+
+  it('should use 0.95 as default compaction threshold', () => {
+    const ctx = new ContextWindow({ maxContextTokens: 10000 });
+    // 94% should not trigger
+    ctx.trackUsage({ inputTokens: 9400, outputTokens: 100 });
+    assert.equal(ctx.needsCompaction(), false);
+    // push to 95%+
+    ctx.trackUsage({ inputTokens: 200, outputTokens: 0 });
+    assert.equal(ctx.needsCompaction(), true);
+  });
+
+  it('isCritical returns false below 90%', () => {
+    const ctx = new ContextWindow({ maxContextTokens: 10000 });
+    ctx.trackUsage({ inputTokens: 8900, outputTokens: 100 });
+    assert.equal(ctx.isCritical(), false);
+  });
+
+  it('isCritical returns true at 90%', () => {
+    const ctx = new ContextWindow({ maxContextTokens: 10000 });
+    ctx.trackUsage({ inputTokens: 9000, outputTokens: 100 });
+    assert.equal(ctx.isCritical(), true);
+  });
+
+  it('isCritical returns true above 90%', () => {
+    const ctx = new ContextWindow({ maxContextTokens: 10000 });
+    ctx.trackUsage({ inputTokens: 9500, outputTokens: 100 });
+    assert.equal(ctx.isCritical(), true);
+  });
+
+  it('getTokenBudgetRemaining returns correct value', () => {
+    const ctx = new ContextWindow({ maxContextTokens: 10000 });
+    ctx.trackUsage({ inputTokens: 7000, outputTokens: 500 });
+    assert.equal(ctx.getTokenBudgetRemaining(), 3000);
+  });
+
+  it('getTokenBudgetRemaining returns 0 when over max', () => {
+    const ctx = new ContextWindow({ maxContextTokens: 10000 });
+    ctx.trackUsage({ inputTokens: 11000, outputTokens: 500 });
+    assert.equal(ctx.getTokenBudgetRemaining(), 0);
+  });
+
+  it('getTokenBudgetRemaining returns full budget when unused', () => {
+    const ctx = new ContextWindow({ maxContextTokens: 200000 });
+    assert.equal(ctx.getTokenBudgetRemaining(), 200000);
+  });
 });

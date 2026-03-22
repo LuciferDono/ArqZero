@@ -1,5 +1,5 @@
 // src/cli/app.tsx
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Box, useApp, useInput } from 'ink';
 import type { LLMProvider } from '../api/provider.js';
 import type { TokenUsage } from '../api/types.js';
@@ -20,14 +20,13 @@ import {
   CommandInput,
   PermissionInline,
   TranscriptView,
+  Footer,
 } from './components/index.js';
 import type { OperationEntryData } from './components/index.js';
 import { useInputHistory } from './hooks/useInputHistory.js';
 import { SlashSuggestions, filterSuggestions } from './components/SlashSuggestions.js';
 import type { SlashSuggestion } from './components/SlashSuggestions.js';
 import type { Message } from '../api/types.js';
-import { appendMessage, appendCompaction } from '../session/history.js';
-import type { CompactionSnapshot } from '../session/history.js';
 
 interface AppProps {
   provider: LLMProvider;
@@ -55,47 +54,71 @@ function estimateCost(usage: TokenUsage): number {
   );
 }
 
-function summarizeToolResult(name: string, result: ToolResult): string {
+function extractPath(input?: Record<string, unknown>): string {
+  if (!input) return '';
+  const p = (input.file_path ?? input.path ?? input.notebook_path ?? '') as string;
+  // Show just filename or last 2 path segments
+  const parts = p.replace(/\\/g, '/').split('/');
+  return parts.length > 2 ? parts.slice(-2).join('/') : p;
+}
+
+function summarizeToolResult(name: string, result: ToolResult, input?: Record<string, unknown>): string {
   const content = result.content;
+  const path = extractPath(input);
 
-  if (name === 'Read') {
-    const lineMatch = content.match(/(\d+)\s*lines?/i);
-    const pathMatch = content.match(/(?:Read|read)\s+(.+?)(?:\s|$)/);
-    if (lineMatch) return `${pathMatch?.[1] ?? ''} (${lineMatch[1]} lines)`.trim();
+  switch (name) {
+    case 'Read': {
+      const lineCount = content.split('\n').length;
+      return path ? `${path} (${lineCount} lines)` : `${lineCount} lines`;
+    }
+    case 'Write':
+      return path ? `${path}` : 'file written';
+    case 'Edit':
+    case 'MultiEdit':
+      return path ? `${path}` : 'file edited';
+    case 'Bash': {
+      const cmd = (input?.command as string)?.toLowerCase() ?? '';
+      const short = cmd.length > 60 ? cmd.slice(0, 57) + '...' : cmd;
+      // Wrap in ANSI italic
+      return short ? `\x1b[3m${short}\x1b[23m` : '\x1b[3m(command)\x1b[23m';
+    }
+    case 'Glob': {
+      const pattern = (input?.pattern as string) ?? '';
+      const lines = content.trim().split('\n').filter(Boolean);
+      return pattern ? `${pattern} → ${lines.length} files` : `${lines.length} files`;
+    }
+    case 'Grep': {
+      const pattern = (input?.pattern as string) ?? '';
+      const lines = content.trim().split('\n').filter(Boolean);
+      return pattern ? `"${pattern}" → ${lines.length} matches` : `${lines.length} matches`;
+    }
+    case 'LS': {
+      const lines = content.trim().split('\n').filter(Boolean);
+      return path ? `${path} (${lines.length} entries)` : `${lines.length} entries`;
+    }
+    case 'WebSearch':
+      return (input?.query as string) ?? 'search';
+    case 'WebFetch':
+      return (input?.url as string)?.slice(0, 50) ?? 'fetch';
+    case 'Dispatch':
+      return (input?.description as string) ?? 'sub-agent';
+    case 'NotebookRead':
+      return path || 'notebook';
+    case 'NotebookEdit':
+      return path || 'notebook edited';
+    case 'TodoWrite':
+      return 'tasks updated';
+    case 'TodoRead':
+      return 'tasks';
+    default:
+      return content.length > 60 ? content.slice(0, 57) + '...' : content;
   }
-
-  if (name === 'Write') {
-    const pathMatch = content.match(/(?:Wrote|wrote|Written|written)\s+(.+?)(?:\s|$)/);
-    return `Wrote ${pathMatch?.[1] ?? ''}`.trim();
-  }
-
-  if (name === 'Edit') {
-    const pathMatch = content.match(/(?:in|edited)\s+(.+?)(?:\s|$)/i);
-    return `Edited ${pathMatch?.[1] ?? ''}`.trim();
-  }
-
-  if (name === 'Bash') {
-    const firstLine = content.split('\n')[0] ?? '';
-    return firstLine.length > 60 ? firstLine.slice(0, 57) + '...' : firstLine;
-  }
-
-  if (name === 'Glob') {
-    const lines = content.trim().split('\n').filter(Boolean);
-    return `Found ${lines.length} files`;
-  }
-
-  if (name === 'Grep') {
-    const lines = content.trim().split('\n').filter(Boolean);
-    return `Found ${lines.length} matches`;
-  }
-
-  // Fallback
-  return content.length > 60 ? content.slice(0, 57) + '...' : content;
 }
 
 export default function App({ provider, config, registry, systemPrompt, commandRegistry, initialMessages, resumedSessionId }: AppProps) {
   const [input, setInput] = useState('');
   const [entries, setEntries] = useState<OperationEntryData[]>([]);
+  const [modelName, setModelName] = useState(config.model);
   const [streamingText, setStreamingText] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [activeOperation, setActiveOperation] = useState<{ name: string; startTime: number } | null>(null);
@@ -104,6 +127,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
   const [contextPercent, setContextPercent] = useState(0);
   const [pendingPermission, setPendingPermission] = useState<PendingPermission | null>(null);
   const [transcriptMode, setTranscriptMode] = useState(false);
+  const [expandedView, setExpandedView] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const { exit } = useApp();
   const history = useInputHistory();
@@ -165,15 +189,20 @@ export default function App({ provider, config, registry, systemPrompt, commandR
     // Load initial messages for session resume
     if (initialMessages && initialMessages.length > 0) {
       engineRef.current.setMessages(initialMessages);
+    }
+  }
+
+  // Show welcome / resume message once on mount (avoid setState during render)
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
       setEntries((e) => [
         ...e,
         {
           type: 'system' as const,
-          content: `Resumed session ${session.id} (${initialMessages.length} messages)`,
+          content: `Resumed session ${sessionRef.current!.id} (${initialMessages.length} messages)`,
         },
       ]);
     } else {
-      // Welcome message on fresh session
       setEntries((e) => [
         ...e,
         {
@@ -182,7 +211,8 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         },
       ]);
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handlePermissionResponse = useCallback((response: PermissionResponse) => {
     if (pendingPermission) {
@@ -204,16 +234,38 @@ export default function App({ provider, config, registry, systemPrompt, commandR
       return;
     }
 
-    // Ctrl+O: toggle transcript view
+    // Ctrl+O: cycle view (normal → expanded → transcript → normal)
     if (key.ctrl && _input === 'o') {
-      setTranscriptMode((m) => !m);
+      if (!transcriptMode && !expandedView) {
+        setExpandedView(true);
+      } else if (expandedView && !transcriptMode) {
+        setExpandedView(false);
+        setTranscriptMode(true);
+      } else {
+        setTranscriptMode(false);
+        setExpandedView(false);
+      }
       return;
     }
 
-    // Escape: cancel current input or abort streaming
+    // Ctrl+J: insert newline (multi-line input)
+    if (key.ctrl && _input === 'j' && !isStreaming && !pendingPermission) {
+      setInput((v) => v + '\n');
+      return;
+    }
+
+    // Escape: abort streaming, collapse expanded, or clear input
     if (key.escape) {
       if (isStreaming) {
         engineRef.current?.abort();
+        setIsStreaming(false);
+        setActiveOperation(null);
+        setStreamingText('');
+        setEntries((e) => [...e, { type: 'system', content: '(interrupted)' }]);
+      } else if (expandedView) {
+        setExpandedView(false);
+      } else if (transcriptMode) {
+        setTranscriptMode(false);
       } else {
         setInput('');
       }
@@ -256,7 +308,17 @@ export default function App({ provider, config, registry, systemPrompt, commandR
     }
   });
 
-  const handleSubmit = async (value: string) => {
+  const handleSubmitImpl = async (value: string) => {
+    // If suggestions are visible, execute the selected command
+    if (showSuggestions && suggestions.length > 0) {
+      const selected = suggestions[suggestionIndex];
+      if (selected) {
+        value = selected.name;
+        setInput('');
+        setSuggestionIndex(0);
+      }
+    }
+
     if (!value.trim()) return;
 
     // Push to history before processing
@@ -277,7 +339,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           costEstimate,
           messages: engineRef.current?.getMessages(),
           cronManager: cronManagerRef.current ?? undefined,
-          onModelChange: (m: string) => { config.model = m; },
+          onModelChange: (m: string) => { config.model = m; setModelName(m); },
           onClear: () => setEntries([]),
           onCompact: () => {
             setEntries((e) => [...e, { type: 'system', content: 'Manual compaction triggered.' }]);
@@ -287,7 +349,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
             exit();
           },
           onSubmit: async (prompt: string) => {
-            await handleSubmit(prompt);
+            await handleSubmitRef.current(prompt);
           },
         };
         setInput('');
@@ -332,17 +394,22 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           }
           toolStartTimesRef.current.set(id, Date.now());
           setActiveOperation({ name, startTime: Date.now() });
+
+          // Dispatch: show dispatching entry immediately
+          if (name === 'Dispatch') {
+            setEntries((e) => [...e, { type: 'system', content: 'Dispatching sub-agent...' }]);
+          }
         },
-        onToolEnd: (id, name, result) => {
+        onToolEnd: (id, name, result, toolInput) => {
           setActiveOperation(null);
           const startTime = toolStartTimesRef.current.get(id);
           const elapsed = startTime ? Date.now() - startTime : undefined;
           toolStartTimesRef.current.delete(id);
 
-          const summary = summarizeToolResult(name, result);
+          const summary = summarizeToolResult(name, result, toolInput);
           const entry: OperationEntryData = {
             type: 'tool',
-            content: summary,
+            content: name === 'Dispatch' ? `Agent complete: ${summary}` : summary,
             toolName: name,
             elapsed,
           };
@@ -365,11 +432,35 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           }
         },
         onCapabilitiesMatched: (matches: MatchResult[]) => {
-          const names = matches.map((m) => m.capability.name).join(', ');
+          if (matches.length === 0) return;
+          const names = matches.map((m) => m.capability.name);
+          const verbs = [
+            'Spinning up', 'Activating', 'Loading', 'Engaging', 'Deploying',
+            'Channeling', 'Tuning into', 'Wiring up', 'Locking onto', 'Dialing in',
+          ];
+          const verb = verbs[Math.floor(Math.random() * verbs.length)];
           setEntries((e) => [
             ...e,
-            { type: 'system', content: `\u25b8 ${names} matched` },
+            { type: 'system', content: `${verb} ${names.join(' + ')}` },
           ]);
+        },
+        onContextWarning: (percent, action) => {
+          if (action === 'warning') {
+            setEntries((e) => [...e, {
+              type: 'system',
+              content: `Context at ${percent}% -- approaching limit`,
+            }]);
+          } else if (action === 'compacting') {
+            setEntries((e) => [...e, {
+              type: 'system',
+              content: `Context full -- saving session and compacting...`,
+            }]);
+          } else if (action === 'compacted') {
+            setEntries((e) => [...e, {
+              type: 'system',
+              content: `Context compacted to ${percent}%. Session preserved.`,
+            }]);
+          }
         },
         onCompaction: (result) => {
           setEntries((e) => [...e, {
@@ -396,10 +487,14 @@ export default function App({ provider, config, registry, systemPrompt, commandR
     setIsStreaming(false);
   };
 
+  const handleSubmitRef = useRef(handleSubmitImpl);
+  handleSubmitRef.current = handleSubmitImpl;
+  const stableHandleSubmit = useCallback((v: string) => handleSubmitRef.current(v), []);
+
   return (
     <Box flexDirection="column" padding={1}>
       <Header
-        modelName={config.model}
+        modelName={modelName}
         tokenUsage={tokenUsage}
         costEstimate={costEstimate}
         contextPercent={contextPercent}
@@ -412,6 +507,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           entries={entries}
           activeOperation={activeOperation}
           streamingText={isStreaming ? streamingText : undefined}
+          expanded={expandedView}
         />
       )}
 
@@ -425,7 +521,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
       <CommandInput
         value={input}
         onChange={(v) => { setInput(v); setSuggestionIndex(0); }}
-        onSubmit={handleSubmit}
+        onSubmit={stableHandleSubmit}
         disabled={isStreaming || !!pendingPermission}
       />
 
@@ -433,6 +529,13 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         suggestions={suggestions}
         selectedIndex={suggestionIndex}
         visible={showSuggestions}
+      />
+
+      <Footer
+        isStreaming={isStreaming}
+        transcriptMode={transcriptMode}
+        expandedView={expandedView}
+        sessionId={sessionRef.current?.id}
       />
     </Box>
   );

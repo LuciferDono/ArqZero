@@ -195,17 +195,13 @@ export class FireworksAdapter implements LLMProvider {
       }
     }
 
-    const result: any = { role: 'assistant' };
-    if (textParts.length > 0) {
-      result.content = textParts.join('');
-    } else {
-      result.content = null;
-    }
+    const content = textParts.length > 0 ? textParts.join('') : null;
+
     if (toolCalls.length > 0) {
-      result.tool_calls = toolCalls;
+      return { role: 'assistant' as const, content, tool_calls: toolCalls };
     }
 
-    return result;
+    return { role: 'assistant' as const, content };
   }
 
   /** Convert ArqZero tool definitions to OpenAI format */

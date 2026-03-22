@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { extname } from 'node:path';
 import type { Tool, ToolContext, ToolResult } from '../types.js';
+import { guardPath } from '../path-guard.js';
 
 const languageMap: Record<string, string> = {
   '.ts': 'typescript',
@@ -52,12 +53,19 @@ export const readTool: Tool = {
   },
   permissionLevel: 'safe',
 
-  async execute(input: unknown, _ctx: ToolContext): Promise<ToolResult> {
+  async execute(input: unknown, ctx: ToolContext): Promise<ToolResult> {
     const { file_path, offset, limit } = input as ReadInput;
+
+    let resolvedPath: string;
+    try {
+      resolvedPath = guardPath(file_path, ctx.cwd);
+    } catch (err: any) {
+      return { content: err.message, isError: true };
+    }
 
     let raw: string;
     try {
-      raw = readFileSync(file_path, 'utf-8');
+      raw = readFileSync(resolvedPath, 'utf-8');
     } catch (err: any) {
       return {
         content: `Error reading file: ${err.message}`,

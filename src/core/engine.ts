@@ -12,7 +12,7 @@ import { compactMessages, buildCompactedMessages } from './compaction.js';
 import { ToolExecutor } from '../tools/executor.js';
 import { userMessage, assistantMessage, toolResultMessage } from './message.js';
 import { CAPABILITIES } from '../registry/capabilities.js';
-import { matchCapabilities, selectCapabilities } from '../registry/matcher.js';
+import { matchCapabilities, selectCapabilities, resolveDependencies } from '../registry/matcher.js';
 import type { MatchResult } from '../registry/matcher.js';
 import { buildCapabilityContext } from '../registry/injector.js';
 import { appendMessage, appendCompaction } from '../session/history.js';
@@ -22,10 +22,11 @@ export interface EngineCallbacks {
   onTextDelta?: (text: string) => void;
   onThinkingDelta?: (text: string) => void;
   onToolStart?: (id: string, name: string) => void;
-  onToolEnd?: (id: string, name: string, result: ToolResult) => void;
+  onToolEnd?: (id: string, name: string, result: ToolResult, input?: Record<string, unknown>) => void;
   onMessageEnd?: (usage: TokenUsage) => void;
   onCompaction?: (result: CompactionResult) => void;
   onCapabilitiesMatched?: (matches: MatchResult[]) => void;
+  onContextWarning?: (percent: number, action: 'warning' | 'compacting' | 'compacted') => void;
   onError?: (error: Error) => void;
 }
 
@@ -67,7 +68,8 @@ export class ConversationEngine {
 
     // Match capabilities from user message
     const allMatches = matchCapabilities(text, CAPABILITIES);
-    const selected = selectCapabilities(allMatches);
+    const capped = selectCapabilities(allMatches);
+    const selected = resolveDependencies(capped, CAPABILITIES, 8);
     this.activeCapabilityContext = buildCapabilityContext(selected);
     if (selected.length > 0) {
       callbacks.onCapabilitiesMatched?.(selected);
@@ -83,34 +85,49 @@ export class ConversationEngine {
 
     await this.runConversationLoop(callbacks);
 
-    // Check if compaction is needed after conversation completes
+    // Check context health after conversation completes
     const { contextWindow } = this.options;
-    if (contextWindow?.needsCompaction()) {
-      const preserveCount = contextWindow.getPreserveCount(this.messages.length);
-      const result = await compactMessages(
-        this.messages,
-        preserveCount,
-        this.options.provider,
-        this.options.model,
-      );
-      if (result.compactedMessageCount > 0) {
-        const preserved = this.messages.slice(
-          this.messages.length - result.preservedMessageCount,
+    if (contextWindow) {
+      const usage = contextWindow.getUsageSummary();
+
+      // Warn at 90% (critical)
+      if (contextWindow.isCritical() && !contextWindow.needsCompaction()) {
+        callbacks.onContextWarning?.(usage.percent, 'warning');
+      }
+
+      // Compact at 95%
+      if (contextWindow.needsCompaction()) {
+        callbacks.onContextWarning?.(usage.percent, 'compacting');
+
+        const preserveCount = contextWindow.getPreserveCount(this.messages.length);
+        const result = await compactMessages(
+          this.messages,
+          preserveCount,
+          this.options.provider,
+          this.options.model,
         );
-        this.messages = buildCompactedMessages(result.summary, preserved);
-        this.options.session?.recordCompaction();
+        if (result.compactedMessageCount > 0) {
+          const preserved = this.messages.slice(
+            this.messages.length - result.preservedMessageCount,
+          );
+          this.messages = buildCompactedMessages(result.summary, preserved);
+          this.options.session?.recordCompaction();
 
-        // Persist compaction
-        if (this.options.session) {
-          const snapshot: CompactionSnapshot = {
-            summary: result.summary,
-            preservedMessages: preserved,
-            compactedCount: result.compactedMessageCount,
-          };
-          appendCompaction(this.options.session.id, snapshot);
+          // Persist compaction
+          if (this.options.session) {
+            const snapshot: CompactionSnapshot = {
+              summary: result.summary,
+              preservedMessages: preserved,
+              compactedCount: result.compactedMessageCount,
+            };
+            appendCompaction(this.options.session.id, snapshot);
+          }
+
+          // Report post-compaction state
+          const postUsage = contextWindow.getUsageSummary();
+          callbacks.onContextWarning?.(postUsage.percent, 'compacted');
+          callbacks.onCompaction?.(result);
         }
-
-        callbacks.onCompaction?.(result);
       }
     }
   }
@@ -263,7 +280,7 @@ export class ConversationEngine {
             content: preResult.message ?? 'Blocked by hook',
             isError: true,
           };
-          callbacks.onToolEnd?.(block.id!, block.name!, errorResult);
+          callbacks.onToolEnd?.(block.id!, block.name!, errorResult, block.input as Record<string, unknown>);
           const deniedMsg = toolResultMessage(block.id!, block.name!, errorResult.content, true);
           this.messages.push(deniedMsg);
           if (this.options.session) {
@@ -294,7 +311,7 @@ export class ConversationEngine {
       });
 
       // Notify UI
-      callbacks.onToolEnd?.(block.id!, block.name!, result);
+      callbacks.onToolEnd?.(block.id!, block.name!, result, block.input as Record<string, unknown>);
 
       // Add tool result to messages
       const toolMsg = toolResultMessage(block.id!, block.name!, result.content, result.isError);

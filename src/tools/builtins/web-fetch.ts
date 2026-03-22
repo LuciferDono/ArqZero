@@ -100,14 +100,15 @@ export const webFetchTool: Tool = {
       };
     }
 
+    let timeout: ReturnType<typeof setTimeout>;
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15_000);
+      timeout = setTimeout(() => controller.abort(), 15_000);
 
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'ArqZero/1.0',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
         },
       });
 
@@ -130,6 +131,7 @@ export const webFetchTool: Tool = {
 
       return { content: text };
     } catch (err: any) {
+      clearTimeout(timeout);
       const message = err.name === 'AbortError'
         ? 'Error: Fetch request timed out after 15 seconds.'
         : `Error: Failed to fetch URL: ${err.message}`;

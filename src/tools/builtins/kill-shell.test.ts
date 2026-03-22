@@ -12,7 +12,7 @@ const ctx: ToolContext = {
 describe('killShellTool', () => {
   it('should return not-implemented message', async () => {
     const result = await killShellTool.execute({ process_id: 'abc123' }, ctx);
-    assert.equal(result.isError, undefined);
+    assert.equal(result.isError, true);
     assert.ok(result.content.includes('not yet implemented'));
   });
 
