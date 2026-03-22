@@ -14,6 +14,8 @@ import { CAPABILITIES } from '../registry/capabilities.js';
 import { matchCapabilities, selectCapabilities } from '../registry/matcher.js';
 import type { MatchResult } from '../registry/matcher.js';
 import { buildCapabilityContext } from '../registry/injector.js';
+import { appendMessage, appendCompaction } from '../session/history.js';
+import type { CompactionSnapshot } from '../session/history.js';
 
 export interface EngineCallbacks {
   onTextDelta?: (text: string) => void;
@@ -69,7 +71,14 @@ export class ConversationEngine {
       callbacks.onCapabilitiesMatched?.(selected);
     }
 
-    this.messages.push(userMessage(text));
+    const userMsg = userMessage(text);
+    this.messages.push(userMsg);
+
+    // Persist user message
+    if (this.options.session) {
+      appendMessage(this.options.session.id, userMsg);
+    }
+
     await this.runConversationLoop(callbacks);
 
     // Check if compaction is needed after conversation completes
@@ -88,6 +97,17 @@ export class ConversationEngine {
         );
         this.messages = buildCompactedMessages(result.summary, preserved);
         this.options.session?.recordCompaction();
+
+        // Persist compaction
+        if (this.options.session) {
+          const snapshot: CompactionSnapshot = {
+            summary: result.summary,
+            preservedMessages: preserved,
+            compactedCount: result.compactedMessageCount,
+          };
+          appendCompaction(this.options.session.id, snapshot);
+        }
+
         callbacks.onCompaction?.(result);
       }
     }
@@ -206,7 +226,13 @@ export class ConversationEngine {
     }
 
     // 4. Add assistant message to history
-    this.messages.push(assistantMessage(contentBlocks));
+    const asstMsg = assistantMessage(contentBlocks);
+    this.messages.push(asstMsg);
+
+    // Persist assistant message
+    if (this.options.session) {
+      appendMessage(this.options.session.id, asstMsg);
+    }
 
     // 5. Check if there are tool_use blocks to execute
     const toolUseBlocks = contentBlocks.filter((b) => b.type === 'tool_use');
@@ -236,9 +262,11 @@ export class ConversationEngine {
             isError: true,
           };
           callbacks.onToolEnd?.(block.id!, block.name!, errorResult);
-          this.messages.push(
-            toolResultMessage(block.id!, block.name!, errorResult.content, true),
-          );
+          const deniedMsg = toolResultMessage(block.id!, block.name!, errorResult.content, true);
+          this.messages.push(deniedMsg);
+          if (this.options.session) {
+            appendMessage(this.options.session.id, deniedMsg);
+          }
           continue;
         }
 
@@ -267,9 +295,13 @@ export class ConversationEngine {
       callbacks.onToolEnd?.(block.id!, block.name!, result);
 
       // Add tool result to messages
-      this.messages.push(
-        toolResultMessage(block.id!, block.name!, result.content, result.isError),
-      );
+      const toolMsg = toolResultMessage(block.id!, block.name!, result.content, result.isError);
+      this.messages.push(toolMsg);
+
+      // Persist tool result message
+      if (this.options.session) {
+        appendMessage(this.options.session.id, toolMsg);
+      }
     }
 
     // 7. Recurse -- send tool results back to LLM

@@ -20,6 +20,9 @@ import {
 } from './components/index.js';
 import type { OperationEntryData } from './components/index.js';
 import { useInputHistory } from './hooks/useInputHistory.js';
+import type { Message } from '../api/types.js';
+import { appendMessage, appendCompaction } from '../session/history.js';
+import type { CompactionSnapshot } from '../session/history.js';
 
 interface AppProps {
   provider: LLMProvider;
@@ -27,6 +30,8 @@ interface AppProps {
   registry: ToolRegistry;
   systemPrompt?: string;
   commandRegistry?: SlashCommandRegistry;
+  initialMessages?: Message[];
+  resumedSessionId?: string;
 }
 
 interface PendingPermission {
@@ -83,7 +88,7 @@ function summarizeToolResult(name: string, result: ToolResult): string {
   return content.length > 60 ? content.slice(0, 57) + '...' : content;
 }
 
-export default function App({ provider, config, registry, systemPrompt, commandRegistry }: AppProps) {
+export default function App({ provider, config, registry, systemPrompt, commandRegistry, initialMessages, resumedSessionId }: AppProps) {
   const [input, setInput] = useState('');
   const [entries, setEntries] = useState<OperationEntryData[]>([]);
   const [streamingText, setStreamingText] = useState('');
@@ -100,9 +105,12 @@ export default function App({ provider, config, registry, systemPrompt, commandR
   const contextWindowRef = useRef<ContextWindow | null>(null);
   const toolStartTimesRef = useRef<Map<string, number>>(new Map());
 
+  const sessionRef = useRef<Session | null>(null);
+
   if (!engineRef.current) {
     const permissionManager = new PermissionManager(config.permissions);
-    const session = new Session();
+    const session = resumedSessionId ? new Session(resumedSessionId) : new Session();
+    sessionRef.current = session;
     const contextWindow = new ContextWindow();
     contextWindowRef.current = contextWindow;
     const toolContext: ToolContext = {
@@ -125,6 +133,18 @@ export default function App({ provider, config, registry, systemPrompt, commandR
       session,
       contextWindow,
     });
+
+    // Load initial messages for session resume
+    if (initialMessages && initialMessages.length > 0) {
+      engineRef.current.setMessages(initialMessages);
+      setEntries((e) => [
+        ...e,
+        {
+          type: 'system' as const,
+          content: `Resumed session ${session.id} (${initialMessages.length} messages)`,
+        },
+      ]);
+    }
   }
 
   const handlePermissionResponse = useCallback((response: PermissionResponse) => {
