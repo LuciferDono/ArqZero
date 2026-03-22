@@ -1,5 +1,5 @@
 // src/cli/components/Header.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
 import os from 'node:os';
 import type { TokenUsage } from '../../api/types.js';
@@ -13,7 +13,7 @@ export interface HeaderProps {
   sessionId?: string;
 }
 
-// Display name mapping — visual alias for models
+// Display name mapping
 const MODEL_DISPLAY_NAMES: Record<string, string> = {
   'accounts/fireworks/models/glm-4p7': 'PRIMUS',
   'glm-4p7': 'PRIMUS',
@@ -33,9 +33,7 @@ function shortModelName(name: string): string {
 
 function formatTokens(usage: TokenUsage): string {
   const total = usage.inputTokens + usage.outputTokens;
-  if (total >= 1000) {
-    return `${(total / 1000).toFixed(1)}k`;
-  }
+  if (total >= 1000) return `${(total / 1000).toFixed(1)}k`;
   return `${total}`;
 }
 
@@ -45,32 +43,31 @@ function formatCost(cost: number): string {
 }
 
 function getUsername(): string {
-  try {
-    return os.userInfo().username;
-  } catch {
-    return 'user';
-  }
+  try { return os.userInfo().username; } catch { return 'user'; }
 }
 
 function getCwd(): string {
   const cwd = process.cwd();
   const home = os.homedir();
-  if (cwd.startsWith(home)) {
-    return '~' + cwd.slice(home.length).replace(/\\/g, '/');
-  }
+  if (cwd.startsWith(home)) return '~' + cwd.slice(home.length).replace(/\\/g, '/');
   return cwd.replace(/\\/g, '/');
 }
 
-// ARQ + ZERO side by side, proper spacing for Z and E
-const LOGO_ARQ = [
+function getTermWidth(): number {
+  return process.stdout.columns || 80;
+}
+
+// ─── Logo variants by terminal width ──────────────────────────
+
+// Full: 62 chars wide — for terminals >= 80 cols
+const LOGO_FULL_ARQ = [
   ' ░█████╗░██████╗░░██████╗░',
   ' ██╔══██╗██╔══██╗██╔═══██╗',
   ' ███████║██████╔╝██║██╗██║',
   ' ██╔══██║██╔══██╗╚██████╔╝',
   ' ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═══╝╚═╝',
 ];
-
-const LOGO_ZERO = [
+const LOGO_FULL_ZERO = [
   '███████╗ ██████╗ ██████╗░ ░█████╗░',
   '╚══███╔╝ ██╔═══╝ ██╔══██╗ ██╔══██╗',
   '  ███╔╝  █████╗  ██████╔╝ ██║  ██║',
@@ -78,30 +75,70 @@ const LOGO_ZERO = [
   '███████╗ ██████╗ ╚═╝  ╚═╝  ╚════╝ ',
 ];
 
-function LogoBlock() {
-  const lines = LOGO_ARQ.length;
-  return (
-    <Box flexDirection="column">
-      {Array.from({ length: lines }, (_, i) => (
-        <Box key={i}>
-          <Text color={COLORS.brand} bold>{LOGO_ARQ[i]}</Text>
-          <Text color="#8BBBD4" bold>  {LOGO_ZERO[i] ?? ''}</Text>
+// Compact: 31 chars — for terminals 40-79 cols
+const LOGO_COMPACT = [
+  ' ▄▀█ █▀█ █▀█ ▀█ █▀▀ █▀█ █▀█',
+  ' █▀█ █▀▄ ▀▀█ █▄ ██▄ █▀▄ █▄█',
+];
+
+// Minimal: plain text — for terminals < 40 cols
+// (no constant needed, just render text)
+
+function Logo() {
+  const width = getTermWidth();
+
+  // Full block logo — wide terminal
+  if (width >= 80) {
+    const lines = LOGO_FULL_ARQ.length;
+    return (
+      <Box flexDirection="column">
+        {Array.from({ length: lines }, (_, i) => (
+          <Box key={i}>
+            <Text color={COLORS.brand} bold>{LOGO_FULL_ARQ[i]}</Text>
+            <Text color="#8BBBD4" bold>  {LOGO_FULL_ZERO[i] ?? ''}</Text>
+          </Box>
+        ))}
+        <Box>
+          <Text color={COLORS.brand}> ─────── </Text>
+          <Text color={COLORS.info} bold>v{THEME.version}</Text>
         </Box>
-      ))}
-      <Box>
-        <Text color={COLORS.brand}> ─────── </Text>
-        <Text color={COLORS.info} bold>v{THEME.version}</Text>
       </Box>
+    );
+  }
+
+  // Compact half-block logo — medium terminal
+  if (width >= 40) {
+    return (
+      <Box flexDirection="column">
+        {LOGO_COMPACT.map((line, i) => (
+          <Box key={i}>
+            <Text color={COLORS.brand} bold>{line}</Text>
+          </Box>
+        ))}
+        <Box>
+          <Text color={COLORS.brand}>── </Text>
+          <Text color={COLORS.info} bold>v{THEME.version}</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Minimal text — very narrow terminal
+  return (
+    <Box>
+      <Text color={COLORS.brand} bold>◆ ArqZero</Text>
+      <Text color={COLORS.info}> v{THEME.version}</Text>
     </Box>
   );
 }
 
-// Context meter — visual bar
+// Context meter — adapts width to terminal
 function ContextMeter({ percent }: { percent: number }) {
   if (percent <= 0) return null;
-  const width = 12;
-  const filled = Math.round(width * percent / 100);
-  const empty = width - filled;
+  const termWidth = getTermWidth();
+  const barWidth = termWidth >= 80 ? 12 : termWidth >= 50 ? 8 : 4;
+  const filled = Math.round(barWidth * percent / 100);
+  const empty = barWidth - filled;
   const color = percent > 80 ? COLORS.ctxCritical : percent > 60 ? COLORS.ctxCaution : COLORS.ctxHealthy;
   return (
     <Box>
@@ -114,42 +151,80 @@ function ContextMeter({ percent }: { percent: number }) {
 }
 
 export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: HeaderProps) {
+  const [termWidth, setTermWidth] = useState(getTermWidth());
+
+  // Listen for terminal resize
+  useEffect(() => {
+    const onResize = () => setTermWidth(getTermWidth());
+    process.stdout.on('resize', onResize);
+    return () => { process.stdout.off('resize', onResize); };
+  }, []);
+
   const user = getUsername();
   const model = shortModelName(modelName);
   const cwd = getCwd();
 
+  // Truncate cwd if too long for terminal
+  const maxCwdLen = Math.max(10, termWidth - 40);
+  const displayCwd = cwd.length > maxCwdLen
+    ? '...' + cwd.slice(cwd.length - maxCwdLen + 3)
+    : cwd;
+
+  // Separator adapts to actual terminal width
+  const sepWidth = Math.max(10, Math.min(termWidth, 120));
+
+  // Narrow terminal: stack info vertically
+  const isNarrow = termWidth < 60;
+
   return (
     <Box flexDirection="column" marginBottom={0}>
-      {/* Logo — full width */}
-      <LogoBlock />
+      <Logo />
 
-      {/* Info bar */}
-      <Box>
-        <Box flexGrow={1}>
-          <Text color={COLORS.username}>{user}</Text>
-          <Text color={COLORS.brand}> ◈ </Text>
-          <Text color={THEME.text}>{cwd}</Text>
+      {isNarrow ? (
+        // Narrow: stack user, model, stats vertically
+        <Box flexDirection="column">
+          <Box>
+            <Text color={COLORS.username}>{user}</Text>
+            <Text color={COLORS.brand}> ◈ </Text>
+            <Text color={THEME.text}>{displayCwd}</Text>
+          </Box>
+          <Box>
+            <Text color={COLORS.structural}>▐</Text>
+            <Text color={COLORS.badgeBg} backgroundColor={COLORS.brand} bold> {model} </Text>
+            <Text color={COLORS.structural}>▌</Text>
+            {tokenUsage && <Text color={THEME.dim}> {formatTokens(tokenUsage)}t</Text>}
+            {contextPercent > 0 && <Text color={THEME.dim}> {contextPercent}%</Text>}
+          </Box>
         </Box>
+      ) : (
+        // Wide: horizontal layout
         <Box>
-          <Text color={COLORS.structural}>▐</Text>
-          <Text color={COLORS.badgeBg} backgroundColor={COLORS.brand} bold> {model} </Text>
-          <Text color={COLORS.structural}>▌</Text>
-          {tokenUsage && (
-            <Text color={THEME.dim}>  {formatTokens(tokenUsage)} tok</Text>
-          )}
-          {costEstimate > 0 && (
-            <Text color={THEME.dim}> │ {formatCost(costEstimate)}</Text>
-          )}
-          {contextPercent > 0 && (
-            <Text color={THEME.dim}> │ ctx {contextPercent}%</Text>
-          )}
+          <Box flexGrow={1}>
+            <Text color={COLORS.username}>{user}</Text>
+            <Text color={COLORS.brand}> ◈ </Text>
+            <Text color={THEME.text}>{displayCwd}</Text>
+          </Box>
+          <Box>
+            <Text color={COLORS.structural}>▐</Text>
+            <Text color={COLORS.badgeBg} backgroundColor={COLORS.brand} bold> {model} </Text>
+            <Text color={COLORS.structural}>▌</Text>
+            {tokenUsage && (
+              <Text color={THEME.dim}>  {formatTokens(tokenUsage)} tok</Text>
+            )}
+            {costEstimate > 0 && (
+              <Text color={THEME.dim}> │ {formatCost(costEstimate)}</Text>
+            )}
+            {contextPercent > 0 && (
+              <Text color={THEME.dim}> │ ctx {contextPercent}%</Text>
+            )}
+          </Box>
         </Box>
-      </Box>
+      )}
 
-      {/* Separator */}
+      {/* Separator — always fits terminal width */}
       <Box>
         <Text color={COLORS.brand}>{'─'}</Text>
-        <Text color={COLORS.structural}>{'─'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 1))}</Text>
+        <Text color={COLORS.structural}>{'─'.repeat(Math.max(0, sepWidth - 1))}</Text>
       </Box>
     </Box>
   );

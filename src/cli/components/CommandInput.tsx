@@ -23,7 +23,7 @@ export function CommandInput({ value, onChange, onSubmit, disabled }: CommandInp
           <Text color={THEME.dim}>&gt; </Text>
         </Box>
         <Box>
-          <Text color={THEME.dim}>{'─'.repeat(Math.min(process.stdout.columns || 80, 80))}</Text>
+          <Text color={THEME.dim}>{'─'.repeat(Math.max(10, Math.min(process.stdout.columns || 80, 120)))}</Text>
         </Box>
       </Box>
     );
@@ -43,7 +43,7 @@ export function CommandInput({ value, onChange, onSubmit, disabled }: CommandInp
 
       {/* Bottom border */}
       <Box>
-        <Text color={THEME.dim}>{'─'.repeat(Math.min(process.stdout.columns || 80, 80))}</Text>
+        <Text color={THEME.dim}>{'─'.repeat(Math.max(10, Math.min(process.stdout.columns || 80, 120)))}</Text>
       </Box>
     </Box>
   );
