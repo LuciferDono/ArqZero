@@ -1,5 +1,6 @@
 import type { SlashCommand, SlashCommandContext } from './registry.js';
 import { MemoryStore } from '../memory/store.js';
+import { rewindToCheckpoint, formatCheckpointList } from '../checkpoints/rewind.js';
 
 export const helpCommand: SlashCommand = {
   name: '/help',
@@ -138,6 +139,35 @@ export const memoryCommand: SlashCommand = {
   },
 };
 
+export const rewindCommand: SlashCommand = {
+  name: '/rewind',
+  description: 'List checkpoints or rewind to a checkpoint',
+  async execute(args: string, ctx: SlashCommandContext): Promise<string> {
+    const store = ctx.checkpointStore;
+    if (!store) {
+      return 'Checkpoint store not available.';
+    }
+
+    if (!args) {
+      return formatCheckpointList(store.getAll());
+    }
+
+    const targetId = parseInt(args.trim(), 10);
+    if (isNaN(targetId)) {
+      return `Invalid checkpoint id: "${args.trim()}". Usage: /rewind <id>`;
+    }
+
+    const cp = store.getById(targetId);
+    if (!cp) {
+      return `Checkpoint ${targetId} not found.`;
+    }
+
+    const result = rewindToCheckpoint(store, targetId);
+    const fileList = result.restoredFiles.map((f) => `  • ${f}`).join('\n');
+    return `Rewound ${result.checkpointsRewound} checkpoint(s). Restored files:\n${fileList}`;
+  },
+};
+
 export const builtinCommands: SlashCommand[] = [
   helpCommand,
   modelCommand,
@@ -147,4 +177,5 @@ export const builtinCommands: SlashCommand[] = [
   quitCommand,
   skillCommand,
   memoryCommand,
+  rewindCommand,
 ];

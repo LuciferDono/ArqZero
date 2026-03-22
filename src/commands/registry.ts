@@ -1,10 +1,12 @@
 import type { AppConfig } from '../config/schema.js';
 import type { SkillRegistry } from '../skills/commands.js';
+import type { CheckpointStore } from '../checkpoints/store.js';
 
 export interface SlashCommandContext {
   config: AppConfig;
   skillRegistry?: SkillRegistry;
   commandRegistry?: SlashCommandRegistry;
+  checkpointStore?: CheckpointStore;
   onModelChange?: (model: string) => void;
   onClear?: () => void;
   onCompact?: () => void;
