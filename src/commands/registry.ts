@@ -1,16 +1,39 @@
 import type { AppConfig } from '../config/schema.js';
 import type { SkillRegistry } from '../skills/commands.js';
 import type { CheckpointStore } from '../checkpoints/store.js';
+import type { ContextWindow } from '../session/context.js';
+import type { ToolRegistry } from '../tools/registry.js';
+import type { Message } from '../api/types.js';
+import type { CronManager } from '../cli/cron.js';
+import type { PluginManager } from '../plugins/manager.js';
+import type { PluginLoader } from '../plugins/loader.js';
+
+export interface TokenUsageStats {
+  inputTokens: number;
+  outputTokens: number;
+}
 
 export interface SlashCommandContext {
   config: AppConfig;
   skillRegistry?: SkillRegistry;
   commandRegistry?: SlashCommandRegistry;
   checkpointStore?: CheckpointStore;
+  contextWindow?: ContextWindow;
+  toolRegistry?: ToolRegistry;
+  tokenUsage?: TokenUsageStats;
+  costEstimate?: number;
+  messages?: Message[];
+  cronManager?: CronManager;
+  pluginManager?: PluginManager;
+  pluginLoader?: PluginLoader;
+  effort?: string;
+  vimMode?: boolean;
   onModelChange?: (model: string) => void;
   onClear?: () => void;
   onCompact?: () => void;
   onQuit?: () => void;
+  onEffortChange?: (level: string) => void;
+  onVimToggle?: (enabled: boolean) => void;
 }
 
 export interface SlashCommand {

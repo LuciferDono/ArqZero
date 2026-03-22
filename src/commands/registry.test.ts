@@ -10,11 +10,29 @@ import {
   configCommand,
   quitCommand,
   skillCommand,
+  contextCommand,
+  costCommand,
+  effortCommand,
+  permissionsCommand,
+  toolsCommand,
+  statusCommand,
+  exportCommand,
+  doctorCommand,
+  initCommand,
+  agentsCommand,
+  loopCommand,
+  vimCommand,
   builtinCommands,
 } from './builtins.js';
 import { SkillRegistry } from '../skills/commands.js';
 import type { LoadedSkill } from '../skills/parser.js';
 import type { AppConfig } from '../config/schema.js';
+import { ContextWindow } from '../session/context.js';
+import { ToolRegistry } from '../tools/registry.js';
+import { CronManager } from '../cli/cron.js';
+import type { Tool } from '../tools/types.js';
+import fs from 'node:fs';
+import path from 'node:path';
 
 function createMockCommand(overrides: Partial<SlashCommand> = {}): SlashCommand {
   return {
@@ -420,8 +438,8 @@ describe('Built-in commands', () => {
   });
 
   describe('builtinCommands array', () => {
-    it('should contain all 9 built-in commands', () => {
-      assert.equal(builtinCommands.length, 9);
+    it('should contain all 23 built-in commands', () => {
+      assert.equal(builtinCommands.length, 23);
     });
 
     it('should have unique names', () => {
@@ -434,6 +452,270 @@ describe('Built-in commands', () => {
       for (const cmd of builtinCommands) {
         assert.ok(cmd.name.startsWith('/'), `${cmd.name} should start with /`);
       }
+    });
+  });
+
+  describe('/context', () => {
+    it('should show context window usage', async () => {
+      const cw = new ContextWindow({ maxContextTokens: 200000 });
+      cw.trackUsage({ inputTokens: 96000, outputTokens: 4000 });
+      const ctx = createMockContext({ contextWindow: cw });
+      const output = await contextCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('48%'));
+      assert.ok(output.includes('96k'));
+      assert.ok(output.includes('200k'));
+    });
+
+    it('should handle missing context window', async () => {
+      const ctx = createMockContext();
+      const output = await contextCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('not available'));
+    });
+  });
+
+  describe('/cost', () => {
+    it('should show cost and token usage', async () => {
+      const ctx = createMockContext({
+        tokenUsage: { inputTokens: 4200, outputTokens: 1800 },
+        costEstimate: 0.012,
+      });
+      const output = await costCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('$0.012'));
+      assert.ok(output.includes('input'));
+      assert.ok(output.includes('output'));
+    });
+
+    it('should show zeros when no usage', async () => {
+      const ctx = createMockContext();
+      const output = await costCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('$0.000'));
+    });
+  });
+
+  describe('/effort', () => {
+    it('should set effort level', async () => {
+      let setTo = '';
+      const ctx = createMockContext({ onEffortChange: (l) => { setTo = l; } });
+      const output = await effortCommand.execute('high', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('high'));
+      assert.equal(setTo, 'high');
+    });
+
+    it('should reject invalid level', async () => {
+      const ctx = createMockContext();
+      const output = await effortCommand.execute('turbo', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('Invalid'));
+    });
+
+    it('should show current level when no args', async () => {
+      const ctx = createMockContext({ effort: 'low' });
+      const output = await effortCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('low'));
+    });
+  });
+
+  describe('/permissions', () => {
+    it('should show permission rules', async () => {
+      const ctx = createMockContext();
+      const output = await permissionsCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('ask'));
+      assert.ok(output.includes('Read'));
+      assert.ok(output.includes('Glob'));
+      assert.ok(output.includes('Grep'));
+    });
+  });
+
+  describe('/tools', () => {
+    it('should list tools from registry', async () => {
+      const toolRegistry = new ToolRegistry();
+      const mockTool: Tool = {
+        name: 'Read',
+        description: 'Read a file',
+        inputSchema: {},
+        permissionLevel: 'safe',
+        execute: async () => ({ content: '' }),
+      };
+      toolRegistry.register(mockTool);
+
+      const ctx = createMockContext({ toolRegistry });
+      const output = await toolsCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('Read'));
+      assert.ok(output.includes('safe'));
+    });
+
+    it('should handle missing tool registry', async () => {
+      const ctx = createMockContext();
+      const output = await toolsCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('not available'));
+    });
+  });
+
+  describe('/status', () => {
+    it('should show provider and model', async () => {
+      const ctx = createMockContext();
+      const output = await statusCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('ArqZero'));
+      assert.ok(output.includes('fireworks'));
+      assert.ok(output.includes('connected'));
+    });
+  });
+
+  describe('/export', () => {
+    it('should export messages to file', async () => {
+      const messages = [
+        { role: 'user' as const, content: 'Hello' },
+        { role: 'assistant' as const, content: 'Hi there' },
+      ];
+      const ctx = createMockContext({ messages });
+      const filename = `test-export-${Date.now()}.md`;
+      try {
+        const output = await exportCommand.execute(filename, ctx);
+        assert.ok(output);
+        assert.ok(output.includes(filename));
+        const content = fs.readFileSync(filename, 'utf-8');
+        assert.ok(content.includes('Hello'));
+        assert.ok(content.includes('Hi there'));
+      } finally {
+        try { fs.unlinkSync(filename); } catch {}
+      }
+    });
+
+    it('should report when no messages', async () => {
+      const ctx = createMockContext({ messages: [] });
+      const output = await exportCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('No messages'));
+    });
+  });
+
+  describe('/doctor', () => {
+    it('should show health check info', async () => {
+      const ctx = createMockContext();
+      const output = await doctorCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('Health Check'));
+      assert.ok(output.includes('Provider'));
+      assert.ok(output.includes('API key'));
+    });
+  });
+
+  describe('/init', () => {
+    it('should not overwrite existing file', async () => {
+      const testPath = path.join(process.cwd(), 'ARQZERO.md');
+      const existed = fs.existsSync(testPath);
+      if (!existed) {
+        fs.writeFileSync(testPath, 'existing', 'utf-8');
+      }
+      try {
+        const ctx = createMockContext();
+        const output = await initCommand.execute('', ctx);
+        assert.ok(output);
+        assert.ok(output.includes('already exists'));
+      } finally {
+        if (!existed) {
+          try { fs.unlinkSync(testPath); } catch {}
+        }
+      }
+    });
+  });
+
+  describe('/agents', () => {
+    it('should handle missing agents directory', async () => {
+      const ctx = createMockContext();
+      const output = await agentsCommand.execute('', ctx);
+      assert.ok(output);
+      assert.equal(typeof output, 'string');
+    });
+  });
+
+  describe('/loop', () => {
+    it('should create a loop', async () => {
+      const manager = new CronManager();
+      const ctx = createMockContext({ cronManager: manager });
+      try {
+        const output = await loopCommand.execute('5m check build', ctx);
+        assert.ok(output);
+        assert.ok(output.includes('Loop #'));
+        assert.ok(output.includes('check build'));
+        assert.equal(manager.list().length, 1);
+      } finally {
+        manager.stopAll();
+      }
+    });
+
+    it('should list loops', async () => {
+      const manager = new CronManager();
+      manager.add(60000, 'test job', async () => {});
+      const ctx = createMockContext({ cronManager: manager });
+      try {
+        const output = await loopCommand.execute('list', ctx);
+        assert.ok(output);
+        assert.ok(output.includes('test job'));
+      } finally {
+        manager.stopAll();
+      }
+    });
+
+    it('should stop all loops', async () => {
+      const manager = new CronManager();
+      manager.add(60000, 'test job', async () => {});
+      const ctx = createMockContext({ cronManager: manager });
+      const output = await loopCommand.execute('stop', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('stopped'));
+      assert.equal(manager.list().length, 0);
+    });
+
+    it('should reject invalid interval', async () => {
+      const manager = new CronManager();
+      const ctx = createMockContext({ cronManager: manager });
+      const output = await loopCommand.execute('xyz check build', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('Invalid'));
+    });
+
+    it('should handle missing manager', async () => {
+      const ctx = createMockContext();
+      const output = await loopCommand.execute('5m test', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('not available'));
+    });
+  });
+
+  describe('/vim', () => {
+    it('should toggle vim mode', async () => {
+      let toggled = false;
+      const ctx = createMockContext({
+        vimMode: false,
+        onVimToggle: (v) => { toggled = v; },
+      });
+      const output = await vimCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('enabled'));
+      assert.equal(toggled, true);
+    });
+
+    it('should toggle off when already on', async () => {
+      let toggled = true;
+      const ctx = createMockContext({
+        vimMode: true,
+        onVimToggle: (v) => { toggled = v; },
+      });
+      const output = await vimCommand.execute('', ctx);
+      assert.ok(output);
+      assert.ok(output.includes('disabled'));
+      assert.equal(toggled, false);
     });
   });
 });
