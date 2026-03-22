@@ -61,11 +61,14 @@ function getCwd(): string {
   return cwd.replace(/\\/g, '/');
 }
 
-// Block logo — ARQZERO, compact 4-row, same style as reference
+// Block logo — same ░██╗║╔╚╝═ style, reduced width
 const LOGO = [
-  ' ██▀█▄ █▀▀▄ █▀█▀ ▀▀█ █▀▀ █▀▀▄ █▀▀█',
-  ' █▄▄█▀ █▄▄▀ █ ▀█  █▄ █▀▀ █▄▄▀ █  █',
-  ' █  █  █  █  ▀▀▀  ▀▀ ▀▀▀ █  █ ▀▀▀▀',
+  ' ░███╗ ██╗░ ░███╗ ████╗ ███╗ ██╗░ ░███╗',
+  ' ██╔═╝ ██╠╗ ██║█║ ╚═██║ ██╔╝ ██╠╗ ██║█║',
+  ' ████║ ███╝ ╚███║  ██╔╝ ███╗ ███╝ ██║█║',
+  ' ██╔═║ ██╠╗ ╚██╔╝ ██╔╝ ██╔╝ ██╠╗ ██║█║',
+  ' ╚═╝   ╚═╝  ╚═╝  ████║ ███╝ ╚═╝  ╚██╔╝',
+  '                  ╚═══╝ ╚══╝       ╚═╝ ',
 ];
 
 const COLOR_CYAN = '#00e5c0';
@@ -111,40 +114,29 @@ export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: 
 
   return (
     <Box flexDirection="column" marginBottom={0}>
-      {/* Main header: Logo left, info right */}
+      {/* Logo — full width */}
+      <LogoBlock />
+
+      {/* Info bar */}
       <Box>
         <Box flexGrow={1}>
-          <LogoBlock />
+          <Text color="#888888">{user}</Text>
+          <Text color={COLOR_CYAN}> ◈ </Text>
+          <Text color={THEME.text}>{cwd}</Text>
         </Box>
-        <Box flexDirection="column" alignItems="flex-end" justifyContent="flex-end">
-          {/* User + path */}
-          <Box>
-            <Text color="#888888">{user}</Text>
-            <Text color={THEME.primary}> ◈ </Text>
-            <Text color={THEME.text}>{cwd}</Text>
-          </Box>
-          {/* Model badge */}
-          <Box>
-            <Text color="#444444">▐</Text>
-            <Text color="#1a1a1a" backgroundColor={THEME.primary} bold> {model} </Text>
-            <Text color="#444444">▌</Text>
-          </Box>
-          {/* Stats row */}
-          <Box>
-            {tokenUsage && (
-              <>
-                <Text color={THEME.dim}>{formatTokens(tokenUsage)} tok</Text>
-                <Text color="#444444"> │ </Text>
-              </>
-            )}
-            {costEstimate > 0 && (
-              <>
-                <Text color={THEME.dim}>{formatCost(costEstimate)}</Text>
-                <Text color="#444444"> │ </Text>
-              </>
-            )}
-            <ContextMeter percent={contextPercent} />
-          </Box>
+        <Box>
+          <Text color="#444444">▐</Text>
+          <Text color="#1a1a1a" backgroundColor={COLOR_CYAN} bold> {model} </Text>
+          <Text color="#444444">▌</Text>
+          {tokenUsage && (
+            <Text color={THEME.dim}>  {formatTokens(tokenUsage)} tok</Text>
+          )}
+          {costEstimate > 0 && (
+            <Text color={THEME.dim}> │ {formatCost(costEstimate)}</Text>
+          )}
+          {contextPercent > 0 && (
+            <Text color={THEME.dim}> │ ctx {contextPercent}%</Text>
+          )}
         </Box>
       </Box>
 
