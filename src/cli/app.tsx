@@ -20,6 +20,7 @@ import {
   CommandInput,
   PermissionInline,
   TranscriptView,
+  Footer,
 } from './components/index.js';
 import type { OperationEntryData } from './components/index.js';
 import { useInputHistory } from './hooks/useInputHistory.js';
@@ -433,6 +434,12 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         suggestions={suggestions}
         selectedIndex={suggestionIndex}
         visible={showSuggestions}
+      />
+
+      <Footer
+        isStreaming={isStreaming}
+        transcriptMode={transcriptMode}
+        sessionId={sessionRef.current?.id}
       />
     </Box>
   );

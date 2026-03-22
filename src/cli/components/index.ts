@@ -30,3 +30,6 @@ export type { DiffViewProps } from './DiffView.js';
 
 export { SlashSuggestions, filterSuggestions } from './SlashSuggestions.js';
 export type { SlashSuggestion, SlashSuggestionsProps } from './SlashSuggestions.js';
+
+export { Footer } from './Footer.js';
+export type { FooterProps } from './Footer.js';

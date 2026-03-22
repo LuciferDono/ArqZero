@@ -61,25 +61,24 @@ function getCwd(): string {
   return cwd.replace(/\\/g, '/');
 }
 
-// Gradient ASCII art logo — each line is a single string for alignment
+// Gradient ASCII art logo
 const LOGO_LINES = [
   '   ▄▀▀▄ █▀▀▄ █▀▀█ ▀▀█ █▀▀ █▀▀▄ █▀▀█',
   '   █▀▀█ █▄▄▀ █ ▄▀  ▄▀ █▀▀ █▄▄▀ █  █',
   '   ▀  ▀ ▀ ▀▀  ▀▀▀ █▄▄ ▀▀▀ ▀ ▀▀ ▀▀▀▀',
 ];
 
-// Color each character with a gradient sweep
-function Logo() {
-  const colors = ['#FF6B00', '#FF8C00', '#FFB800', '#FFD54F', '#FFF176', '#FFD54F', '#FFB800', '#FF8C00'];
+const GRADIENT = ['#FF6B00', '#FF8C00', '#FFB800', '#FFD54F', '#FFF176', '#FFD54F', '#FFB800', '#FF8C00'];
 
+function Logo() {
   return (
     <Box flexDirection="column">
       {LOGO_LINES.map((line, lineIdx) => (
         <Box key={lineIdx}>
           {line.split('').map((char, i) => {
-            const colorIdx = Math.floor((i / line.length) * colors.length);
+            const colorIdx = Math.floor((i / line.length) * GRADIENT.length);
             return (
-              <Text key={i} color={colors[colorIdx]} bold>
+              <Text key={i} color={GRADIENT[colorIdx]} bold>
                 {char}
               </Text>
             );
@@ -90,56 +89,74 @@ function Logo() {
   );
 }
 
-export function Header({ modelName, tokenUsage, costEstimate, contextPercent, sessionId }: HeaderProps) {
+// Context meter — visual bar
+function ContextMeter({ percent }: { percent: number }) {
+  if (percent <= 0) return null;
+  const width = 12;
+  const filled = Math.round(width * percent / 100);
+  const empty = width - filled;
+  const color = percent > 80 ? '#FF4444' : percent > 60 ? '#FFB800' : '#69DB7C';
+  return (
+    <Box>
+      <Text color={THEME.dim}>ctx </Text>
+      <Text color={color}>{'█'.repeat(filled)}</Text>
+      <Text color="#333333">{'░'.repeat(empty)}</Text>
+      <Text color={THEME.dim}> {percent}%</Text>
+    </Box>
+  );
+}
+
+export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: HeaderProps) {
   const user = getUsername();
   const model = shortModelName(modelName);
   const cwd = getCwd();
 
-  // Right side stats
-  const stats: string[] = [];
-  if (tokenUsage) {
-    stats.push(`${formatTokens(tokenUsage)} tok`);
-  }
-  if (costEstimate > 0) {
-    stats.push(formatCost(costEstimate));
-  }
-  if (contextPercent > 0) {
-    stats.push(`ctx ${contextPercent}%`);
-  }
-
   return (
-    <Box flexDirection="column" marginBottom={1}>
-      {/* Logo */}
+    <Box flexDirection="column" marginBottom={0}>
+      {/* Main header: Logo left, info right */}
       <Box>
         <Box flexGrow={1}>
           <Logo />
         </Box>
-        {/* Right-aligned info panel next to logo */}
         <Box flexDirection="column" alignItems="flex-end" justifyContent="flex-end">
+          {/* User + path */}
           <Box>
-            <Text color={THEME.dim}>{user}</Text>
-            <Text color={THEME.primary}> @ </Text>
+            <Text color="#888888">{user}</Text>
+            <Text color={THEME.primary}> ◈ </Text>
             <Text color={THEME.text}>{cwd}</Text>
           </Box>
+          {/* Model badge */}
           <Box>
-            <Text color={THEME.dim}>model </Text>
-            <Text color={THEME.info} bold>{model}</Text>
+            <Text color="#444444">▐</Text>
+            <Text color="#1a1a1a" backgroundColor={THEME.primary} bold> {model} </Text>
+            <Text color="#444444">▌</Text>
           </Box>
-          {stats.length > 0 && (
-            <Box>
-              <Text color={THEME.dim}>{stats.join('  │  ')}</Text>
-            </Box>
-          )}
+          {/* Stats row */}
+          <Box>
+            {tokenUsage && (
+              <>
+                <Text color={THEME.dim}>{formatTokens(tokenUsage)} tok</Text>
+                <Text color="#444444"> │ </Text>
+              </>
+            )}
+            {costEstimate > 0 && (
+              <>
+                <Text color={THEME.dim}>{formatCost(costEstimate)}</Text>
+                <Text color="#444444"> │ </Text>
+              </>
+            )}
+            <ContextMeter percent={contextPercent} />
+          </Box>
         </Box>
       </Box>
 
-      {/* Separator */}
+      {/* Gradient separator */}
       <Box>
-        <Text color="#FF8C00">{'━'}</Text>
-        <Text color="#FFB800">{'━━'}</Text>
-        <Text color="#FFD54F">{'━━━'}</Text>
-        <Text color="#FFF176">{'━━━━'}</Text>
-        <Text color={THEME.dim}>{'━'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 10))}</Text>
+        <Text color="#FF6B00">{'━━'}</Text>
+        <Text color="#FF8C00">{'━━━'}</Text>
+        <Text color="#FFB800">{'━━━━'}</Text>
+        <Text color="#FFD54F">{'━━━━━'}</Text>
+        <Text color="#444444">{'━'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 14))}</Text>
       </Box>
     </Box>
   );
