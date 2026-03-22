@@ -90,7 +90,7 @@ function LogoBlock() {
         <Box key={`a${i}`}><Text color={COLOR_CYAN} bold>{line}</Text></Box>
       ))}
       {LOGO_ZERO.map((line, i) => (
-        <Box key={`z${i}`}><Text color={COLOR_PURPLE} bold>{line}</Text></Box>
+        <Box key={`z${i}`}><Text color={COLOR_CYAN} bold>{line}</Text></Box>
       ))}
     </Box>
   );
