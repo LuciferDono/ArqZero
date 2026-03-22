@@ -17,6 +17,11 @@ export function buildSystemPrompt(cwd: string, memoryStore?: MemoryStore): strin
   parts.push(`Platform: ${process.platform}`);
   parts.push(`Date: ${new Date().toISOString().split('T')[0]}`);
 
+  // Capability pipeline instructions
+  parts.push('');
+  parts.push('You operate with a capability matching system. Before responding, your active capabilities have been matched from the user\'s message. Follow the guidance from activated process capabilities (planning, debugging, testing) before domain-specific work.');
+  parts.push('When facing complex tasks with multiple matched capabilities, use the Dispatch tool to parallelize independent sub-tasks.');
+
   // Load ARQZERO.md if it exists
   const arqzeroMdPath = path.join(cwd, 'ARQZERO.md');
   if (fs.existsSync(arqzeroMdPath)) {

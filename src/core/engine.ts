@@ -10,6 +10,10 @@ import type { HookRegistry } from '../hooks/registry.js';
 import { compactMessages, buildCompactedMessages } from './compaction.js';
 import { ToolExecutor } from '../tools/executor.js';
 import { userMessage, assistantMessage, toolResultMessage } from './message.js';
+import { CAPABILITIES } from '../registry/capabilities.js';
+import { matchCapabilities, selectCapabilities } from '../registry/matcher.js';
+import type { MatchResult } from '../registry/matcher.js';
+import { buildCapabilityContext } from '../registry/injector.js';
 
 export interface EngineCallbacks {
   onTextDelta?: (text: string) => void;
@@ -18,6 +22,7 @@ export interface EngineCallbacks {
   onToolEnd?: (id: string, name: string, result: ToolResult) => void;
   onMessageEnd?: (usage: TokenUsage) => void;
   onCompaction?: (result: CompactionResult) => void;
+  onCapabilitiesMatched?: (matches: MatchResult[]) => void;
   onError?: (error: Error) => void;
 }
 
@@ -39,6 +44,7 @@ export class ConversationEngine {
   private messages: Message[] = [];
   private executor: ToolExecutor;
   private options: EngineOptions;
+  private activeCapabilityContext = '';
 
   constructor(options: EngineOptions) {
     this.options = options;
@@ -54,6 +60,15 @@ export class ConversationEngine {
     callbacks: EngineCallbacks = {},
   ): Promise<void> {
     this.options.session?.touch();
+
+    // Match capabilities from user message
+    const allMatches = matchCapabilities(text, CAPABILITIES);
+    const selected = selectCapabilities(allMatches);
+    this.activeCapabilityContext = buildCapabilityContext(selected);
+    if (selected.length > 0) {
+      callbacks.onCapabilitiesMatched?.(selected);
+    }
+
     this.messages.push(userMessage(text));
     await this.runConversationLoop(callbacks);
 
@@ -95,7 +110,9 @@ export class ConversationEngine {
       model: this.options.model,
       tools: definitions.length > 0 ? definitions : undefined,
       maxTokens: this.options.maxTokens,
-      systemPrompt: this.options.systemPrompt,
+      systemPrompt: this.options.systemPrompt
+        ? this.options.systemPrompt + this.activeCapabilityContext
+        : this.activeCapabilityContext || undefined,
       intent: 'chat' as const,
     };
 

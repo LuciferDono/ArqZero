@@ -7,6 +7,7 @@ import type { AppConfig } from '../config/schema.js';
 import type { ToolRegistry } from '../tools/registry.js';
 import type { ToolContext, ToolResult, PermissionRequest, PermissionResponse } from '../tools/types.js';
 import { ConversationEngine } from '../core/engine.js';
+import type { MatchResult } from '../registry/matcher.js';
 import { PermissionManager } from '../permissions/manager.js';
 import { Session } from '../session/session.js';
 import { ContextWindow } from '../session/context.js';
@@ -252,6 +253,13 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           if (contextWindowRef.current) {
             setContextPercent(contextWindowRef.current.getUsageSummary().percent);
           }
+        },
+        onCapabilitiesMatched: (matches: MatchResult[]) => {
+          const names = matches.map((m) => m.capability.name).join(', ');
+          setEntries((e) => [
+            ...e,
+            { type: 'system', content: `\u25b8 ${names} matched` },
+          ]);
         },
         onCompaction: (result) => {
           setEntries((e) => [...e, {
