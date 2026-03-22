@@ -23,15 +23,15 @@ export const helpCommand: SlashCommand = {
 
 // Available models — display name → full model ID
 const AVAILABLE_MODELS: Record<string, string> = {
-  'primus':      'accounts/fireworks/models/glm-4p7',
-  'primus edge': 'accounts/fireworks/models/glm-5',
-  'glm-4p7':     'accounts/fireworks/models/glm-4p7',
-  'glm-5':       'accounts/fireworks/models/glm-5',
+  'enso':    'accounts/fireworks/models/glm-4p7',
+  'primus':  'accounts/fireworks/models/glm-5',
+  'glm-4p7': 'accounts/fireworks/models/glm-4p7',
+  'glm-5':   'accounts/fireworks/models/glm-5',
 };
 
 const MODEL_LIST = [
-  { id: 'accounts/fireworks/models/glm-4p7', name: 'PRIMUS', desc: 'GLM-4.7 (400B MoE, 200K ctx)' },
-  { id: 'accounts/fireworks/models/glm-5', name: 'PRIMUS Edge', desc: 'GLM-5 (latest, enhanced reasoning)' },
+  { id: 'accounts/fireworks/models/glm-4p7', name: 'Enso', desc: 'GLM-4.7 (400B MoE, 200K ctx) — mushin flow' },
+  { id: 'accounts/fireworks/models/glm-5', name: 'PRIMUS', desc: 'GLM-5 (latest, enhanced reasoning)' },
 ];
 
 export const modelCommand: SlashCommand = {

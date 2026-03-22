@@ -15,10 +15,10 @@ export interface HeaderProps {
 
 // Display name mapping
 const MODEL_DISPLAY_NAMES: Record<string, string> = {
-  'accounts/fireworks/models/glm-4p7': 'PRIMUS',
-  'glm-4p7': 'PRIMUS',
-  'accounts/fireworks/models/glm-5': 'PRIMUS Edge',
-  'glm-5': 'PRIMUS Edge',
+  'accounts/fireworks/models/glm-4p7': 'Enso',
+  'glm-4p7': 'Enso',
+  'accounts/fireworks/models/glm-5': 'PRIMUS',
+  'glm-5': 'PRIMUS',
 };
 
 function shortModelName(name: string): string {
