@@ -71,15 +71,15 @@ const LOGO_ARQ = [
 ];
 
 const LOGO_ZERO = [
-  '░█████╗ ██████╗ ██████╗░ ░█████╗░',
-  '╚══███║ ██╔═══╝ ██╔══██╗ ██╔══██╗',
-  '  ███╔╝ █████╗  ██████╔╝ ██║  ██║',
-  ' ███╔╝  ██╔══╝  ██╔══██╗ ╚█████╔╝',
-  '███████╗██████╗ ╚═╝  ╚═╝  ╚════╝ ',
+  '███████╗ ██████╗ ██████╗░ ░█████╗░',
+  '╚══███╔╝ ██╔═══╝ ██╔══██╗ ██╔══██╗',
+  '  ███╔╝  █████╗  ██████╔╝ ██║  ██║',
+  ' ███╔╝   ██╔══╝  ██╔══██╗ ╚█████╔╝',
+  '███████╗ ██████╗ ╚═╝  ╚═╝  ╚════╝ ',
 ];
 
-// Claude's orange
-const COLOR_LOGO = '#D77757';
+const COLOR_LOGO = '#00e5c0';
+const COLOR_VERSION = '#a78bfa';
 const COLOR_MUTED = '#2d3a55';
 
 function LogoBlock() {
@@ -94,7 +94,7 @@ function LogoBlock() {
       ))}
       <Box>
         <Text color={COLOR_LOGO}> ─────── </Text>
-        <Text color={COLOR_MUTED}>v{THEME.version}</Text>
+        <Text color={COLOR_VERSION} bold>v{THEME.version}</Text>
       </Box>
     </Box>
   );
