@@ -1,18 +1,87 @@
 @import "tailwindcss";
 
-:root {
-  --brand: #00D4AA;
-  --brand-deep: #00A886;
-  --brand-light: #4EECD0;
-  --bg: #0a0a0a;
-  --surface: #141414;
-  --border: #262626;
-  --text: #d4d4d4;
-  --text-dim: #6b7280;
+@theme {
+  --color-brand: #00D4AA;
+  --color-brand-deep: #00A886;
+  --color-brand-light: #4EECD0;
+  --color-bg: #0a0a0a;
+  --color-surface: #141414;
+  --color-border: #1e1e1e;
+  --color-text: #D4D4D4;
+  --color-text-dim: #6B7280;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+  }
+
+  ::selection {
+    background: #00D4AA33;
+    color: #fff;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--color-bg); }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+}
+
+/* Terminal cursor blink */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Fade in up */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+/* Stagger children */
+.stagger > * {
+  opacity: 0;
+  animation: fade-in-up 0.5s ease-out forwards;
+}
+.stagger > *:nth-child(1) { animation-delay: 0.1s; }
+.stagger > *:nth-child(2) { animation-delay: 0.2s; }
+.stagger > *:nth-child(3) { animation-delay: 0.3s; }
+.stagger > *:nth-child(4) { animation-delay: 0.4s; }
+.stagger > *:nth-child(5) { animation-delay: 0.5s; }
+.stagger > *:nth-child(6) { animation-delay: 0.6s; }
+
+/* Typing animation */
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: typing 2s steps(40) forwards;
+}
+
+/* Glow effect for brand color */
+.glow {
+  text-shadow: 0 0 10px #00D4AA44, 0 0 20px #00D4AA22;
+}
+
+/* Terminal line prefix */
+.prompt::before {
+  content: '> ';
+  color: #00D4AA;
+  font-weight: bold;
 }

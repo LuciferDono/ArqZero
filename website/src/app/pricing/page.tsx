@@ -1,161 +1,76 @@
-import Link from 'next/link';
-
-const plans = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    features: [
-      '9 tools (Read, Write, Edit, Bash, Glob, Grep, LS, WebSearch, WebFetch)',
-      '6 slash commands',
-      '10 capabilities',
-      '50 messages/day',
-      'No account required',
-    ],
-    cta: 'Install Free',
-    ctaHref: '/docs/install',
-    highlight: false,
-  },
-  {
-    name: 'Pro',
-    price: '$12',
-    period: '/mo',
-    features: [
-      'All 18 tools',
-      'All 25+ slash commands',
-      'All 42 capabilities + verification gates',
-      'Unlimited messages',
-      'Subagent dispatch (7 parallel)',
-      'Cross-session memory',
-      'Session resume, checkpoints, plugins',
-    ],
-    cta: 'Start Pro',
-    ctaHref: '/login',
-    highlight: true,
-  },
-  {
-    name: 'Team',
-    price: '$30',
-    period: '/user/mo',
-    features: [
-      'Everything in Pro',
-      'Shared team memory',
-      'Team settings sync',
-      'Usage dashboard',
-    ],
-    cta: 'Contact Us',
-    ctaHref: 'mailto:team@arqzero.dev',
-    highlight: false,
-  },
-];
-
-const comparisonFeatures = [
-  { feature: 'Tools', free: '9', pro: '18', team: '18' },
-  { feature: 'Slash commands', free: '6', pro: '25+', team: '25+' },
-  { feature: 'Capabilities', free: '10', pro: '42', team: '42' },
-  { feature: 'Verification gates', free: 'No', pro: 'Yes', team: 'Yes' },
-  { feature: 'Messages/day', free: '50', pro: 'Unlimited', team: 'Unlimited' },
-  { feature: 'Subagents', free: 'No', pro: '7 parallel', team: '7 parallel' },
-  { feature: 'Cross-session memory', free: 'No', pro: 'Yes', team: 'Yes' },
-  { feature: 'Plugins', free: 'No', pro: 'Yes', team: 'Yes' },
-  { feature: 'Team features', free: 'No', pro: 'No', team: 'Yes' },
-];
-
-export default function PricingPage() {
+export default function Pricing() {
   return (
-    <main className="min-h-screen py-24 px-6">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-4xl md:text-5xl font-bold text-center mb-4">
-          Simple, transparent <span style={{ color: 'var(--brand)' }}>pricing</span>
-        </h1>
-        <p className="text-center mb-16" style={{ color: 'var(--text-dim)' }}>
-          No hidden fees. No per-token charges. Bring your own LLM keys.
-        </p>
+    <main className="max-w-4xl mx-auto px-6 py-16">
+      <nav className="flex items-center justify-between mb-16">
+        <a href="/" className="text-brand font-bold text-lg">◆ ArqZero</a>
+        <div className="flex gap-6 text-sm text-text-dim">
+          <a href="/pricing" className="text-brand">pricing</a>
+          <a href="/docs" className="hover:text-brand transition-colors">docs</a>
+        </div>
+      </nav>
 
-        {/* Pricing cards */}
-        <div className="grid md:grid-cols-3 gap-6 mb-20">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className="rounded-xl border p-8 flex flex-col"
-              style={{
-                backgroundColor: 'var(--surface)',
-                borderColor: plan.highlight ? 'var(--brand)' : 'var(--border)',
-                boxShadow: plan.highlight ? '0 0 30px rgba(0, 212, 170, 0.1)' : undefined,
-              }}
-            >
-              <h2 className="text-xl font-bold text-white mb-2">{plan.name}</h2>
-              <div className="mb-6">
-                <span className="text-4xl font-bold text-white">{plan.price}</span>
-                <span className="text-sm" style={{ color: 'var(--text-dim)' }}>
-                  {plan.period}
-                </span>
-              </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <span style={{ color: 'var(--brand)' }} className="mt-0.5 shrink-0">
-                      +
-                    </span>
-                    <span style={{ color: 'var(--text)' }}>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                href={plan.ctaHref}
-                className="block text-center px-6 py-3 rounded-lg font-semibold transition-opacity hover:opacity-90"
-                style={{
-                  backgroundColor: plan.highlight ? 'var(--brand)' : 'transparent',
-                  color: plan.highlight ? 'black' : 'var(--text)',
-                  border: plan.highlight ? 'none' : '1px solid var(--border)',
-                }}
-              >
-                {plan.cta}
-              </Link>
-            </div>
-          ))}
+      <div className="text-text-dim text-sm mb-8">$ arqzero --pricing</div>
+
+      <div className="grid gap-6 md:grid-cols-3 mb-16 stagger">
+        {/* Free */}
+        <div className="border border-border p-6">
+          <div className="text-text-dim text-xs mb-1">FREE</div>
+          <div className="text-2xl font-bold mb-1">$0</div>
+          <div className="text-text-dim text-xs mb-6">no account needed</div>
+          <ul className="text-sm space-y-2 text-text-dim mb-6">
+            <li><span className="text-[#3AAF60]">✓</span> 9 tools</li>
+            <li><span className="text-[#3AAF60]">✓</span> 6 commands</li>
+            <li><span className="text-[#3AAF60]">✓</span> 10 capabilities</li>
+            <li><span className="text-[#3AAF60]">✓</span> 50 msgs/day</li>
+            <li><span className="text-[#3AAF60]">✓</span> Headless mode</li>
+          </ul>
+          <a href="/docs/install" className="block text-center border border-border py-2 text-sm hover:border-brand hover:text-brand transition-colors">
+            npm i -g arqzero
+          </a>
         </div>
 
-        {/* Feature comparison */}
-        <h2 className="text-2xl font-bold text-center mb-8">Feature comparison</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
-                <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--text-dim)' }}>
-                  Feature
-                </th>
-                <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--text-dim)' }}>
-                  Free
-                </th>
-                <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--brand)' }}>
-                  Pro
-                </th>
-                <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--text-dim)' }}>
-                  Team
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {comparisonFeatures.map((row) => (
-                <tr key={row.feature} className="border-b" style={{ borderColor: 'var(--border)' }}>
-                  <td className="py-3 px-4 text-white">{row.feature}</td>
-                  <td className="py-3 px-4" style={{ color: 'var(--text-dim)' }}>{row.free}</td>
-                  <td className="py-3 px-4 font-semibold" style={{ color: 'var(--brand)' }}>{row.pro}</td>
-                  <td className="py-3 px-4" style={{ color: 'var(--text-dim)' }}>{row.team}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Pro — highlighted */}
+        <div className="border border-brand p-6 relative">
+          <div className="absolute -top-3 left-4 bg-brand text-black text-xs px-2 py-0.5 font-bold">RECOMMENDED</div>
+          <div className="text-brand text-xs mb-1">PRO</div>
+          <div className="text-2xl font-bold mb-1">$12<span className="text-sm font-normal text-text-dim">/mo</span></div>
+          <div className="text-text-dim text-xs mb-6">+ your own API key</div>
+          <ul className="text-sm space-y-2 mb-6">
+            <li><span className="text-brand">✓</span> All 18 tools</li>
+            <li><span className="text-brand">✓</span> All 25+ commands</li>
+            <li><span className="text-brand">✓</span> All 42 capabilities</li>
+            <li><span className="text-brand">✓</span> Verification gates</li>
+            <li><span className="text-brand">✓</span> 7 parallel subagents</li>
+            <li><span className="text-brand">✓</span> Cross-session memory</li>
+            <li><span className="text-brand">✓</span> Unlimited messages</li>
+            <li><span className="text-brand">✓</span> Session resume</li>
+            <li><span className="text-brand">✓</span> Plugins + MCP</li>
+          </ul>
+          <a href="/login" className="block text-center bg-brand text-black py-2 text-sm font-bold hover:bg-brand-light transition-colors">
+            Start Pro →
+          </a>
         </div>
 
-        {/* Back link */}
-        <div className="text-center mt-16">
-          <Link href="/" className="text-sm hover:underline" style={{ color: 'var(--brand)' }}>
-            &larr; Back to home
-          </Link>
+        {/* Team */}
+        <div className="border border-border p-6">
+          <div className="text-text-dim text-xs mb-1">TEAM</div>
+          <div className="text-2xl font-bold mb-1">$30<span className="text-sm font-normal text-text-dim">/user/mo</span></div>
+          <div className="text-text-dim text-xs mb-6">everything in Pro, plus</div>
+          <ul className="text-sm space-y-2 text-text-dim mb-6">
+            <li><span className="text-[#4A8FD4]">✓</span> Shared team memory</li>
+            <li><span className="text-[#4A8FD4]">✓</span> Team settings sync</li>
+            <li><span className="text-[#4A8FD4]">✓</span> Usage dashboard</li>
+            <li><span className="text-[#4A8FD4]">✓</span> Priority support</li>
+          </ul>
+          <a href="mailto:team@arqzero.dev" className="block text-center border border-border py-2 text-sm hover:border-brand hover:text-brand transition-colors">
+            Contact us
+          </a>
         </div>
       </div>
+
+      <footer className="border-t border-border pt-8 text-center text-text-dim text-xs">
+        <a href="/" className="hover:text-brand transition-colors">◆ ArqZero</a>
+      </footer>
     </main>
   );
 }

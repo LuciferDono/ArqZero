@@ -1,231 +1,156 @@
-import Link from 'next/link';
-
-function Hero() {
+export default function Home() {
   return (
-    <section className="pt-24 pb-16 px-6 text-center">
-      <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
-        Arq<span style={{ color: 'var(--brand)' }}>Zero</span>
-      </h1>
-      <p className="text-xl md:text-2xl max-w-2xl mx-auto mb-4" style={{ color: 'var(--text)' }}>
-        The only coding agent that enforces engineering methodology
-      </p>
-      <p className="text-base max-w-xl mx-auto mb-10" style={{ color: 'var(--text-dim)' }}>
-        Bring your own AI. Your keys. Your models. Your terminal.
-      </p>
-      <div className="flex gap-4 justify-center flex-wrap">
-        <Link
-          href="/docs/install"
-          className="px-6 py-3 rounded-lg font-semibold text-black transition-opacity hover:opacity-90"
-          style={{ backgroundColor: 'var(--brand)' }}
-        >
-          Get Started
-        </Link>
-        <Link
-          href="/pricing"
-          className="px-6 py-3 rounded-lg font-semibold border transition-colors hover:bg-white/5"
-          style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
-        >
-          View Pricing
-        </Link>
-      </div>
-    </section>
-  );
-}
-
-function TerminalDemo() {
-  const lines = [
-    { type: 'input', text: '> fix the auth bug in login' },
-    { type: 'meta', text: 'Engaging debugging + security' },
-    { type: 'tool', text: '● Read src/auth/login.ts', time: '0.2s' },
-    { type: 'tool', text: '● Grep "token" → 12 matches', time: '0.3s' },
-    { type: 'tool', text: '● Edit src/auth/login.ts', time: '0.1s' },
-    { type: 'diff-add', text: '  ⎿ + const token = await verifyJWT(req);' },
-    { type: 'diff-del', text: '  ⎿ - const token = req.headers.auth;' },
-    { type: 'tool', text: '● Bash npm test', time: '1.4s' },
-    { type: 'result', text: '  ⎿ 42 passing, 0 failing' },
-    { type: 'output', text: 'All tests pass. Auth now validates JWT properly.' },
-  ];
-
-  return (
-    <section className="pb-20 px-6">
-      <div
-        className="max-w-3xl mx-auto rounded-xl overflow-hidden border"
-        style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
-      >
-        {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b" style={{ borderColor: 'var(--border)' }}>
-          <span className="w-3 h-3 rounded-full bg-red-500/80" />
-          <span className="w-3 h-3 rounded-full bg-yellow-500/80" />
-          <span className="w-3 h-3 rounded-full bg-green-500/80" />
-          <span className="ml-3 text-xs" style={{ color: 'var(--text-dim)' }}>arqzero</span>
+    <main className="max-w-4xl mx-auto px-6 py-16">
+      {/* Nav */}
+      <nav className="flex items-center justify-between mb-20">
+        <span className="text-brand font-bold text-lg">◆ ArqZero</span>
+        <div className="flex gap-6 text-sm text-text-dim">
+          <a href="/pricing" className="hover:text-brand transition-colors">pricing</a>
+          <a href="/docs" className="hover:text-brand transition-colors">docs</a>
+          <a href="https://github.com/LuciferDono/ArqZero" className="hover:text-brand transition-colors">github</a>
         </div>
-        {/* Terminal body */}
-        <div className="p-5 text-sm leading-relaxed space-y-1 font-mono">
-          {lines.map((line, i) => (
-            <div key={i} className="flex justify-between">
-              <span
-                className={
-                  line.type === 'input' ? 'font-bold text-white' :
-                  line.type === 'meta' ? 'italic' :
-                  line.type === 'diff-add' ? '' :
-                  line.type === 'diff-del' ? '' :
-                  line.type === 'result' ? '' :
-                  line.type === 'output' ? 'mt-2' : ''
-                }
-                style={{
-                  color:
-                    line.type === 'input' ? '#ffffff' :
-                    line.type === 'meta' ? 'var(--text-dim)' :
-                    line.type === 'tool' ? 'var(--brand)' :
-                    line.type === 'diff-add' ? '#4ade80' :
-                    line.type === 'diff-del' ? '#f87171' :
-                    line.type === 'result' ? 'var(--text-dim)' :
-                    'var(--text)',
-                }}
-              >
-                {line.text}
-              </span>
-              {line.time && (
-                <span className="ml-4 shrink-0" style={{ color: 'var(--text-dim)' }}>
-                  {line.time}
-                </span>
-              )}
+      </nav>
+
+      {/* Hero — looks like a terminal prompt */}
+      <section className="mb-24 animate-fade-in-up">
+        <div className="text-text-dim text-sm mb-4">$ arqzero --about</div>
+        <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
+          The coding agent that follows<br />
+          <span className="text-brand glow">engineering methodology.</span>
+        </h1>
+        <p className="text-text-dim text-lg mb-8 max-w-2xl">
+          Not a chatbot wrapper. ArqZero has 42 structured capabilities —
+          TDD protocols, debugging procedures, verification gates that
+          won&apos;t let it claim done until tests pass.
+        </p>
+        <div className="flex gap-4 flex-wrap">
+          <a href="/docs/install"
+            className="bg-brand text-black font-bold px-6 py-3 text-sm hover:bg-brand-light transition-colors">
+            npm i -g arqzero
+          </a>
+          <a href="/pricing"
+            className="border border-border px-6 py-3 text-sm text-text-dim hover:border-brand hover:text-brand transition-colors">
+            view pricing →
+          </a>
+        </div>
+      </section>
+
+      {/* Terminal demo */}
+      <section className="mb-24">
+        <div className="text-text-dim text-sm mb-4">$ arqzero</div>
+        <div className="bg-surface border border-border p-6 font-mono text-sm leading-relaxed">
+          <div className="text-brand mb-4">◆ ArqZero v2.0.0</div>
+          <div className="text-text-dim mb-2 italic">Engaging debugging + security</div>
+          <div className="mb-1"><span className="text-[#3AAF60]">●</span> <span className="text-[#4A7CF0]">Read</span> <span className="text-text-dim">src/auth/login.ts (42 lines)</span> <span className="text-text-dim float-right">0.2s</span></div>
+          <div className="mb-1"><span className="text-[#3AAF60]">●</span> <span className="text-[#4A7CF0]">Grep</span> <span className="text-text-dim">&quot;token&quot; → 12 matches</span> <span className="text-text-dim float-right">0.3s</span></div>
+          <div className="mb-1"><span className="text-[#3AAF60]">●</span> <span className="text-[#4A7CF0]">Edit</span> <span className="text-text-dim">src/auth/login.ts</span> <span className="text-text-dim float-right">0.1s</span></div>
+          <div className="ml-4 mb-1"><span className="text-text-dim">⎿</span> <span className="text-[#2E9E50] bg-[#0a2e1a] px-1">+ const token = await verifyJWT(req);</span></div>
+          <div className="ml-4 mb-1"><span className="text-text-dim">⎿</span> <span className="text-[#B03A3A] bg-[#2e0a0a] px-1">- const token = req.headers.auth;</span></div>
+          <div className="mb-1"><span className="text-[#3AAF60]">●</span> <span className="text-[#D42E8A]">Bash</span> <span className="text-text-dim italic">npm test</span> <span className="text-text-dim float-right">1.4s</span></div>
+          <div className="ml-4 mb-3"><span className="text-text-dim">⎿</span> <span className="text-[#3AAF60]">42 passing</span>, 0 failing</div>
+          <div>Auth now validates JWT properly. Bug fixed.</div>
+          <div className="mt-3 text-brand">{'>'} <span className="cursor-blink">▌</span></div>
+        </div>
+      </section>
+
+      {/* How it works — three "commands" */}
+      <section className="mb-24 stagger">
+        <div className="text-text-dim text-sm mb-8">$ arqzero --how-it-works</div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          <div className="bg-surface border border-border p-5">
+            <div className="text-brand text-sm mb-2">01</div>
+            <div className="font-bold mb-2">You describe the task</div>
+            <div className="text-text-dim text-sm">&quot;Fix the auth bug&quot; or &quot;refactor the API layer&quot; or &quot;add tests for the payment module&quot;</div>
+          </div>
+          <div className="bg-surface border border-border p-5">
+            <div className="text-brand text-sm mb-2">02</div>
+            <div className="font-bold mb-2">Capabilities activate</div>
+            <div className="text-text-dim text-sm">42 structured methodologies match your task. TDD, debugging, security review — each with multi-step protocols.</div>
+          </div>
+          <div className="bg-surface border border-border p-5">
+            <div className="text-brand text-sm mb-2">03</div>
+            <div className="font-bold mb-2">Verification gates enforce</div>
+            <div className="text-text-dim text-sm">ArqZero won&apos;t claim done until tests pass. Mandatory completion checks. No hallucinated success.</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="mb-24 stagger">
+        <div className="text-text-dim text-sm mb-8">$ arqzero --features</div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {[
+            ['42 Capabilities', 'TDD, debugging, code review, planning, migration — each with 8-10 step imperative protocols.'],
+            ['Verification Gates', 'Mandatory completion checks. Run tests, check coverage, validate security before claiming done.'],
+            ['Any LLM Provider', 'OpenAI, Anthropic, Fireworks, Ollama, any OpenAI-compatible endpoint. Your keys, your choice.'],
+            ['18 Built-in Tools', 'Read, Write, Edit, Bash, Glob, Grep, WebSearch, MultiEdit, Dispatch, and more.'],
+            ['Subagent Dispatch', 'Up to 7 parallel agents for complex tasks. Auto-routing picks the right model per sub-task.'],
+            ['Cross-Session Memory', 'Learns across sessions. Remembers your project, your patterns, your preferences.'],
+          ].map(([title, desc]) => (
+            <div key={title} className="border border-border p-5 hover:border-brand/30 transition-colors">
+              <div className="text-brand text-sm mb-1">●</div>
+              <div className="font-bold mb-1 text-sm">{title}</div>
+              <div className="text-text-dim text-xs leading-relaxed">{desc}</div>
             </div>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
+      </section>
 
-const features = [
-  {
-    title: '42 Structured Capabilities',
-    desc: 'TDD, debugging, code review with real multi-step protocols. Not just prompts — enforced methodology.',
-  },
-  {
-    title: 'Verification Gates',
-    desc: "Won't claim done until tests pass. Every capability has built-in verification steps.",
-  },
-  {
-    title: 'Any LLM Provider',
-    desc: 'OpenAI, Anthropic, Fireworks, Ollama, any OpenAI-compatible endpoint. Your keys, your choice.',
-  },
-  {
-    title: '18 Built-in Tools',
-    desc: 'Read, Write, Edit, Bash, Glob, Grep, WebSearch, and more. Full filesystem and shell access.',
-  },
-  {
-    title: 'Subagent Dispatch',
-    desc: 'Up to 7 parallel agents for complex tasks. Divide and conquer with structured coordination.',
-  },
-  {
-    title: 'Cross-Session Memory',
-    desc: 'Learns across sessions, remembers your project patterns, preferences, and architecture decisions.',
-  },
-];
-
-function Features() {
-  return (
-    <section className="pb-20 px-6">
-      <h2 className="text-3xl font-bold text-center mb-12">
-        Built for <span style={{ color: 'var(--brand)' }}>real engineering</span>
-      </h2>
-      <div className="max-w-5xl mx-auto grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {features.map((f) => (
-          <div
-            key={f.title}
-            className="rounded-xl border p-6 transition-colors hover:border-[var(--brand)]/30"
-            style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
-          >
-            <h3 className="text-lg font-semibold mb-2 text-white">{f.title}</h3>
-            <p className="text-sm leading-relaxed" style={{ color: 'var(--text-dim)' }}>
-              {f.desc}
-            </p>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-const comparisonRows = [
-  { feature: 'Methodologies', arq: '42 structured', claude: 'None', cursor: 'None', cont: 'None' },
-  { feature: 'Verification gates', arq: 'Yes', claude: 'No', cursor: 'No', cont: 'No' },
-  { feature: 'Any LLM', arq: 'Yes', claude: 'Claude only', cursor: 'Limited', cont: 'Yes' },
-  { feature: 'Price', arq: '$12/mo', claude: '$20/mo + API', cursor: '$20/mo', cont: 'Free' },
-  { feature: 'Open-core', arq: 'Yes', claude: 'No', cursor: 'No', cont: 'Yes' },
-  { feature: 'Subagents', arq: '7 parallel', claude: '1', cursor: 'No', cont: 'No' },
-];
-
-function Comparison() {
-  return (
-    <section className="pb-20 px-6">
-      <h2 className="text-3xl font-bold text-center mb-12">
-        How ArqZero <span style={{ color: 'var(--brand)' }}>compares</span>
-      </h2>
-      <div className="max-w-4xl mx-auto overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b" style={{ borderColor: 'var(--border)' }}>
-              <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--text-dim)' }}>Feature</th>
-              <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--brand)' }}>ArqZero</th>
-              <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--text-dim)' }}>Claude Code</th>
-              <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--text-dim)' }}>Cursor</th>
-              <th className="text-left py-3 px-4 font-semibold" style={{ color: 'var(--text-dim)' }}>Continue</th>
-            </tr>
-          </thead>
-          <tbody>
-            {comparisonRows.map((row) => (
-              <tr key={row.feature} className="border-b" style={{ borderColor: 'var(--border)' }}>
-                <td className="py-3 px-4 text-white">{row.feature}</td>
-                <td className="py-3 px-4 font-semibold" style={{ color: 'var(--brand)' }}>{row.arq}</td>
-                <td className="py-3 px-4" style={{ color: 'var(--text-dim)' }}>{row.claude}</td>
-                <td className="py-3 px-4" style={{ color: 'var(--text-dim)' }}>{row.cursor}</td>
-                <td className="py-3 px-4" style={{ color: 'var(--text-dim)' }}>{row.cont}</td>
+      {/* Comparison */}
+      <section className="mb-24">
+        <div className="text-text-dim text-sm mb-8">$ arqzero --compare</div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-border">
+                <th className="text-left py-3 text-text-dim font-normal">Feature</th>
+                <th className="text-center py-3 text-brand font-bold">ArqZero</th>
+                <th className="text-center py-3 text-text-dim font-normal">Claude Code</th>
+                <th className="text-center py-3 text-text-dim font-normal">Cursor</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
-}
+            </thead>
+            <tbody className="text-text-dim">
+              {[
+                ['Structured methodologies', '42', 'No', 'No'],
+                ['Verification gates', 'Yes', 'No', 'No'],
+                ['Any LLM provider', 'Yes', 'Claude only', 'OpenAI/Claude'],
+                ['Open-core', 'Yes', 'No', 'No'],
+                ['Price', '$12/mo + BYOK', '$20-200/mo', '$20/mo'],
+                ['Subagents', '7 parallel', 'Yes', 'No'],
+                ['Terminal-native', 'Yes', 'Yes', 'No (IDE)'],
+              ].map(([feature, arq, claude, cursor]) => (
+                <tr key={feature} className="border-b border-border/50">
+                  <td className="py-2">{feature}</td>
+                  <td className="py-2 text-center text-brand">{arq}</td>
+                  <td className="py-2 text-center">{claude}</td>
+                  <td className="py-2 text-center">{cursor}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
-function CTAFooter() {
-  return (
-    <section className="py-20 px-6 text-center border-t" style={{ borderColor: 'var(--border)' }}>
-      <h2 className="text-3xl font-bold mb-4">
-        Get started in <span style={{ color: 'var(--brand)' }}>30 seconds</span>
-      </h2>
-      <div
-        className="inline-block rounded-lg px-6 py-3 mb-8 font-mono text-sm border"
-        style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
-      >
-        <span style={{ color: 'var(--text-dim)' }}>$</span>{' '}
-        <span className="text-white">npm i -g arqzero</span>
-      </div>
-      <div>
-        <Link
-          href="/pricing"
-          className="px-6 py-3 rounded-lg font-semibold text-black transition-opacity hover:opacity-90"
-          style={{ backgroundColor: 'var(--brand)' }}
-        >
-          View Pricing
-        </Link>
-      </div>
-    </section>
-  );
-}
+      {/* CTA */}
+      <section className="mb-24 text-center">
+        <div className="text-text-dim text-sm mb-6">$ arqzero --install</div>
+        <div className="bg-surface border border-brand/20 inline-block px-8 py-4 mb-6">
+          <code className="text-brand text-lg">npm i -g arqzero</code>
+        </div>
+        <p className="text-text-dim text-sm">Free tier. No account required. 30 seconds to start.</p>
+      </section>
 
-export default function Home() {
-  return (
-    <main className="min-h-screen">
-      <Hero />
-      <TerminalDemo />
-      <Features />
-      <Comparison />
-      <CTAFooter />
+      {/* Footer */}
+      <footer className="border-t border-border pt-8 pb-16 flex justify-between text-text-dim text-xs">
+        <span>◆ ArqZero v2.0.0</span>
+        <div className="flex gap-6">
+          <a href="/pricing" className="hover:text-brand transition-colors">pricing</a>
+          <a href="/docs" className="hover:text-brand transition-colors">docs</a>
+          <a href="https://github.com/LuciferDono/ArqZero" className="hover:text-brand transition-colors">github</a>
+        </div>
+      </footer>
     </main>
   );
 }
