@@ -1,6 +1,58 @@
 // src/cli/theme.ts
+
+// ─── Color System ───────────────────────────────────────────────
+// Single source of truth. Do not add colors outside this system.
+
+export const COLORS = {
+  // Brand — maximum 2 uses per screen: prompt symbol + one active state
+  brand:           '#00D4AA',
+  brandDeep:       '#00A886',
+  brandLight:      '#4EECD0',
+  brandSubtle:     '#00D4AA18',
+
+  // Semantic — only when meaning is carried
+  success:         '#3AAF60',
+  error:           '#D04545',
+  warning:         '#C47F00',
+  info:            '#4A8FD4',
+
+  // Tools — load-bearing cognition, do not change
+  toolFile:        '#4A7CF0',  // Read, Write, Edit, Glob, Grep — blue
+  toolBash:        '#D42E8A',  // Bash — magenta
+
+  // Diff — desaturated for long reading
+  diffLineAdd:     '#2E9E50',
+  diffWordAdd:     '#48BC66',
+  diffLineRemove:  '#B03A3A',
+  diffWordRemove:  '#D05858',
+
+  // Context meter
+  ctxHealthy:      '#3AAF60',
+  ctxCaution:      '#C47F00',
+  ctxCritical:     '#C83030',
+  ctxTrack:        '#0d1520',
+
+  // Chrome — neutral, invisible structure
+  bg:              '#04080f',
+  username:        '#607890',
+  structural:      '#253545',
+  badgeBg:         '#161616',
+
+  // Text levels
+  textPrimary:     '#E0E8F0',
+  textSecondary:   '#607890',
+  textDim:         '#253545',
+  textInvisible:   '#1a3050',
+
+  // Permission
+  permYes:         '#3AAF60',
+  permAlways:      '#4A8FD4',
+  permNo:          '#D04545',
+} as const;
+
+// Legacy THEME mapping for components that still reference THEME.*
 export const THEME = {
-  // Symbols
+  // Symbols (unchanged)
   dot: process.platform === 'darwin' ? '\u23FA' : '\u25CF',
   branch: '\u23BF',
   diamond: '\u25C6',
@@ -10,19 +62,19 @@ export const THEME = {
   successDot: '\u25CF',
   failureMark: '\u00D7',
 
-  // ArqZero colors (amber/gold identity)
-  primary: '#FFB800',
-  primaryShimmer: '#FFD54F',
-  text: 'white',
-  dim: 'gray',
-  success: 'green',
-  error: 'red',
-  warning: 'yellow',
-  info: 'cyan',
-  toolBorder: '#5769F7',
-  bashBorder: '#FF0087',
-  diffAdded: '#69DB7C',
-  diffRemoved: '#FFA8B4',
+  // Colors — mapped from COLORS
+  primary:       COLORS.brand,
+  primaryShimmer: COLORS.brandLight,
+  text:          COLORS.textPrimary,
+  dim:           COLORS.textSecondary,
+  success:       COLORS.success,
+  error:         COLORS.error,
+  warning:       COLORS.warning,
+  info:          COLORS.info,
+  toolBorder:    COLORS.toolFile,
+  bashBorder:    COLORS.toolBash,
+  diffAdded:     COLORS.diffLineAdd,
+  diffRemoved:   COLORS.diffLineRemove,
 
   // App
   appName: 'ArqZero',

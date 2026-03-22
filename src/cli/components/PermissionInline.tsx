@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { PermissionRequest, PermissionResponse, PermissionLevel } from '../../tools/types.js';
-import { THEME } from '../theme.js';
+import { THEME, COLORS } from '../theme.js';
 
 export interface PermissionInlineProps {
   request: PermissionRequest;
@@ -199,17 +199,22 @@ export function PermissionInline({ request, onRespond }: PermissionInlineProps) 
 
       {/* Arrow-key options */}
       <Box flexDirection="column" marginTop={1}>
-        {options.map((opt, i) => (
-          <Box key={i}>
-            <Text color={i === selectedIndex ? THEME.primary : THEME.dim}>
-              {i === selectedIndex ? '\u203A ' : '  '}
-            </Text>
-            <Text color={i === selectedIndex ? THEME.text : THEME.dim} bold={i === selectedIndex}>
-              {opt.label}
-            </Text>
-            {opt.hotkey && <Text color={THEME.dim}> ({opt.hotkey})</Text>}
-          </Box>
-        ))}
+        {options.map((opt, i) => {
+          const optColor = opt.hotkey === 'y' ? COLORS.permYes
+            : opt.hotkey === 'a' ? COLORS.permAlways
+            : COLORS.permNo;
+          return (
+            <Box key={i}>
+              <Text color={i === selectedIndex ? optColor : THEME.dim}>
+                {i === selectedIndex ? '\u203A ' : '  '}
+              </Text>
+              <Text color={i === selectedIndex ? THEME.text : THEME.dim} bold={i === selectedIndex}>
+                {opt.label}
+              </Text>
+              {opt.hotkey && <Text color={THEME.dim}> ({opt.hotkey})</Text>}
+            </Box>
+          );
+        })}
       </Box>
     </Box>
   );

@@ -1,7 +1,7 @@
 // src/cli/components/DiffView.tsx
 import React from 'react';
 import { Box, Text } from 'ink';
-import { THEME } from '../theme.js';
+import { THEME, COLORS } from '../theme.js';
 import { generateDiffLines } from '../diff-utils.js';
 import type { DiffLine, DiffSegment } from '../diff-utils.js';
 
@@ -13,8 +13,8 @@ export interface DiffViewProps {
 }
 
 // Brighter variants for word-level highlights within changed lines
-const WORD_ADDED = '#40C057';
-const WORD_REMOVED = '#FF6B6B';
+const WORD_ADDED = COLORS.diffWordAdd;
+const WORD_REMOVED = COLORS.diffWordRemove;
 
 function LineNumber({ num, width }: { num?: number; width: number }) {
   const str = num != null ? String(num).padStart(width, ' ') : ' '.repeat(width);
