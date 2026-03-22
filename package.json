@@ -1,7 +1,7 @@
 {
   "name": "arqzero",
   "version": "0.1.0",
-  "description": "AI-powered coding assistant CLI built on Claude",
+  "description": "ArqZero — terminal-native AI engineering agent with structured methodologies",
   "type": "module",
   "bin": {
     "arqzero": "./bin/arqzero.mjs"
@@ -15,7 +15,9 @@
     "cli",
     "ai",
     "coding-assistant",
-    "claude"
+    "coding-agent",
+    "arqzero",
+    "terminal"
   ],
   "files": [
     "bin/",

@@ -5,7 +5,7 @@ import { injectMemories } from '../memory/injector.js';
 
 /**
  * Build the system prompt by loading ARQZERO.md from the current working directory
- * (like CLAUDE.md in Claude Code).
+ * Loads project-level instructions from ARQZERO.md in the working directory.
  */
 export function buildSystemPrompt(cwd: string, memoryStore?: MemoryStore): string {
   const parts: string[] = [];

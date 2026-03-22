@@ -4,7 +4,7 @@ import type { McpClientManager, McpToolInfo } from './client.js';
 
 /**
  * Create an ArqZero Tool adapter from an MCP tool.
- * Tool name follows Claude Code convention: mcp__<server>__<toolname>
+ * Tool name convention: mcp__<server>__<toolname>
  */
 function createMcpToolAdapter(
   toolInfo: McpToolInfo,
