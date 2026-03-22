@@ -207,7 +207,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         ...e,
         {
           type: 'system' as const,
-          content: `ArqZero v2.0.0\n  Type a message to start. Use /help for commands.`,
+          content: `Type a message to start, or /help for commands.`,
         },
       ]);
     }
