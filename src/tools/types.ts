@@ -27,6 +27,13 @@ export interface ToolResult {
     truncated?: boolean;
     lineCount?: number;
   };
+  /** Metadata for UI display (e.g., diff data). Not sent to the model. */
+  metadata?: {
+    filePath?: string;
+    oldContent?: string;
+    newContent?: string;
+    diffOperation?: 'edit' | 'write' | 'delete';
+  };
 }
 
 export interface Tool {

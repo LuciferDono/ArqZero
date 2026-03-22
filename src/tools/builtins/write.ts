@@ -1,4 +1,4 @@
-import { writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { Tool, ToolContext, ToolResult } from '../types.js';
 
@@ -23,11 +23,27 @@ export const writeTool: Tool = {
   async execute(input: unknown, _ctx: ToolContext): Promise<ToolResult> {
     const { file_path, content } = input as WriteInput;
 
+    // Capture old content for diff display
+    let oldContent = '';
+    if (existsSync(file_path)) {
+      try {
+        oldContent = readFileSync(file_path, 'utf-8');
+      } catch {
+        // File exists but unreadable — treat as new
+      }
+    }
+
     mkdirSync(dirname(file_path), { recursive: true });
     writeFileSync(file_path, content, 'utf-8');
 
     return {
       content: `Wrote ${content.length} characters to ${file_path}`,
+      metadata: {
+        filePath: file_path,
+        oldContent,
+        newContent: content,
+        diffOperation: 'write',
+      },
     };
   },
 };

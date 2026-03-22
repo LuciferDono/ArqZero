@@ -42,7 +42,8 @@ export const multiEditTool: Tool = {
       return { content: 'No edits provided', isError: true };
     }
 
-    let content = readFileSync(file_path, 'utf-8');
+    const originalContent = readFileSync(file_path, 'utf-8');
+    let content = originalContent;
 
     for (let i = 0; i < edits.length; i++) {
       const { old_string, new_string } = edits[i];
@@ -68,6 +69,12 @@ export const multiEditTool: Tool = {
 
     return {
       content: `Applied ${edits.length} edit(s) to ${file_path}`,
+      metadata: {
+        filePath: file_path,
+        oldContent: originalContent,
+        newContent: content,
+        diffOperation: 'edit',
+      },
     };
   },
 };

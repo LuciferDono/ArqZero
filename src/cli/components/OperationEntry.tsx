@@ -3,6 +3,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { THEME } from '../theme.js';
 import { renderMarkdown } from '../markdown.js';
+import { DiffView } from './DiffView.js';
 
 export type EntryType = 'user' | 'text' | 'tool' | 'error' | 'system';
 
@@ -11,7 +12,11 @@ export interface OperationEntryData {
   content: string;
   toolName?: string;
   elapsed?: number;      // milliseconds
-  diffLines?: string[];  // for edit operations, show +/- lines
+  diffLines?: string[];  // for edit operations, show +/- lines (legacy)
+  filePath?: string;     // file path for diff display
+  oldContent?: string;   // old file content for diff
+  newContent?: string;   // new file content for diff
+  diffOperation?: 'edit' | 'write' | 'delete';  // type of file operation
   success?: boolean;     // tool success status (default true)
 }
 
@@ -59,7 +64,15 @@ export function OperationEntry({ entry }: OperationEntryProps) {
               <Text color={THEME.dim}>  {elapsedStr}</Text>
             )}
           </Box>
-          {entry.diffLines && entry.diffLines.length > 0 && (
+          {entry.filePath && entry.oldContent != null && entry.newContent != null && (
+            <DiffView
+              filePath={entry.filePath}
+              oldContent={entry.oldContent}
+              newContent={entry.newContent}
+              operation={entry.diffOperation ?? 'edit'}
+            />
+          )}
+          {entry.diffLines && entry.diffLines.length > 0 && !entry.filePath && (
             <Box flexDirection="column" marginLeft={2}>
               {entry.diffLines.map((line, i) => {
                 const lineColor = line.startsWith('+') ? THEME.diffAdded

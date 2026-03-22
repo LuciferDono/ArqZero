@@ -58,6 +58,12 @@ export const editTool: Tool = {
 
     return {
       content: `Edited ${file_path}: replaced ${count} occurrence(s)`,
+      metadata: {
+        filePath: file_path,
+        oldContent: file,
+        newContent: updated,
+        diffOperation: 'edit',
+      },
     };
   },
 };
