@@ -24,7 +24,8 @@ marked.use(
       }
     },
     hr: () => '─'.repeat(40) + '\n',
-  }) as any,
+  // @ts-expect-error marked-terminal type mismatch with Marked extension interface
+  }),
 );
 
 /**

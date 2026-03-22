@@ -33,11 +33,11 @@ export class CronManager {
   private jobs: InternalJob[] = [];
   private nextId = 1;
 
-  add(intervalMs: number, prompt: string, callback: () => Promise<void>): number {
+  add(intervalMs: number, prompt: string, callback: () => Promise<void>, onError?: (err: unknown) => void): number {
     const id = this.nextId++;
     const timer = setInterval(() => {
-      callback().catch(() => {
-        // Swallow errors from cron callbacks
+      callback().catch((err) => {
+        if (onError) { onError(err); }
       });
     }, intervalMs);
 

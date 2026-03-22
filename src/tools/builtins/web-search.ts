@@ -188,13 +188,16 @@ export const webSearchTool: Tool = {
       return { content: 'Error: query is required and must not be empty.', isError: true };
     }
 
+    let bingError = false;
+    let ddgError = false;
+
     // Primary: Bing
     try {
       const results = await searchWithBing(query.trim());
       if (results.length > 0) {
         return { content: formatResults(results, 'Bing') };
       }
-    } catch { /* fall through */ }
+    } catch { bingError = true; }
 
     // Fallback: DuckDuckGo
     try {
@@ -202,7 +205,12 @@ export const webSearchTool: Tool = {
       if (results.length > 0) {
         return { content: formatResults(results, 'DuckDuckGo') };
       }
-    } catch { /* fall through */ }
+    } catch { ddgError = true; }
+
+    // Both engines threw — report an error instead of misleading "no results"
+    if (bingError && ddgError) {
+      return { content: 'Error: Search unavailable', isError: true };
+    }
 
     return { content: 'No search results found.' };
   },

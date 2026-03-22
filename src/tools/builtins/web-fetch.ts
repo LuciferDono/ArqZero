@@ -130,6 +130,7 @@ export const webFetchTool: Tool = {
 
       return { content: text };
     } catch (err: any) {
+      clearTimeout(timeout);
       const message = err.name === 'AbortError'
         ? 'Error: Fetch request timed out after 15 seconds.'
         : `Error: Failed to fetch URL: ${err.message}`;

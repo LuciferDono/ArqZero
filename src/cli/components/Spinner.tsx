@@ -5,8 +5,6 @@ import { THEME, SPINNER_VERBS } from '../theme.js';
 import { runtime } from '../../config/runtime.js';
 
 export interface SpinnerProps {
-  label?: string;
-  startTime?: number;
   isActive?: boolean;
 }
 
@@ -116,6 +114,6 @@ export function ShimmerSpinner({ isActive = true }: { isActive: boolean }) {
 }
 
 // Backward-compatible Spinner wrapper
-export function Spinner({ label, startTime }: SpinnerProps) {
-  return <ShimmerSpinner isActive={true} />;
+export function Spinner({ isActive = true }: SpinnerProps) {
+  return <ShimmerSpinner isActive={isActive} />;
 }

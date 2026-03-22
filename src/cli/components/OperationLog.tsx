@@ -68,6 +68,7 @@ export function OperationLog({ entries, activeOperation, streamingText, expanded
 
   return (
     <Box flexDirection="column">
+      {/* Index keys are acceptable here: entries are append-only, never reordered or deleted mid-session */}
       {displayEntries.map((entry, i) => {
         if (entry.type === 'grouped') {
           return <GroupedOperationEntry key={i} group={entry} expanded={expanded} />;

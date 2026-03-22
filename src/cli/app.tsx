@@ -1,5 +1,5 @@
 // src/cli/app.tsx
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Box, useApp, useInput } from 'ink';
 import type { LLMProvider } from '../api/provider.js';
 import type { TokenUsage } from '../api/types.js';
@@ -27,8 +27,6 @@ import { useInputHistory } from './hooks/useInputHistory.js';
 import { SlashSuggestions, filterSuggestions } from './components/SlashSuggestions.js';
 import type { SlashSuggestion } from './components/SlashSuggestions.js';
 import type { Message } from '../api/types.js';
-import { appendMessage, appendCompaction } from '../session/history.js';
-import type { CompactionSnapshot } from '../session/history.js';
 
 interface AppProps {
   provider: LLMProvider;
@@ -119,6 +117,7 @@ function summarizeToolResult(name: string, result: ToolResult, input?: Record<st
 export default function App({ provider, config, registry, systemPrompt, commandRegistry, initialMessages, resumedSessionId }: AppProps) {
   const [input, setInput] = useState('');
   const [entries, setEntries] = useState<OperationEntryData[]>([]);
+  const [modelName, setModelName] = useState(config.model);
   const [streamingText, setStreamingText] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [activeOperation, setActiveOperation] = useState<{ name: string; startTime: number } | null>(null);
@@ -189,15 +188,20 @@ export default function App({ provider, config, registry, systemPrompt, commandR
     // Load initial messages for session resume
     if (initialMessages && initialMessages.length > 0) {
       engineRef.current.setMessages(initialMessages);
+    }
+  }
+
+  // Show welcome / resume message once on mount (avoid setState during render)
+  useEffect(() => {
+    if (initialMessages && initialMessages.length > 0) {
       setEntries((e) => [
         ...e,
         {
           type: 'system' as const,
-          content: `Resumed session ${session.id} (${initialMessages.length} messages)`,
+          content: `Resumed session ${sessionRef.current!.id} (${initialMessages.length} messages)`,
         },
       ]);
     } else {
-      // Welcome message on fresh session
       setEntries((e) => [
         ...e,
         {
@@ -206,7 +210,8 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         },
       ]);
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handlePermissionResponse = useCallback((response: PermissionResponse) => {
     if (pendingPermission) {
@@ -302,7 +307,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
     }
   });
 
-  const handleSubmit = async (value: string) => {
+  const handleSubmitImpl = async (value: string) => {
     // If suggestions are visible, execute the selected command
     if (showSuggestions && suggestions.length > 0) {
       const selected = suggestions[suggestionIndex];
@@ -333,7 +338,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           costEstimate,
           messages: engineRef.current?.getMessages(),
           cronManager: cronManagerRef.current ?? undefined,
-          onModelChange: (m: string) => { config.model = m; },
+          onModelChange: (m: string) => { config.model = m; setModelName(m); },
           onClear: () => setEntries([]),
           onCompact: () => {
             setEntries((e) => [...e, { type: 'system', content: 'Manual compaction triggered.' }]);
@@ -343,7 +348,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
             exit();
           },
           onSubmit: async (prompt: string) => {
-            await handleSubmit(prompt);
+            await handleSubmitRef.current(prompt);
           },
         };
         setInput('');
@@ -452,10 +457,14 @@ export default function App({ provider, config, registry, systemPrompt, commandR
     setIsStreaming(false);
   };
 
+  const handleSubmitRef = useRef(handleSubmitImpl);
+  handleSubmitRef.current = handleSubmitImpl;
+  const stableHandleSubmit = useCallback((v: string) => handleSubmitRef.current(v), []);
+
   return (
     <Box flexDirection="column" padding={1}>
       <Header
-        modelName={config.model}
+        modelName={modelName}
         tokenUsage={tokenUsage}
         costEstimate={costEstimate}
         contextPercent={contextPercent}
@@ -482,7 +491,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
       <CommandInput
         value={input}
         onChange={(v) => { setInput(v); setSuggestionIndex(0); }}
-        onSubmit={handleSubmit}
+        onSubmit={stableHandleSubmit}
         disabled={isStreaming || !!pendingPermission}
       />
 
