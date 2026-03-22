@@ -27,6 +27,7 @@ import { useInputHistory } from './hooks/useInputHistory.js';
 import { SlashSuggestions, filterSuggestions } from './components/SlashSuggestions.js';
 import type { SlashSuggestion } from './components/SlashSuggestions.js';
 import type { Message } from '../api/types.js';
+import { getModelCost, getModelByName } from '../config/model-router.js';
 
 interface AppProps {
   provider: LLMProvider;
@@ -43,14 +44,11 @@ interface PendingPermission {
   resolve: (response: PermissionResponse) => void;
 }
 
-// Fireworks pricing estimate: ~$0.90/M input, ~$0.90/M output for llama-70b
-const COST_PER_INPUT_TOKEN = 0.9 / 1_000_000;
-const COST_PER_OUTPUT_TOKEN = 0.9 / 1_000_000;
-
-function estimateCost(usage: TokenUsage): number {
+function estimateCost(usage: TokenUsage, modelId?: string): number {
+  const cost = getModelCost(modelId ?? '');
   return (
-    usage.inputTokens * COST_PER_INPUT_TOKEN +
-    usage.outputTokens * COST_PER_OUTPUT_TOKEN
+    usage.inputTokens * (cost.costPerMInput / 1_000_000) +
+    usage.outputTokens * (cost.costPerMOutput / 1_000_000)
   );
 }
 
@@ -426,10 +424,19 @@ export default function App({ provider, config, registry, systemPrompt, commandR
         },
         onMessageEnd: (usage) => {
           setTokenUsage(usage);
-          setCostEstimate((c) => c + estimateCost(usage));
+          const activeModelId = engineRef.current?.getActiveModel();
+          setCostEstimate((c) => c + estimateCost(usage, activeModelId));
           if (contextWindowRef.current) {
             setContextPercent(contextWindowRef.current.getUsageSummary().percent);
           }
+        },
+        onModelRouted: (model, reason) => {
+          const display = getModelByName(model)?.displayName ?? model;
+          setModelName(model);
+          setEntries((e) => [
+            ...e,
+            { type: 'system', content: `Routing to ${display} for ${reason}` },
+          ]);
         },
         onCapabilitiesMatched: (matches: MatchResult[]) => {
           if (matches.length === 0) return;

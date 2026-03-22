@@ -17,6 +17,7 @@ import type { MatchResult } from '../registry/matcher.js';
 import { buildCapabilityContext } from '../registry/injector.js';
 import { appendMessage, appendCompaction } from '../session/history.js';
 import type { CompactionSnapshot } from '../session/history.js';
+import { routeModel } from '../config/model-router.js';
 
 export interface EngineCallbacks {
   onTextDelta?: (text: string) => void;
@@ -26,6 +27,7 @@ export interface EngineCallbacks {
   onMessageEnd?: (usage: TokenUsage) => void;
   onCompaction?: (result: CompactionResult) => void;
   onCapabilitiesMatched?: (matches: MatchResult[]) => void;
+  onModelRouted?: (model: string, reason: string) => void;
   onContextWarning?: (percent: number, action: 'warning' | 'compacting' | 'compacted') => void;
   onError?: (error: Error) => void;
 }
@@ -50,14 +52,20 @@ export class ConversationEngine {
   private executor: ToolExecutor;
   private options: EngineOptions;
   private activeCapabilityContext = '';
+  private activeModel: string;
 
   constructor(options: EngineOptions) {
     this.options = options;
+    this.activeModel = options.model;
     this.executor = new ToolExecutor(options.registry, options.permissions, options.checkpointStore);
   }
 
   getMessages(): Message[] {
     return [...this.messages];
+  }
+
+  getActiveModel(): string {
+    return this.activeModel;
   }
 
   async handleUserMessage(
@@ -73,6 +81,17 @@ export class ConversationEngine {
     this.activeCapabilityContext = buildCapabilityContext(selected);
     if (selected.length > 0) {
       callbacks.onCapabilitiesMatched?.(selected);
+    }
+
+    // Auto-route model based on matched capabilities
+    const routing = routeModel(
+      text,
+      selected.map(m => m.capability.name),
+      this.options.model,
+    );
+    this.activeModel = routing.model;
+    if (routing.model !== this.options.model) {
+      callbacks.onModelRouted?.(routing.model, routing.reason);
     }
 
     const userMsg = userMessage(text);
@@ -146,7 +165,7 @@ export class ConversationEngine {
     const definitions = this.options.registry.getDefinitions();
     const request = {
       messages: this.messages,
-      model: this.options.model,
+      model: this.activeModel,
       tools: definitions.length > 0 ? definitions : undefined,
       maxTokens: this.options.maxTokens,
       systemPrompt: this.options.systemPrompt

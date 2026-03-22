@@ -7,6 +7,7 @@ import { rewindToCheckpoint, formatCheckpointList } from '../checkpoints/rewind.
 import { formatSettingsDisplay } from '../cli/components/settings-display.js';
 import { parseDuration } from '../cli/cron.js';
 import { pluginCommands } from './plugin-commands.js';
+import { MODELS, getModelByName } from '../config/model-router.js';
 
 export const helpCommand: SlashCommand = {
   name: '/help',
@@ -21,19 +22,6 @@ export const helpCommand: SlashCommand = {
   },
 };
 
-// Available models — display name → full model ID
-const AVAILABLE_MODELS: Record<string, string> = {
-  'enso':    'accounts/fireworks/models/glm-4p7',
-  'primus':  'accounts/fireworks/models/glm-5',
-  'glm-4p7': 'accounts/fireworks/models/glm-4p7',
-  'glm-5':   'accounts/fireworks/models/glm-5',
-};
-
-const MODEL_LIST = [
-  { id: 'accounts/fireworks/models/glm-4p7', name: 'Enso', desc: 'GLM-4.7 (400B MoE, 200K ctx) — mushin flow' },
-  { id: 'accounts/fireworks/models/glm-5', name: 'PRIMUS', desc: 'GLM-5 (latest, enhanced reasoning)' },
-];
-
 export const modelCommand: SlashCommand = {
   name: '/model',
   description: 'Show or change current model',
@@ -41,36 +29,32 @@ export const modelCommand: SlashCommand = {
     if (!args) {
       const current = ctx.config.model;
       const lines = ['Available models:'];
-      for (const m of MODEL_LIST) {
+      for (const m of MODELS) {
         const active = m.id === current ? ' (active)' : '';
-        lines.push(`  ${m.name} — ${m.desc}${active}`);
+        lines.push(`  ${m.displayName} [${m.tier}] — ${m.description}${active}`);
       }
       lines.push('');
-      lines.push('Usage: /model <name>  (e.g. /model primus edge)');
+      lines.push('Auto-routing: strong tasks auto-upgrade to PRIMUS');
+      lines.push('Usage: /model <name>  (e.g. /model primus)');
       return lines.join('\n');
     }
-    // Match model name from the start of args (ignore trailing text)
-    const input = args.trim().toLowerCase();
-    let modelId: string | undefined;
-    let matchedName: string | undefined;
 
-    // Try longest match first (e.g. "primus edge" before "primus")
-    const sortedKeys = Object.keys(AVAILABLE_MODELS).sort((a, b) => b.length - a.length);
-    for (const key of sortedKeys) {
-      if (input === key || input.startsWith(key + ' ')) {
-        modelId = AVAILABLE_MODELS[key];
-        matchedName = MODEL_LIST.find(m => m.id === modelId)?.name ?? key;
-        break;
-      }
+    const input = args.trim();
+
+    // Try exact match first, then match first word (ignore trailing text)
+    let model = getModelByName(input);
+    if (!model) {
+      const firstWord = input.split(/\s+/)[0];
+      model = getModelByName(firstWord);
     }
 
-    if (!modelId) {
-      const names = MODEL_LIST.map(m => m.name.toLowerCase()).join(', ');
-      return `Unknown model "${args.trim()}". Available: ${names}`;
+    if (!model) {
+      const names = MODELS.map(m => m.displayName.toLowerCase()).join(', ');
+      return `Unknown model "${input}". Available: ${names}`;
     }
 
-    ctx.onModelChange?.(modelId);
-    return `Model set to: ${matchedName}`;
+    ctx.onModelChange?.(model.id);
+    return `Model set to: ${model.displayName} [${model.tier}]`;
   },
 };
 

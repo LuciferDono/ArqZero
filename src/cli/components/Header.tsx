@@ -4,6 +4,7 @@ import { Box, Text } from 'ink';
 import os from 'node:os';
 import type { TokenUsage } from '../../api/types.js';
 import { THEME, COLORS } from '../theme.js';
+import { MODELS } from '../../config/model-router.js';
 
 export interface HeaderProps {
   modelName: string;
@@ -13,16 +14,11 @@ export interface HeaderProps {
   sessionId?: string;
 }
 
-// Display name mapping
-const MODEL_DISPLAY_NAMES: Record<string, string> = {
-  'accounts/fireworks/models/glm-4p7': 'Enso',
-  'glm-4p7': 'Enso',
-  'accounts/fireworks/models/glm-5': 'PRIMUS',
-  'glm-5': 'PRIMUS',
-};
-
 function shortModelName(name: string): string {
-  if (MODEL_DISPLAY_NAMES[name]) return MODEL_DISPLAY_NAMES[name];
+  // Look up display name from central model registry
+  const model = MODELS.find(m => m.id === name || m.displayName.toLowerCase() === name.toLowerCase());
+  if (model) return model.displayName;
+  // Fallback: strip common prefixes
   const prefixes = ['accounts/fireworks/models/', 'accounts/', 'models/'];
   let short = name;
   for (const prefix of prefixes) {
@@ -30,7 +26,9 @@ function shortModelName(name: string): string {
       short = short.slice(prefix.length);
     }
   }
-  return MODEL_DISPLAY_NAMES[short] ?? short;
+  // Try again with short name
+  const byShort = MODELS.find(m => m.id.endsWith('/' + short));
+  return byShort?.displayName ?? short;
 }
 
 function formatTokens(usage: TokenUsage): string {

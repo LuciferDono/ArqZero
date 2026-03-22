@@ -3,6 +3,7 @@ import type { ToolContext } from '../tools/types.js';
 import { ToolRegistry } from '../tools/registry.js';
 import { ConversationEngine } from '../core/engine.js';
 import type { AgentDefinition } from './types.js';
+import { getModelByTier } from '../config/model-router.js';
 
 export class AgentRunner {
   private activeAgents = new Map<string, { engine: ConversationEngine; promise: Promise<string> }>();
@@ -28,8 +29,8 @@ export class AgentRunner {
     const agentId = `agent-${this.nextId++}`;
     const definition = options.definition;
 
-    // Determine model: prompt-level > definition > default
-    const model = options.model ?? definition?.model ?? this.defaultModel;
+    // Determine model: prompt-level > definition > default tier (subagents get 'default' tier, not 'strong')
+    const model = options.model ?? definition?.model ?? getModelByTier('default').id;
 
     // Create filtered registry if allowedTools specified
     let agentRegistry = this.registry;
