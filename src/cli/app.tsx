@@ -233,6 +233,12 @@ export default function App({ provider, config, registry, systemPrompt, commandR
       return;
     }
 
+    // Ctrl+J: insert newline (multi-line input)
+    if (key.ctrl && _input === 'j' && !isStreaming && !pendingPermission) {
+      setInput((v) => v + '\n');
+      return;
+    }
+
     // Escape: cancel current input or abort streaming
     if (key.escape) {
       if (isStreaming) {
