@@ -2,6 +2,7 @@ import type { LLMProvider } from '../api/provider.js';
 import type { AppConfig } from '../config/schema.js';
 import type { ToolRegistry } from '../tools/registry.js';
 import type { TokenUsage } from '../api/types.js';
+import type { PermissionRequest, PermissionResponse } from '../tools/types.js';
 import { ConversationEngine } from '../core/engine.js';
 
 export interface HeadlessOptions {
@@ -16,6 +17,18 @@ export interface HeadlessOptions {
 export async function runHeadless(options: HeadlessOptions): Promise<void> {
   const { prompt, provider, config, registry, systemPrompt, outputFormat } = options;
 
+  // Determine permission handler based on config mode.
+  // In 'trust' mode (e.g. --auto-approve), approve all with a warning.
+  // In 'ask' mode without auto-approve, deny non-safe tools (no interactive prompt available).
+  let promptUser: (req: PermissionRequest) => Promise<PermissionResponse>;
+  if (config.permissions.defaultMode === 'trust') {
+    process.stderr.write('⚠ Headless mode: auto-approving all tool permissions (trust mode)\n');
+    promptUser = async () => ({ allowed: true });
+  } else {
+    // 'ask' or 'locked' — cannot prompt in headless mode, deny non-safe tools
+    promptUser = async () => ({ allowed: false });
+  }
+
   const engine = new ConversationEngine({
     provider,
     registry,
@@ -25,7 +38,7 @@ export async function runHeadless(options: HeadlessOptions): Promise<void> {
     toolContext: {
       cwd: process.cwd(),
       config,
-      promptUser: async () => ({ allowed: true }),
+      promptUser,
     },
   });
 

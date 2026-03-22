@@ -160,6 +160,12 @@ async function main() {
     process.exit(0);
   });
 
+  // Wire --auto-approve flag
+  if (args.autoApprove) {
+    config.permissions.defaultMode = 'trust';
+    process.stderr.write('⚠ Auto-approve enabled: all tool permissions bypassed\n');
+  }
+
   // Initialize sub-agent system.
   // Sub-agents auto-approve all tool permissions intentionally: they operate
   // within the scope already approved by the parent conversation.
@@ -168,8 +174,9 @@ async function main() {
     config,
     promptUser: async (_req: PermissionRequest): Promise<PermissionResponse> => ({ allowed: true }),
   };
-  const agentRunner = new AgentRunner(provider, registry, toolContext, config.model);
-  setAgentRunner(agentRunner);
+  const agentRunnerInstance = new AgentRunner(provider, registry, toolContext, config.model);
+  toolContext.agentRunner = agentRunnerInstance;
+  setAgentRunner(agentRunnerInstance);
 
   const systemPrompt = buildSystemPrompt(process.cwd());
 

@@ -17,6 +17,8 @@ export interface ToolContext {
   cwd: string;
   config: AppConfig;
   promptUser: (request: PermissionRequest) => Promise<PermissionResponse>;
+  /** Optional AgentRunner instance for sub-agent dispatch (avoids global singleton). */
+  agentRunner?: any;
 }
 
 export interface ToolResult {

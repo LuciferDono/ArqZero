@@ -100,9 +100,10 @@ export const webFetchTool: Tool = {
       };
     }
 
+    let timeout: ReturnType<typeof setTimeout>;
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 15_000);
+      timeout = setTimeout(() => controller.abort(), 15_000);
 
       const response = await fetch(url, {
         signal: controller.signal,
