@@ -10,12 +10,25 @@ export interface SpinnerProps {
   isActive?: boolean;
 }
 
+export const TIPS = [
+  'Tip: Use /clear to start fresh when switching topics',
+  'Tip: Use /compress to free up context space',
+  'Tip: Use /undo to restore files to a checkpoint',
+  'Tip: Use /think to adjust reasoning depth',
+  'Tip: Use /export to save this conversation',
+];
+
+/** Stalled thresholds in seconds */
+export const STALLED_THRESHOLD_WIDEN = 10;
+export const STALLED_THRESHOLD_FULL = 30;
+
 export function ShimmerSpinner({ isActive = true }: { isActive: boolean }) {
   const [verb] = useState(() => SPINNER_VERBS[Math.floor(Math.random() * SPINNER_VERBS.length)]);
   const [glimmerIndex, setGlimmerIndex] = useState(0);
   const [dotVisible, setDotVisible] = useState(true);
   const [elapsed, setElapsed] = useState(0);
   const startTime = useRef(Date.now());
+  const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]);
 
   // Shimmer animation at 50ms
   useEffect(() => {
@@ -48,13 +61,27 @@ export function ShimmerSpinner({ isActive = true }: { isActive: boolean }) {
 
   const fullText = `${verb}...`;
 
+  // Determine shimmer width based on elapsed time (stalled indicator)
+  const shimmerWidth = elapsed >= STALLED_THRESHOLD_FULL
+    ? fullText.length
+    : elapsed >= STALLED_THRESHOLD_WIDEN
+      ? 6
+      : 3;
+
   // Reduced motion: static text, no animation
   if (runtime.reducedMotion) {
     const elapsedStr = elapsed > 0 ? ` ${elapsed}s` : '';
     return (
-      <Box>
-        <Text color={THEME.primary}>{THEME.dot} {fullText}</Text>
-        <Text color={THEME.dim}>{elapsedStr}</Text>
+      <Box flexDirection="column">
+        <Box>
+          <Text color={THEME.primary}>{THEME.dot} {fullText}</Text>
+          <Text color={THEME.dim}>{elapsedStr}</Text>
+        </Box>
+        {elapsed >= STALLED_THRESHOLD_FULL && (
+          <Box marginLeft={2}>
+            <Text color={THEME.dim}>{tip}</Text>
+          </Box>
+        )}
       </Box>
     );
   }
@@ -62,7 +89,7 @@ export function ShimmerSpinner({ isActive = true }: { isActive: boolean }) {
   // Render each character with shimmer color
   const chars = fullText.split('').map((char, i) => {
     const distance = Math.abs(i - glimmerIndex);
-    const isShimmer = distance < 3;
+    const isShimmer = distance < shimmerWidth;
     return (
       <Text key={i} color={isShimmer ? THEME.primaryShimmer : THEME.primary}>
         {char}
@@ -73,10 +100,17 @@ export function ShimmerSpinner({ isActive = true }: { isActive: boolean }) {
   const elapsedStr = elapsed > 0 ? ` ${elapsed}s` : '';
 
   return (
-    <Box>
-      <Text color={THEME.primary}>{dotVisible ? THEME.dot : ' '} </Text>
-      {chars}
-      <Text color={THEME.dim}>{elapsedStr}</Text>
+    <Box flexDirection="column">
+      <Box>
+        <Text color={THEME.primary}>{dotVisible ? THEME.dot : ' '} </Text>
+        {chars}
+        <Text color={THEME.dim}>{elapsedStr}</Text>
+      </Box>
+      {elapsed >= STALLED_THRESHOLD_FULL && (
+        <Box marginLeft={2}>
+          <Text color={THEME.dim}>{tip}</Text>
+        </Box>
+      )}
     </Box>
   );
 }
