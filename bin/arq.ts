@@ -15,6 +15,8 @@ import { registerMcpTools } from '../src/mcp/bridge.js';
 import { buildSystemPrompt } from '../src/core/system-prompt.js';
 import { SlashCommandRegistry } from '../src/commands/registry.js';
 import { builtinCommands } from '../src/commands/builtins.js';
+import { parseArgs } from '../src/cli/args.js';
+import { runHeadless } from '../src/cli/headless.js';
 
 async function promptUser(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -27,6 +29,8 @@ async function promptUser(question: string): Promise<string> {
 }
 
 async function main() {
+  const args = parseArgs(process.argv.slice(2));
+
   if (!configExists()) {
     console.log('Welcome to ArqZero! Let\'s set up your configuration.\n');
     await runInit(promptUser);
@@ -34,6 +38,11 @@ async function main() {
   }
 
   const config = loadConfig();
+
+  // Apply CLI overrides
+  if (args.model) {
+    config.model = args.model;
+  }
 
   let provider: LLMProvider;
   if (config.fireworksApiKey) {
@@ -79,6 +88,21 @@ async function main() {
 
   const systemPrompt = buildSystemPrompt(process.cwd());
 
+  // Headless mode: -p / --print
+  if (args.print) {
+    const outputFormat = args.outputFormat ?? 'text';
+    await runHeadless({
+      prompt: args.print,
+      provider,
+      config,
+      registry,
+      systemPrompt,
+      outputFormat,
+    });
+    process.exit(0);
+  }
+
+  // Interactive mode
   const commandRegistry = new SlashCommandRegistry();
   for (const cmd of builtinCommands) {
     commandRegistry.register(cmd);
