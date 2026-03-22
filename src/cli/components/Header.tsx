@@ -1,6 +1,7 @@
 // src/cli/components/Header.tsx
 import React from 'react';
 import { Box, Text } from 'ink';
+import os from 'node:os';
 import type { TokenUsage } from '../../api/types.js';
 import { THEME } from '../theme.js';
 
@@ -9,10 +10,10 @@ export interface HeaderProps {
   tokenUsage: TokenUsage | null;
   costEstimate: number;
   contextPercent: number;
+  sessionId?: string;
 }
 
 function shortModelName(name: string): string {
-  // Strip common prefixes like accounts/fireworks/models/
   const prefixes = ['accounts/fireworks/models/', 'accounts/', 'models/'];
   let short = name;
   for (const prefix of prefixes) {
@@ -26,40 +27,74 @@ function shortModelName(name: string): string {
 function formatTokens(usage: TokenUsage): string {
   const total = usage.inputTokens + usage.outputTokens;
   if (total >= 1000) {
-    return `${(total / 1000).toFixed(1)}k tok`;
+    return `${(total / 1000).toFixed(1)}k`;
   }
-  return `${total} tok`;
+  return `${total}`;
 }
 
 function formatCost(cost: number): string {
-  if (cost < 0.001) return '$0.000';
-  return `$${cost.toFixed(3)}`;
+  if (cost < 0.001) return '$0.00';
+  return `$${cost.toFixed(2)}`;
 }
 
-export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: HeaderProps) {
-  const parts: string[] = [];
+function getUsername(): string {
+  try {
+    return os.userInfo().username;
+  } catch {
+    return 'user';
+  }
+}
 
-  parts.push(shortModelName(modelName));
+function getCwd(): string {
+  const cwd = process.cwd();
+  const home = os.homedir();
+  if (cwd.startsWith(home)) {
+    return '~' + cwd.slice(home.length).replace(/\\/g, '/');
+  }
+  return cwd.replace(/\\/g, '/');
+}
 
+export function Header({ modelName, tokenUsage, costEstimate, contextPercent, sessionId }: HeaderProps) {
+  const user = getUsername();
+  const model = shortModelName(modelName);
+  const cwd = getCwd();
+
+  // Right side stats
+  const stats: string[] = [];
   if (tokenUsage) {
-    parts.push(formatTokens(tokenUsage));
+    stats.push(`${formatTokens(tokenUsage)} tok`);
   }
-
   if (costEstimate > 0) {
-    parts.push(formatCost(costEstimate));
+    stats.push(formatCost(costEstimate));
   }
-
   if (contextPercent > 0) {
-    parts.push(`ctx ${contextPercent}%`);
+    const ctxColor = contextPercent > 80 ? 'red' : contextPercent > 60 ? 'yellow' : 'green';
+    stats.push(`ctx ${contextPercent}%`);
   }
 
   return (
-    <Box marginBottom={1}>
-      <Box flexGrow={1}>
-        <Text bold color={THEME.primary}>{THEME.diamond} {THEME.appName}</Text>
-      </Box>
+    <Box flexDirection="column" marginBottom={1}>
+      {/* Top bar: brand + model + stats */}
       <Box>
-        <Text color={THEME.dim}>{parts.join(' │ ')}</Text>
+        <Box flexGrow={1}>
+          <Text color={THEME.primary} bold>{THEME.diamond} {THEME.appName}</Text>
+          <Text color={THEME.dim}> v{THEME.version}</Text>
+          <Text color={THEME.dim}>  {THEME.pipe} </Text>
+          <Text color={THEME.info}>{model}</Text>
+          <Text color={THEME.dim}>  {THEME.pipe} </Text>
+          <Text color={THEME.dim}>{user}@</Text>
+          <Text color={THEME.text}>{cwd}</Text>
+        </Box>
+        {stats.length > 0 && (
+          <Box>
+            <Text color={THEME.dim}>{stats.join(' │ ')}</Text>
+          </Box>
+        )}
+      </Box>
+
+      {/* Separator */}
+      <Box>
+        <Text color={THEME.dim}>{'━'.repeat(Math.min(process.stdout.columns || 80, 120))}</Text>
       </Box>
     </Box>
   );

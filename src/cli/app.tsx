@@ -23,6 +23,8 @@ import {
 } from './components/index.js';
 import type { OperationEntryData } from './components/index.js';
 import { useInputHistory } from './hooks/useInputHistory.js';
+import { SlashSuggestions, filterSuggestions } from './components/SlashSuggestions.js';
+import type { SlashSuggestion } from './components/SlashSuggestions.js';
 import type { Message } from '../api/types.js';
 import { appendMessage, appendCompaction } from '../session/history.js';
 import type { CompactionSnapshot } from '../session/history.js';
@@ -102,8 +104,23 @@ export default function App({ provider, config, registry, systemPrompt, commandR
   const [contextPercent, setContextPercent] = useState(0);
   const [pendingPermission, setPendingPermission] = useState<PendingPermission | null>(null);
   const [transcriptMode, setTranscriptMode] = useState(false);
+  const [suggestionIndex, setSuggestionIndex] = useState(0);
   const { exit } = useApp();
   const history = useInputHistory();
+
+  // Build suggestion list from registered commands
+  const allCommands: SlashSuggestion[] = React.useMemo(() => {
+    if (!commandRegistry) return [];
+    return commandRegistry.getAll().map((c) => ({ name: c.name, description: c.description }));
+  }, [commandRegistry]);
+
+  // Filter suggestions based on current input
+  const suggestions = React.useMemo(() => {
+    if (!input.startsWith('/') || isStreaming || !!pendingPermission) return [];
+    return filterSuggestions(input, allCommands);
+  }, [input, allCommands, isStreaming, pendingPermission]);
+
+  const showSuggestions = suggestions.length > 0 && input.startsWith('/') && !isStreaming;
 
   const engineRef = useRef<ConversationEngine | null>(null);
   const contextWindowRef = useRef<ContextWindow | null>(null);
@@ -203,18 +220,39 @@ export default function App({ provider, config, registry, systemPrompt, commandR
       return;
     }
 
-    // Up arrow: navigate history
-    if (key.upArrow && !isStreaming && !pendingPermission) {
-      const prev = history.navigateUp(input);
-      setInput(prev);
-      return;
-    }
+    // When suggestions are showing, arrow keys navigate them
+    if (showSuggestions) {
+      if (key.upArrow) {
+        setSuggestionIndex((i) => Math.max(0, i - 1));
+        return;
+      }
+      if (key.downArrow) {
+        setSuggestionIndex((i) => Math.min(suggestions.length - 1, i + 1));
+        return;
+      }
+      // Tab: accept selected suggestion
+      if (key.tab) {
+        const selected = suggestions[suggestionIndex];
+        if (selected) {
+          setInput(selected.name + ' ');
+          setSuggestionIndex(0);
+        }
+        return;
+      }
+    } else {
+      // Up arrow: navigate history
+      if (key.upArrow && !isStreaming && !pendingPermission) {
+        const prev = history.navigateUp(input);
+        setInput(prev);
+        return;
+      }
 
-    // Down arrow: navigate history
-    if (key.downArrow && !isStreaming && !pendingPermission) {
-      const next = history.navigateDown();
-      setInput(next);
-      return;
+      // Down arrow: navigate history
+      if (key.downArrow && !isStreaming && !pendingPermission) {
+        const next = history.navigateDown();
+        setInput(next);
+        return;
+      }
     }
   });
 
@@ -386,9 +424,15 @@ export default function App({ provider, config, registry, systemPrompt, commandR
 
       <CommandInput
         value={input}
-        onChange={setInput}
+        onChange={(v) => { setInput(v); setSuggestionIndex(0); }}
         onSubmit={handleSubmit}
         disabled={isStreaming || !!pendingPermission}
+      />
+
+      <SlashSuggestions
+        suggestions={suggestions}
+        selectedIndex={suggestionIndex}
+        visible={showSuggestions}
       />
     </Box>
   );

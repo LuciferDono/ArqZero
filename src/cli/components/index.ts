@@ -27,3 +27,6 @@ export { formatSettingsDisplay, shortModel, pad } from './settings-display.js';
 
 export { DiffView } from './DiffView.js';
 export type { DiffViewProps } from './DiffView.js';
+
+export { SlashSuggestions, filterSuggestions } from './SlashSuggestions.js';
+export type { SlashSuggestion, SlashSuggestionsProps } from './SlashSuggestions.js';
