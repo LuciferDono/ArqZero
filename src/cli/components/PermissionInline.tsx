@@ -105,6 +105,44 @@ export function formatInput(input: unknown): string {
   return String(input);
 }
 
+export function renderPreview(request: PermissionRequest): React.ReactNode {
+  const input = request.input as Record<string, unknown> | null;
+  if (!input || typeof input !== 'object') return null;
+
+  if (request.tool === 'Edit' || request.tool === 'MultiEdit') {
+    const oldStr = String(input.old_string ?? '');
+    const newStr = String(input.new_string ?? '');
+    const filePath = String(input.file_path ?? '');
+    const oldLines = oldStr.split('\n').slice(0, 5);
+    const newLines = newStr.split('\n').slice(0, 5);
+    const truncated = oldStr.split('\n').length > 5 || newStr.split('\n').length > 5;
+    return (
+      <Box flexDirection="column" marginTop={1}>
+        {filePath && <Text color={THEME.dim}>{filePath}</Text>}
+        {oldLines.map((l, i) => <Text key={`o${i}`} color={THEME.diffRemoved}>  - {l}</Text>)}
+        {newLines.map((l, i) => <Text key={`n${i}`} color={THEME.diffAdded}>  + {l}</Text>)}
+        {truncated && <Text color={THEME.dim}>  ...</Text>}
+      </Box>
+    );
+  }
+
+  if (request.tool === 'Write') {
+    const content = String(input.content ?? '');
+    const filePath = String(input.file_path ?? '');
+    const lines = content.split('\n').slice(0, 5);
+    const truncated = content.split('\n').length > 5;
+    return (
+      <Box flexDirection="column" marginTop={1}>
+        {filePath && <Text color={THEME.dim}>{filePath}</Text>}
+        {lines.map((l, i) => <Text key={i} color={THEME.diffAdded}>  + {l}</Text>)}
+        {truncated && <Text color={THEME.dim}>  ...</Text>}
+      </Box>
+    );
+  }
+
+  return null;
+}
+
 function borderColor(level: PermissionLevel): string {
   switch (level) {
     case 'safe':
@@ -196,6 +234,9 @@ export function PermissionInline({ request, onRespond }: PermissionInlineProps) 
           <Text color={THEME.dim}>{inputDisplay}</Text>
         </Box>
       )}
+
+      {/* Diff preview for Edit/Write */}
+      {renderPreview(request)}
 
       {/* Arrow-key options */}
       <Box flexDirection="column" marginTop={1}>

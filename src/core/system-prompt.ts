@@ -17,6 +17,10 @@ export function buildSystemPrompt(cwd: string, memoryStore?: MemoryStore): strin
   parts.push(`Platform: ${process.platform}`);
   parts.push(`Date: ${new Date().toISOString().split('T')[0]}`);
 
+  // Communication style
+  parts.push('');
+  parts.push('Do not use emojis in your responses. Use plain text formatting only. Communicate clearly and directly without decorative characters.');
+
   // Capability pipeline instructions
   parts.push('');
   parts.push('You operate with a capability matching system. Before responding, your active capabilities have been matched from the user\'s message. Follow the guidance from activated process capabilities (planning, debugging, testing) before domain-specific work.');

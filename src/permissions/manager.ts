@@ -2,6 +2,12 @@ import type { PermissionLevel, PermissionRequest, PermissionResponse } from '../
 import type { AppConfig } from '../config/schema.js';
 import { getEffectiveLevel } from './escalation.js';
 
+/**
+ * Tools that ALWAYS require user confirmation, even if listed in alwaysAllow.
+ * This is a safety rail that configuration cannot override.
+ */
+const ALWAYS_ASK_TOOLS = new Set(['Write', 'Edit', 'MultiEdit', 'Bash']);
+
 export class PermissionManager {
   private sessionAlwaysAllow = new Set<string>();
   private sessionTrustedPatterns = new Map<string, string[]>();
@@ -21,7 +27,7 @@ export class PermissionManager {
     input: unknown,
     promptUser: (request: PermissionRequest) => Promise<PermissionResponse>,
   ): Promise<{ allowed: boolean; denial?: string }> {
-    // 1. Config deny list
+    // 1. Config deny list — always respected
     if (this.config.alwaysDeny.includes(toolName)) {
       return { allowed: false, denial: `Tool "${toolName}" is denied by configuration` };
     }
@@ -29,43 +35,63 @@ export class PermissionManager {
     // 2. Determine effective level (with escalation)
     const level = getEffectiveLevel(toolName, baseLevel, input);
 
-    // 3. Safe tools always allowed
+    // 3. Safe tools always allowed (ALWAYS_ASK_TOOLS are never 'safe')
     if (level === 'safe') {
       return { allowed: true };
     }
 
-    // 4. Config allow list
-    if (this.config.alwaysAllow.includes(toolName)) {
-      return { allowed: true };
-    }
-
-    // 5. Session-level always allow
+    // 4. Session-level always allow — works for all tools including ALWAYS_ASK_TOOLS
     if (this.sessionAlwaysAllow.has(toolName)) {
       return { allowed: true };
     }
 
-    // 6. Trust mode: auto-approve everything not denied
+    // 5. For ALWAYS_ASK_TOOLS, skip config alwaysAllow / trust mode / trusted patterns
+    //    and go straight to prompting
+    if (ALWAYS_ASK_TOOLS.has(toolName)) {
+      // Locked mode still denies without prompting
+      if (this.config.defaultMode === 'locked') {
+        return { allowed: false, denial: `Tool "${toolName}" denied: locked mode` };
+      }
+
+      const response = await promptUser({ tool: toolName, input, level });
+
+      if (response.allowed) {
+        if (response.remember === 'session') {
+          this.sessionAlwaysAllow.add(toolName);
+        }
+        return { allowed: true };
+      }
+
+      return { allowed: false, denial: `Tool "${toolName}" denied by user` };
+    }
+
+    // 6. Config allow list (non-ALWAYS_ASK tools only)
+    if (this.config.alwaysAllow.includes(toolName)) {
+      return { allowed: true };
+    }
+
+    // 7. Trust mode: auto-approve everything not denied
     if (this.config.defaultMode === 'trust') {
       return { allowed: true };
     }
 
-    // 7. Locked mode: deny without prompting
+    // 8. Locked mode: deny without prompting
     if (this.config.defaultMode === 'locked') {
       return { allowed: false, denial: `Tool "${toolName}" denied: locked mode` };
     }
 
-    // 8. Check config trusted patterns
+    // 9. Check config trusted patterns
     if (this.matchesTrustedPattern(toolName, input, this.config.trustedPatterns)) {
       return { allowed: true };
     }
 
-    // 9. Check session trusted patterns
+    // 10. Check session trusted patterns
     const sessionPatterns = this.sessionTrustedPatterns.get(toolName);
     if (sessionPatterns && this.matchesPatternList(input, sessionPatterns)) {
       return { allowed: true };
     }
 
-    // 10. Prompt user
+    // 11. Prompt user
     const response = await promptUser({ tool: toolName, input, level });
 
     if (response.allowed) {

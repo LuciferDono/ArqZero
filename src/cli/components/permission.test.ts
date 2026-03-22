@@ -2,7 +2,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import type { PermissionRequest } from '../../tools/types.js';
-import { getOptionsForTool, getToolLabel, formatInput } from './PermissionInline.js';
+import { getOptionsForTool, getToolLabel, formatInput, renderPreview } from './PermissionInline.js';
 
 describe('getOptionsForTool', () => {
   it('returns Bash-specific options with command prefix', () => {
@@ -149,5 +149,65 @@ describe('formatInput', () => {
 
   it('handles number input', () => {
     assert.equal(formatInput(42), '42');
+  });
+});
+
+describe('renderPreview', () => {
+  it('returns null for null input', () => {
+    const request: PermissionRequest = { tool: 'Edit', input: null, level: 'ask' };
+    assert.equal(renderPreview(request), null);
+  });
+
+  it('returns null for non-object input', () => {
+    const request: PermissionRequest = { tool: 'Edit', input: 'string', level: 'ask' };
+    assert.equal(renderPreview(request), null);
+  });
+
+  it('returns null for Bash tool (no diff preview)', () => {
+    const request: PermissionRequest = {
+      tool: 'Bash',
+      input: { command: 'ls -la' },
+      level: 'ask',
+    };
+    assert.equal(renderPreview(request), null);
+  });
+
+  it('returns a React element for Edit tool', () => {
+    const request: PermissionRequest = {
+      tool: 'Edit',
+      input: { file_path: 'src/test.ts', old_string: 'foo', new_string: 'bar' },
+      level: 'ask',
+    };
+    const result = renderPreview(request);
+    assert.ok(result !== null);
+  });
+
+  it('returns a React element for MultiEdit tool', () => {
+    const request: PermissionRequest = {
+      tool: 'MultiEdit',
+      input: { file_path: 'src/test.ts', old_string: 'a', new_string: 'b' },
+      level: 'ask',
+    };
+    const result = renderPreview(request);
+    assert.ok(result !== null);
+  });
+
+  it('returns a React element for Write tool', () => {
+    const request: PermissionRequest = {
+      tool: 'Write',
+      input: { file_path: 'out.txt', content: 'hello\nworld' },
+      level: 'ask',
+    };
+    const result = renderPreview(request);
+    assert.ok(result !== null);
+  });
+
+  it('returns null for unknown tool', () => {
+    const request: PermissionRequest = {
+      tool: 'Grep',
+      input: { pattern: 'foo' },
+      level: 'ask',
+    };
+    assert.equal(renderPreview(request), null);
   });
 });
