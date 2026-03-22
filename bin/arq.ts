@@ -19,6 +19,7 @@ import { parseArgs } from '../src/cli/args.js';
 import { runHeadless } from '../src/cli/headless.js';
 import { AgentRunner } from '../src/agents/runner.js';
 import { setAgentRunner } from '../src/tools/builtins/task.js';
+import { WorktreeManager } from '../src/worktrees/manager.js';
 
 async function promptUser(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -32,6 +33,28 @@ async function promptUser(question: string): Promise<string> {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+
+  // Handle --worktree: create/reuse worktree and switch cwd
+  if (args.worktree) {
+    const { spawnSync } = await import('node:child_process');
+    const repoRoot = spawnSync('git', ['rev-parse', '--show-toplevel'], {
+      cwd: process.cwd(),
+      encoding: 'utf-8',
+    });
+    if (repoRoot.status !== 0) {
+      console.error('Error: --worktree requires a git repository');
+      process.exit(1);
+    }
+    const root = repoRoot.stdout.trim();
+    const manager = new WorktreeManager(root);
+    if (!manager.exists(args.worktree)) {
+      const info = manager.create(args.worktree);
+      console.log(`Worktree created: ${info.path} (branch: ${info.branch})`);
+    } else {
+      console.log(`Using existing worktree: ${manager.getPath(args.worktree)}`);
+    }
+    process.chdir(manager.getPath(args.worktree));
+  }
 
   if (!configExists()) {
     console.log('Welcome to ArqZero! Let\'s set up your configuration.\n');
