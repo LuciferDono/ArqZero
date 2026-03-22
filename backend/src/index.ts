@@ -1,6 +1,11 @@
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { cors } from 'hono/cors';
+import { authRoutes } from './routes/auth.js';
+import { licenseRoutes } from './routes/license.js';
+import { usageRoutes } from './routes/usage.js';
+import { checkoutRoutes } from './routes/checkout.js';
+import { webhookRoutes } from './routes/webhook.js';
 
 const app = new Hono();
 
@@ -10,6 +15,12 @@ app.use('/*', cors({
 }));
 
 app.get('/health', (c) => c.json({ status: 'ok', version: '0.1.0' }));
+
+app.route('/auth', authRoutes);
+app.route('/license', licenseRoutes);
+app.route('/usage', usageRoutes);
+app.route('/checkout', checkoutRoutes);
+app.route('/webhooks', webhookRoutes);
 
 const port = parseInt(process.env.PORT ?? '3001');
 console.log(`ArqZero API running on port ${port}`);
