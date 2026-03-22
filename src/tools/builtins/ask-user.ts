@@ -5,7 +5,7 @@ interface AskUserInput {
 }
 
 export const askUserTool: Tool = {
-  name: 'AskUser',
+  name: 'Prompt',
   description: 'Asks the user a question and returns their response.',
   inputSchema: {
     type: 'object',
@@ -20,7 +20,7 @@ export const askUserTool: Tool = {
     const { question } = input as AskUserInput;
 
     const response = await ctx.promptUser({
-      tool: 'AskUser',
+      tool: 'Prompt',
       input: { question },
       level: 'safe',
     });

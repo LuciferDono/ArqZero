@@ -42,7 +42,7 @@ export const clearCommand: SlashCommand = {
 };
 
 export const compactCommand: SlashCommand = {
-  name: '/compact',
+  name: '/compress',
   description: 'Trigger manual compaction',
   async execute(_args: string, ctx: SlashCommandContext): Promise<string> {
     ctx.onCompact?.();
@@ -145,8 +145,8 @@ export const memoryCommand: SlashCommand = {
 };
 
 export const rewindCommand: SlashCommand = {
-  name: '/rewind',
-  description: 'List checkpoints or rewind to a checkpoint',
+  name: '/undo',
+  description: 'List checkpoints or undo to a checkpoint',
   async execute(args: string, ctx: SlashCommandContext): Promise<string> {
     const store = ctx.checkpointStore;
     if (!store) {
@@ -159,7 +159,7 @@ export const rewindCommand: SlashCommand = {
 
     const targetId = parseInt(args.trim(), 10);
     if (isNaN(targetId)) {
-      return `Invalid checkpoint id: "${args.trim()}". Usage: /rewind <id>`;
+      return `Invalid checkpoint id: "${args.trim()}". Usage: /undo <id>`;
     }
 
     const cp = store.getById(targetId);
@@ -204,7 +204,7 @@ export const costCommand: SlashCommand = {
 };
 
 export const effortCommand: SlashCommand = {
-  name: '/effort',
+  name: '/think',
   description: 'Set reasoning effort (low/medium/high)',
   async execute(args: string, ctx: SlashCommandContext): Promise<string> {
     const valid = ['low', 'medium', 'high'];
@@ -318,7 +318,7 @@ export const exportCommand: SlashCommand = {
 };
 
 export const doctorCommand: SlashCommand = {
-  name: '/doctor',
+  name: '/check',
   description: 'Check installation health',
   async execute(_args: string, ctx: SlashCommandContext): Promise<string> {
     const lines: string[] = ['ArqZero Health Check', ''];
@@ -346,7 +346,7 @@ export const doctorCommand: SlashCommand = {
 };
 
 export const initCommand: SlashCommand = {
-  name: '/init',
+  name: '/setup',
   description: 'Generate ARQZERO.md in current directory',
   async execute(_args: string, _ctx: SlashCommandContext): Promise<string> {
     const filePath = path.join(process.cwd(), 'ARQZERO.md');

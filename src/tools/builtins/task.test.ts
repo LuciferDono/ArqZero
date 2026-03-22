@@ -41,7 +41,7 @@ const testToolContext: ToolContext = {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('Task Tool', () => {
+describe('Dispatch Tool', () => {
   beforeEach(() => {
     const provider = new TestProvider('Sub-agent result');
     const registry = new ToolRegistry();
@@ -50,7 +50,7 @@ describe('Task Tool', () => {
   });
 
   it('should have correct name and permission level', () => {
-    assert.equal(taskTool.name, 'Task');
+    assert.equal(taskTool.name, 'Dispatch');
     assert.equal(taskTool.permissionLevel, 'ask');
   });
 

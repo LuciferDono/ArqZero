@@ -57,9 +57,9 @@ describe('parseArgs', () => {
     assert.equal(args.outputFormat, 'stream-json');
   });
 
-  it('parses --dangerously-skip-permissions flag', () => {
-    const args = parseArgs(['--dangerously-skip-permissions']);
-    assert.equal(args.dangerouslySkipPermissions, true);
+  it('parses --auto-approve flag', () => {
+    const args = parseArgs(['--auto-approve']);
+    assert.equal(args.autoApprove, true);
   });
 
   it('parses --worktree flag', () => {

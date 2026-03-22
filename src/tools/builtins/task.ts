@@ -9,7 +9,7 @@ export function setAgentRunner(runner: AgentRunner | null): void {
 }
 
 export const taskTool: Tool = {
-  name: 'Task',
+  name: 'Dispatch',
   description:
     'Launch a sub-agent to handle a complex task autonomously. The agent gets its own conversation context and can use tools.',
   inputSchema: {

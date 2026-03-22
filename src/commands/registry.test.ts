@@ -228,7 +228,7 @@ describe('Built-in commands', () => {
       assert.ok(output.includes('/help'));
       assert.ok(output.includes('/model'));
       assert.ok(output.includes('/clear'));
-      assert.ok(output.includes('/compact'));
+      assert.ok(output.includes('/compress'));
       assert.ok(output.includes('/config'));
       assert.ok(output.includes('/quit'));
       assert.ok(output.includes('/skill'));
@@ -298,7 +298,7 @@ describe('Built-in commands', () => {
     });
   });
 
-  describe('/compact', () => {
+  describe('/compress', () => {
     it('should call onCompact callback', async () => {
       let compacted = false;
       const ctx = createMockContext({
@@ -496,7 +496,7 @@ describe('Built-in commands', () => {
     });
   });
 
-  describe('/effort', () => {
+  describe('/think', () => {
     it('should set effort level', async () => {
       let setTo = '';
       const ctx = createMockContext({ onEffortChange: (l) => { setTo = l; } });
@@ -599,7 +599,7 @@ describe('Built-in commands', () => {
     });
   });
 
-  describe('/doctor', () => {
+  describe('/check', () => {
     it('should show health check info', async () => {
       const ctx = createMockContext();
       const output = await doctorCommand.execute('', ctx);
@@ -610,7 +610,7 @@ describe('Built-in commands', () => {
     });
   });
 
-  describe('/init', () => {
+  describe('/setup', () => {
     it('should not overwrite existing file', async () => {
       const testPath = path.join(process.cwd(), 'ARQZERO.md');
       const existed = fs.existsSync(testPath);

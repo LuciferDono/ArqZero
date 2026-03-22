@@ -6,7 +6,7 @@ import type { PluginManifest, LoadedPlugin } from './types.js';
 const HookDefinitionSchema = z.object({
   event: z.enum([
     'PreToolUse', 'PostToolUse', 'PostToolUseFailure',
-    'UserPromptSubmit', 'Stop', 'SubagentStop',
+    'UserPromptSubmit', 'Stop', 'DispatchStop',
     'SessionStart', 'SessionEnd',
     'PreCompact', 'PostCompact',
     'Notification',

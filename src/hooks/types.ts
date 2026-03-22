@@ -1,6 +1,6 @@
 export type HookEvent =
   | 'PreToolUse' | 'PostToolUse' | 'PostToolUseFailure'
-  | 'UserPromptSubmit' | 'Stop' | 'SubagentStop'
+  | 'UserPromptSubmit' | 'Stop' | 'DispatchStop'
   | 'SessionStart' | 'SessionEnd'
   | 'PreCompact' | 'PostCompact'
   | 'Notification';

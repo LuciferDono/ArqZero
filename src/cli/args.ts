@@ -11,7 +11,7 @@ export interface CliArgs {
   verbose?: boolean;
   allowedTools?: string;
   outputFormat?: 'text' | 'json' | 'stream-json';
-  dangerouslySkipPermissions?: boolean;
+  autoApprove?: boolean;
   worktree?: string;
 }
 
@@ -40,7 +40,7 @@ export function parseArgs(argv?: string[]): CliArgs {
     .option('--verbose', 'Enable verbose output')
     .option('--allowedTools <tools>', 'Comma-separated list of allowed tools')
     .option('--output-format <format>', 'Output format: text, json, or stream-json')
-    .option('--dangerously-skip-permissions', 'Skip all permission checks')
+    .option('--auto-approve', 'Skip all permission checks')
     .option('--worktree <name>', 'Use a named worktree')
     .exitOverride()
     .configureOutput({
@@ -68,8 +68,8 @@ export function parseArgs(argv?: string[]): CliArgs {
   if (opts.outputFormat !== undefined) {
     result.outputFormat = opts.outputFormat as CliArgs['outputFormat'];
   }
-  if (opts.dangerouslySkipPermissions !== undefined) {
-    result.dangerouslySkipPermissions = opts.dangerouslySkipPermissions;
+  if (opts.autoApprove !== undefined) {
+    result.autoApprove = opts.autoApprove;
   }
   if (opts.worktree !== undefined) result.worktree = opts.worktree;
 
