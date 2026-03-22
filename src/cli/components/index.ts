@@ -1,12 +1,18 @@
 // src/cli/components/index.ts
-export { StatusBar } from './StatusBar.js';
-export type { StatusBarProps } from './StatusBar.js';
+export { Header } from './Header.js';
+export type { HeaderProps } from './Header.js';
 
-export { MessageList } from './MessageList.js';
-export type { MessageListProps, ChatEntry } from './MessageList.js';
+export { OperationEntry } from './OperationEntry.js';
+export type { OperationEntryData, OperationEntryProps, EntryType } from './OperationEntry.js';
 
-export { ToolIndicator } from './ToolIndicator.js';
-export type { ToolIndicatorProps } from './ToolIndicator.js';
+export { OperationLog } from './OperationLog.js';
+export type { OperationLogProps } from './OperationLog.js';
 
-export { PermissionPrompt } from './PermissionPrompt.js';
-export type { PermissionPromptProps } from './PermissionPrompt.js';
+export { CommandInput } from './CommandInput.js';
+export type { CommandInputProps } from './CommandInput.js';
+
+export { Spinner } from './Spinner.js';
+export type { SpinnerProps } from './Spinner.js';
+
+export { PermissionInline } from './PermissionInline.js';
+export type { PermissionInlineProps } from './PermissionInline.js';

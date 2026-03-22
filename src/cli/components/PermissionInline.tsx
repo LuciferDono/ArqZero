@@ -1,21 +1,33 @@
-// src/cli/components/PermissionPrompt.tsx
+// src/cli/components/PermissionInline.tsx
 import React, { useState, useCallback } from 'react';
 import { Box, Text, useInput } from 'ink';
 import type { PermissionRequest, PermissionResponse, PermissionLevel } from '../../tools/types.js';
+import { THEME } from '../theme.js';
 
-export interface PermissionPromptProps {
+export interface PermissionInlineProps {
   request: PermissionRequest;
   onRespond: (response: PermissionResponse) => void;
+}
+
+function levelTag(level: PermissionLevel): string {
+  switch (level) {
+    case 'safe':
+      return '';
+    case 'ask':
+      return '[ask]';
+    case 'dangerous':
+      return '[dangerous]';
+  }
 }
 
 function levelColor(level: PermissionLevel): string {
   switch (level) {
     case 'safe':
-      return 'green';
+      return THEME.success;
     case 'ask':
-      return 'yellow';
+      return THEME.warning;
     case 'dangerous':
-      return 'red';
+      return THEME.error;
   }
 }
 
@@ -28,19 +40,16 @@ function formatInput(input: unknown): string {
 
   if (typeof input === 'object') {
     const obj = input as Record<string, unknown>;
-    // For Bash tool, show the command
     if ('command' in obj && typeof obj.command === 'string') {
       const cmd = obj.command;
       return cmd.length > 100 ? cmd.slice(0, 100) + '...' : cmd;
     }
-    // For file tools, show the path
     if ('path' in obj && typeof obj.path === 'string') {
       return obj.path;
     }
     if ('file_path' in obj && typeof obj.file_path === 'string') {
       return obj.file_path as string;
     }
-    // Fallback: stringify
     const str = JSON.stringify(input);
     return str.length > 100 ? str.slice(0, 100) + '...' : str;
   }
@@ -48,7 +57,7 @@ function formatInput(input: unknown): string {
   return String(input);
 }
 
-export function PermissionPrompt({ request, onRespond }: PermissionPromptProps) {
+export function PermissionInline({ request, onRespond }: PermissionInlineProps) {
   const [answered, setAnswered] = useState(false);
 
   const respond = useCallback(
@@ -81,39 +90,26 @@ export function PermissionPrompt({ request, onRespond }: PermissionPromptProps) 
   }
 
   const inputDisplay = formatInput(request.input);
+  const tag = levelTag(request.level);
 
   return (
-    <Box
-      flexDirection="column"
-      borderStyle="round"
-      borderColor="yellow"
-      paddingX={1}
-      marginBottom={1}
-    >
+    <Box flexDirection="column" marginBottom={1}>
       <Box>
-        <Text bold color="yellow">Permission required</Text>
+        <Text color={THEME.dim}>{THEME.arrow} </Text>
+        <Text color={THEME.text} bold>{request.tool}</Text>
+        <Text color={THEME.dim}> {inputDisplay}</Text>
+        {tag && (
+          <Text color={levelColor(request.level)}> {tag}</Text>
+        )}
       </Box>
-
-      <Box marginTop={1}>
-        <Text>Tool: </Text>
-        <Text bold>{request.tool}</Text>
-        <Text> </Text>
-        <Text color={levelColor(request.level)}>[{request.level}]</Text>
-      </Box>
-
-      {inputDisplay && (
-        <Box>
-          <Text color="gray">{inputDisplay}</Text>
-        </Box>
-      )}
-
-      <Box marginTop={1}>
-        <Text color="green" bold>[y]</Text>
-        <Text>es  </Text>
-        <Text color="red" bold>[n]</Text>
-        <Text>o  </Text>
-        <Text color="cyan" bold>[a]</Text>
-        <Text>lways allow this tool</Text>
+      <Box marginLeft={2}>
+        <Text color={THEME.dim}>Allow? </Text>
+        <Text color={THEME.success} bold>[y]</Text>
+        <Text color={THEME.dim}>es </Text>
+        <Text color={THEME.error} bold>[n]</Text>
+        <Text color={THEME.dim}>o </Text>
+        <Text color={THEME.info} bold>[a]</Text>
+        <Text color={THEME.dim}>lways</Text>
       </Box>
     </Box>
   );
