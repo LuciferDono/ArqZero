@@ -127,6 +127,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
   const [contextPercent, setContextPercent] = useState(0);
   const [pendingPermission, setPendingPermission] = useState<PendingPermission | null>(null);
   const [transcriptMode, setTranscriptMode] = useState(false);
+  const [expandedView, setExpandedView] = useState(false);
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const { exit } = useApp();
   const history = useInputHistory();
@@ -227,9 +228,17 @@ export default function App({ provider, config, registry, systemPrompt, commandR
       return;
     }
 
-    // Ctrl+O: toggle transcript view
+    // Ctrl+O: cycle view (normal → expanded → transcript → normal)
     if (key.ctrl && _input === 'o') {
-      setTranscriptMode((m) => !m);
+      if (!transcriptMode && !expandedView) {
+        setExpandedView(true);
+      } else if (expandedView && !transcriptMode) {
+        setExpandedView(false);
+        setTranscriptMode(true);
+      } else {
+        setTranscriptMode(false);
+        setExpandedView(false);
+      }
       return;
     }
 
@@ -239,10 +248,18 @@ export default function App({ provider, config, registry, systemPrompt, commandR
       return;
     }
 
-    // Escape: cancel current input or abort streaming
+    // Escape: abort streaming, collapse expanded, or clear input
     if (key.escape) {
       if (isStreaming) {
         engineRef.current?.abort();
+        setIsStreaming(false);
+        setActiveOperation(null);
+        setStreamingText('');
+        setEntries((e) => [...e, { type: 'system', content: '(interrupted)' }]);
+      } else if (expandedView) {
+        setExpandedView(false);
+      } else if (transcriptMode) {
+        setTranscriptMode(false);
       } else {
         setInput('');
       }
@@ -441,6 +458,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
           entries={entries}
           activeOperation={activeOperation}
           streamingText={isStreaming ? streamingText : undefined}
+          expanded={expandedView}
         />
       )}
 
@@ -467,6 +485,7 @@ export default function App({ provider, config, registry, systemPrompt, commandR
       <Footer
         isStreaming={isStreaming}
         transcriptMode={transcriptMode}
+        expandedView={expandedView}
         sessionId={sessionRef.current?.id}
       />
     </Box>

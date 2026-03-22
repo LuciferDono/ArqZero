@@ -4,52 +4,45 @@ import { markedTerminal } from 'marked-terminal';
 import hljs from 'highlight.js';
 import { runtime } from '../config/runtime.js';
 
-function createMarked(): Marked {
-  const m = new Marked();
-  m.use(
-    markedTerminal({
-      showSectionPrefix: false,
-      // Use highlight.js for code blocks (unless disabled)
-      code: (code: string, lang?: string) => {
-        if (runtime.syntaxHighlightingDisabled) return code;
-        try {
-          if (lang && hljs.getLanguage(lang)) {
-            return hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
-          }
-          return hljs.highlightAuto(code).value;
-        } catch {
-          return code;
+const marked = new Marked();
+marked.use(
+  markedTerminal({
+    showSectionPrefix: false,
+    reflowText: true,
+    tab: 2,
+    // Syntax highlighting for code blocks
+    codespan: (text: string) => `\x1b[36m${text}\x1b[0m`,  // cyan for inline code
+    code(code: string, lang?: string) {
+      if (runtime.syntaxHighlightingDisabled) return code;
+      try {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
         }
-      },
-      // Muted horizontal rules
-      hr: () => '\u2500'.repeat(40) + '\n',
-      // Keep lists tight
-      listitem: (text: string) => `  \u2022 ${text}`,
-    }) as any,
-  );
-  return m;
-}
-
-let marked = createMarked();
+        return hljs.highlightAuto(code).value;
+      } catch {
+        return code;
+      }
+    },
+    hr: () => '─'.repeat(40) + '\n',
+  }) as any,
+);
 
 /**
  * Render markdown to terminal-formatted string.
- * Strips trailing whitespace and normalizes newlines.
+ * Handles headings, bold, italic, code, lists, links.
  */
 export function renderMarkdown(text: string): string {
-  // Don't process very short or non-markdown text
   if (!text || text.length < 3) return text;
 
   // Quick check: does this look like it has markdown?
-  const hasMarkdown = /[#*`_~\[\]|>-]/.test(text);
-  if (!hasMarkdown) return text;
+  if (!/[#*`_~\[\]|>-]/.test(text)) return text;
 
   try {
-    const rendered = marked.parse(text, { async: false }) as string;
-    // Trim trailing newlines that marked adds
-    return rendered.replace(/\n+$/, '');
+    let rendered = marked.parse(text, { async: false }) as string;
+    // Clean up excessive newlines
+    rendered = rendered.replace(/\n{3,}/g, '\n\n').replace(/\n+$/, '');
+    return rendered;
   } catch {
-    // Fallback to raw text if parsing fails
     return text;
   }
 }

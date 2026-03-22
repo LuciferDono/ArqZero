@@ -6,6 +6,7 @@ import { THEME } from '../theme.js';
 export interface FooterProps {
   isStreaming: boolean;
   transcriptMode: boolean;
+  expandedView?: boolean;
   sessionId?: string;
 }
 
@@ -14,17 +15,20 @@ interface Shortcut {
   label: string;
 }
 
-export function Footer({ isStreaming, transcriptMode, sessionId }: FooterProps) {
+export function Footer({ isStreaming, transcriptMode, expandedView, sessionId }: FooterProps) {
+  const viewLabel = transcriptMode ? 'grid' : expandedView ? 'transcript' : 'expand';
+
   const shortcuts: Shortcut[] = isStreaming
     ? [
-        { key: 'Esc', label: 'abort' },
-        { key: 'Ctrl+O', label: 'transcript' },
+        { key: 'Esc', label: 'interrupt' },
+        { key: 'Ctrl+O', label: viewLabel },
       ]
     : [
         { key: '/', label: 'commands' },
         { key: 'Ctrl+J', label: 'newline' },
         { key: 'Ctrl+L', label: 'clear' },
-        { key: 'Ctrl+O', label: transcriptMode ? 'grid' : 'transcript' },
+        { key: 'Ctrl+O', label: viewLabel },
+        { key: 'Esc', label: expandedView ? 'collapse' : transcriptMode ? 'back' : 'clear' },
         { key: '↑↓', label: 'history' },
       ];
 
