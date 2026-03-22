@@ -303,6 +303,16 @@ export default function App({ provider, config, registry, systemPrompt, commandR
   });
 
   const handleSubmit = async (value: string) => {
+    // If suggestions are visible, execute the selected command
+    if (showSuggestions && suggestions.length > 0) {
+      const selected = suggestions[suggestionIndex];
+      if (selected) {
+        value = selected.name;
+        setInput('');
+        setSuggestionIndex(0);
+      }
+    }
+
     if (!value.trim()) return;
 
     // Push to history before processing
