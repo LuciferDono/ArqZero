@@ -49,11 +49,28 @@ export const modelCommand: SlashCommand = {
       lines.push('Usage: /model <name>  (e.g. /model primus edge)');
       return lines.join('\n');
     }
-    const key = args.trim().toLowerCase();
-    const modelId = AVAILABLE_MODELS[key] ?? args.trim();
+    // Match model name from the start of args (ignore trailing text)
+    const input = args.trim().toLowerCase();
+    let modelId: string | undefined;
+    let matchedName: string | undefined;
+
+    // Try longest match first (e.g. "primus edge" before "primus")
+    const sortedKeys = Object.keys(AVAILABLE_MODELS).sort((a, b) => b.length - a.length);
+    for (const key of sortedKeys) {
+      if (input === key || input.startsWith(key + ' ')) {
+        modelId = AVAILABLE_MODELS[key];
+        matchedName = MODEL_LIST.find(m => m.id === modelId)?.name ?? key;
+        break;
+      }
+    }
+
+    if (!modelId) {
+      const names = MODEL_LIST.map(m => m.name.toLowerCase()).join(', ');
+      return `Unknown model "${args.trim()}". Available: ${names}`;
+    }
+
     ctx.onModelChange?.(modelId);
-    const displayName = MODEL_LIST.find(m => m.id === modelId)?.name ?? modelId;
-    return `Model set to: ${displayName}`;
+    return `Model set to: ${matchedName}`;
   },
 };
 
