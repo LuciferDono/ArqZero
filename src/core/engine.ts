@@ -6,6 +6,7 @@ import type { PermissionManager } from '../permissions/manager.js';
 import type { ContextWindow } from '../session/context.js';
 import type { Session } from '../session/session.js';
 import type { CompactionResult } from './compaction.js';
+import type { HookRegistry } from '../hooks/registry.js';
 import { compactMessages, buildCompactedMessages } from './compaction.js';
 import { ToolExecutor } from '../tools/executor.js';
 import { userMessage, assistantMessage, toolResultMessage } from './message.js';
@@ -29,6 +30,7 @@ export interface EngineOptions {
   toolContext: ToolContext;
   maxToolRounds?: number;
   permissions?: PermissionManager;
+  hooks?: HookRegistry;
   contextWindow?: ContextWindow;
   session?: Session;
 }
@@ -193,16 +195,56 @@ export class ConversationEngine {
     const toolUseBlocks = contentBlocks.filter((b) => b.type === 'tool_use');
     if (toolUseBlocks.length === 0) {
       // No tools -- conversation turn is complete
+      await this.options.hooks?.fire('Stop', {
+        event: 'Stop',
+        timestamp: Date.now(),
+      });
       return;
     }
 
     // 6. Execute tools and add results
     for (const block of toolUseBlocks) {
+      // Pre-tool hook: may deny execution
+      if (this.options.hooks) {
+        const preResult = await this.options.hooks.fire('PreToolUse', {
+          event: 'PreToolUse',
+          toolName: block.name!,
+          toolInput: block.input,
+          timestamp: Date.now(),
+        });
+
+        if (preResult.action === 'deny') {
+          const errorResult: ToolResult = {
+            content: preResult.message ?? 'Blocked by hook',
+            isError: true,
+          };
+          callbacks.onToolEnd?.(block.id!, block.name!, errorResult);
+          this.messages.push(
+            toolResultMessage(block.id!, block.name!, errorResult.content, true),
+          );
+          continue;
+        }
+
+        // Apply modified input if provided
+        if (preResult.modifiedInput !== undefined) {
+          block.input = preResult.modifiedInput;
+        }
+      }
+
       const result = await this.executor.execute(
         block.name!,
         block.input,
         this.options.toolContext,
       );
+
+      // Post-tool hook
+      await this.options.hooks?.fire('PostToolUse', {
+        event: 'PostToolUse',
+        toolName: block.name!,
+        toolInput: block.input,
+        toolResult: result,
+        timestamp: Date.now(),
+      });
 
       // Notify UI
       callbacks.onToolEnd?.(block.id!, block.name!, result);
