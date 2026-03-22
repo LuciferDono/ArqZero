@@ -2,6 +2,8 @@ import type { Tool, ToolContext } from '../types.js';
 import type { AgentRunner } from '../../agents/runner.js';
 import type { AgentDefinition } from '../../agents/types.js';
 
+// NOTE: Global mutable singleton. Ideally agentRunner would be threaded via
+// ToolContext, but that refactor is too invasive for now.
 let agentRunner: AgentRunner | null = null;
 
 export function setAgentRunner(runner: AgentRunner | null): void {

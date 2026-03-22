@@ -67,13 +67,14 @@ export class AgentRunner {
 
   private async executeAgent(engine: ConversationEngine, prompt: string): Promise<string> {
     const textParts: string[] = [];
+    let agentError: Error | undefined;
 
     await engine.handleUserMessage(prompt, {
       onTextDelta: (text) => textParts.push(text),
-      onError: (err) => {
-        throw err;
-      },
+      onError: (err) => { agentError = err; },
     });
+
+    if (agentError) throw agentError;
 
     return textParts.join('');
   }

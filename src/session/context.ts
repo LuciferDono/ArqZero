@@ -25,8 +25,8 @@ export class ContextWindow {
    * Update token counts from a message_end event.
    */
   trackUsage(usage: TokenUsage): void {
-    this.totalInputTokens = usage.inputTokens;
-    this.totalOutputTokens = usage.outputTokens;
+    this.totalInputTokens += usage.inputTokens;
+    this.totalOutputTokens += usage.outputTokens;
   }
 
   /**

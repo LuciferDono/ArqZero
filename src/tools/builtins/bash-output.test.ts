@@ -12,7 +12,7 @@ const ctx: ToolContext = {
 describe('bashOutputTool', () => {
   it('should return not-implemented message', async () => {
     const result = await bashOutputTool.execute({ process_id: 'abc123' }, ctx);
-    assert.equal(result.isError, undefined);
+    assert.equal(result.isError, true);
     assert.ok(result.content.includes('not yet implemented'));
   });
 
