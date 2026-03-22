@@ -20,7 +20,7 @@ describe('AppConfigSchema', () => {
     if (result.success) {
       assert.strictEqual(result.data.permissions.defaultMode, 'ask');
       assert.deepStrictEqual(result.data.permissions.alwaysAllow, ['Read', 'Glob', 'Grep']);
-      assert.strictEqual(result.data.model, 'accounts/fireworks/models/llama-v3p3-70b-instruct');
+      assert.strictEqual(result.data.model, 'accounts/fireworks/models/glm-4p7');
     }
   });
 
@@ -36,7 +36,7 @@ describe('AppConfigSchema', () => {
     const result = AppConfigSchema.safeParse({
       provider: 'fireworks',
       fireworksApiKey: 'test-key',
-      model: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
+      model: 'accounts/fireworks/models/glm-4p7',
       mcpServers: {
         github: {
           command: 'npx',

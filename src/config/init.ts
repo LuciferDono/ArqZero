@@ -1,7 +1,7 @@
 import { writeConfig, configExists } from './loader.js';
 import type { AppConfig } from './schema.js';
 
-const DEFAULT_MODEL = 'accounts/fireworks/models/llama-v3p3-70b-instruct';
+const DEFAULT_MODEL = 'accounts/fireworks/models/glm-4p7';
 
 export function createDefaultConfig(fireworksApiKey: string): AppConfig {
   return {

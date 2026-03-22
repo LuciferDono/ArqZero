@@ -7,7 +7,7 @@ import type { Message, ToolDefinition, ChatRequest } from '../types.js';
 function makeRequest(overrides: Partial<ChatRequest> = {}): ChatRequest {
   return {
     messages: [],
-    model: 'accounts/fireworks/models/llama-v3p3-70b-instruct',
+    model: 'accounts/fireworks/models/glm-4p7',
     intent: 'chat',
     ...overrides,
   };

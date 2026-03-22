@@ -15,7 +15,7 @@ export const PermissionsSchema = z.object({
 
 export const AppConfigSchema = z.object({
   provider: z.literal('fireworks'),
-  model: z.string().default('accounts/fireworks/models/llama-v3p3-70b-instruct'),
+  model: z.string().default('accounts/fireworks/models/glm-4p7'),
   fireworksApiKey: z.string(),
   maxTokens: z.number().default(8192),
   permissions: PermissionsSchema.default({
