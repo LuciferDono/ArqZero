@@ -17,6 +17,8 @@ import { SlashCommandRegistry } from '../src/commands/registry.js';
 import { builtinCommands } from '../src/commands/builtins.js';
 import { parseArgs } from '../src/cli/args.js';
 import { runHeadless } from '../src/cli/headless.js';
+import { AgentRunner } from '../src/agents/runner.js';
+import { setAgentRunner } from '../src/tools/builtins/task.js';
 
 async function promptUser(question: string): Promise<string> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
@@ -85,6 +87,15 @@ async function main() {
   process.on('exit', () => {
     mcpManager.disconnectAll().catch(() => {});
   });
+
+  // Initialize sub-agent system
+  const toolContext = {
+    cwd: process.cwd(),
+    config,
+    promptUser: async (req: any) => ({ allowed: true } as any),
+  };
+  const agentRunner = new AgentRunner(provider, registry, toolContext, config.model);
+  setAgentRunner(agentRunner);
 
   const systemPrompt = buildSystemPrompt(process.cwd());
 

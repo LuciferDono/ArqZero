@@ -15,6 +15,7 @@ import { bashOutputTool } from './bash-output.js';
 import { killShellTool } from './kill-shell.js';
 import { notebookReadTool } from './notebook-read.js';
 import { notebookEditTool } from './notebook-edit.js';
+import { taskTool } from './task.js';
 import type { Tool } from '../types.js';
 
 export const builtinTools: Tool[] = [
@@ -35,11 +36,12 @@ export const builtinTools: Tool[] = [
   killShellTool,
   notebookReadTool,
   notebookEditTool,
+  taskTool,
 ];
 
 // Also re-export individual tools for direct access
 export {
   readTool, writeTool, editTool, bashTool, globTool, grepTool, askUserTool,
   webSearchTool, webFetchTool, multiEditTool, lsTool, todoWriteTool, todoReadTool,
-  bashOutputTool, killShellTool, notebookReadTool, notebookEditTool,
+  bashOutputTool, killShellTool, notebookReadTool, notebookEditTool, taskTool,
 };
