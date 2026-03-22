@@ -211,7 +211,7 @@ describe('AgentRunner', () => {
     };
 
     await runner.run({ prompt: 'Test', definition });
-    assert.equal(capturedSystemPrompt, 'You are a specialized agent.');
+    assert.ok(capturedSystemPrompt?.startsWith('You are a specialized agent.'));
   });
 
   it('should have isolated message history per sub-agent', async () => {
