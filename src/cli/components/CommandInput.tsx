@@ -18,21 +18,33 @@ export function CommandInput({ value, onChange, onSubmit, disabled }: CommandInp
 
   if (disabled) {
     return (
-      <Box>
-        <Text color={THEME.dim}>&gt; </Text>
+      <Box flexDirection="column">
+        <Box>
+          <Text color={THEME.dim}>&gt; </Text>
+        </Box>
+        <Box>
+          <Text color={THEME.dim}>{'─'.repeat(Math.max(10, Math.min(process.stdout.columns || 80, 120)))}</Text>
+        </Box>
       </Box>
     );
   }
 
   return (
-    <Box>
-      <Text color={THEME.primary} bold>&gt; </Text>
-      <TextInput
-        value={value}
-        onChange={onChange}
-        onSubmit={handleSubmit}
-        placeholder=""
-      />
+    <Box flexDirection="column">
+      <Box>
+        <Text color={THEME.primary} bold>&gt; </Text>
+        <TextInput
+          value={value}
+          onChange={onChange}
+          onSubmit={handleSubmit}
+          placeholder=""
+        />
+      </Box>
+
+      {/* Bottom border */}
+      <Box>
+        <Text color={THEME.dim}>{'─'.repeat(Math.max(10, Math.min(process.stdout.columns || 80, 120)))}</Text>
+      </Box>
     </Box>
   );
 }

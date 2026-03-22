@@ -10,27 +10,41 @@ export interface FooterProps {
   sessionId?: string;
 }
 
+interface Shortcut {
+  key: string;
+  label: string;
+}
+
 export function Footer({ isStreaming, transcriptMode, expandedView, sessionId }: FooterProps) {
   const viewLabel = transcriptMode ? 'grid' : expandedView ? 'transcript' : 'expand';
 
-  // Fewer shortcuts when streaming — less to render, less to break
-  const parts: Array<[string, string]> = isStreaming
-    ? [['Esc', 'stop'], ['Ctrl+O', viewLabel]]
-    : [['/', 'cmd'], ['Ctrl+O', viewLabel], ['Esc', 'clear'], ['↑↓', 'hist']];
+  const shortcuts: Shortcut[] = isStreaming
+    ? [
+        { key: 'Esc', label: 'interrupt' },
+        { key: 'Ctrl+O', label: viewLabel },
+      ]
+    : [
+        { key: '/', label: 'commands' },
+        { key: 'Ctrl+J', label: 'newline' },
+        { key: 'Ctrl+L', label: 'clear' },
+        { key: 'Ctrl+O', label: viewLabel },
+        { key: 'Esc', label: expandedView ? 'collapse' : transcriptMode ? 'back' : 'clear' },
+        { key: '↑↓', label: 'history' },
+      ];
 
   return (
     <Box>
-      <Box flexGrow={1} flexWrap="wrap">
-        {parts.map(([key, label]) => (
-          <Box key={key} marginRight={1}>
-            <Text color={THEME.primary} bold>{key}</Text>
-            <Text color={THEME.dim}> {label}</Text>
+      <Box flexGrow={1}>
+        {shortcuts.map((s, i) => (
+          <Box key={s.key} marginRight={2}>
+            <Text color={THEME.primary} bold>{s.key}</Text>
+            <Text color={THEME.dim}> {s.label}</Text>
           </Box>
         ))}
       </Box>
       {sessionId && (
         <Box>
-          <Text color={THEME.dim}>{sessionId.slice(0, 8)}</Text>
+          <Text color={THEME.dim}>◈ {sessionId.slice(0, 8)}</Text>
         </Box>
       )}
     </Box>
