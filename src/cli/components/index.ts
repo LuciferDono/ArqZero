@@ -11,7 +11,7 @@ export type { OperationLogProps } from './OperationLog.js';
 export { CommandInput } from './CommandInput.js';
 export type { CommandInputProps } from './CommandInput.js';
 
-export { Spinner } from './Spinner.js';
+export { Spinner, ShimmerSpinner } from './Spinner.js';
 export type { SpinnerProps } from './Spinner.js';
 
 export { PermissionInline } from './PermissionInline.js';

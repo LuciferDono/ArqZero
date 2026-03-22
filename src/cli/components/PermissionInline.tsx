@@ -9,26 +9,8 @@ export interface PermissionInlineProps {
   onRespond: (response: PermissionResponse) => void;
 }
 
-function levelTag(level: PermissionLevel): string {
-  switch (level) {
-    case 'safe':
-      return '';
-    case 'ask':
-      return '[ask]';
-    case 'dangerous':
-      return '[dangerous]';
-  }
-}
-
-function levelColor(level: PermissionLevel): string {
-  switch (level) {
-    case 'safe':
-      return THEME.success;
-    case 'ask':
-      return THEME.warning;
-    case 'dangerous':
-      return THEME.error;
-  }
+function isBashTool(name: string): boolean {
+  return name === 'Bash' || name === 'bash';
 }
 
 function formatInput(input: unknown): string {
@@ -55,6 +37,17 @@ function formatInput(input: unknown): string {
   }
 
   return String(input);
+}
+
+function borderColor(level: PermissionLevel): string {
+  switch (level) {
+    case 'safe':
+      return THEME.success;
+    case 'ask':
+      return THEME.warning;
+    case 'dangerous':
+      return THEME.error;
+  }
 }
 
 export function PermissionInline({ request, onRespond }: PermissionInlineProps) {
@@ -90,26 +83,31 @@ export function PermissionInline({ request, onRespond }: PermissionInlineProps) 
   }
 
   const inputDisplay = formatInput(request.input);
-  const tag = levelTag(request.level);
+  const bash = isBashTool(request.tool);
+  const bColor = borderColor(request.level);
+  const toolLabel = bash ? 'Bash command' : request.tool;
 
   return (
-    <Box flexDirection="column" marginBottom={1}>
-      <Box>
-        <Text color={THEME.dim}>{THEME.arrow} </Text>
-        <Text color={THEME.text} bold>{request.tool}</Text>
-        <Text color={THEME.dim}> {inputDisplay}</Text>
-        {tag && (
-          <Text color={levelColor(request.level)}> {tag}</Text>
+    <Box flexDirection="column" marginBottom={1}
+      borderStyle="round" borderColor={bColor}
+      paddingLeft={1} paddingRight={1}
+    >
+      <Text color={THEME.text} bold>{toolLabel}</Text>
+      <Box marginTop={0}>
+        {bash ? (
+          <Text color={THEME.bashBorder}>{'! '}{inputDisplay}</Text>
+        ) : (
+          <Text color={THEME.dim}>{inputDisplay}</Text>
         )}
       </Box>
-      <Box marginLeft={2}>
+      <Box marginTop={0}>
         <Text color={THEME.dim}>Allow? </Text>
         <Text color={THEME.success} bold>[y]</Text>
         <Text color={THEME.dim}>es </Text>
         <Text color={THEME.error} bold>[n]</Text>
         <Text color={THEME.dim}>o </Text>
         <Text color={THEME.info} bold>[a]</Text>
-        <Text color={THEME.dim}>lways</Text>
+        <Text color={THEME.dim}>lways this session</Text>
       </Box>
     </Box>
   );

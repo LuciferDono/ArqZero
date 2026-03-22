@@ -2,7 +2,7 @@
 import React from 'react';
 import { Box, Text } from 'ink';
 import { OperationEntry } from './OperationEntry.js';
-import { Spinner } from './Spinner.js';
+import { ShimmerSpinner } from './Spinner.js';
 import { THEME } from '../theme.js';
 import type { OperationEntryData } from './OperationEntry.js';
 
@@ -19,16 +19,16 @@ export function OperationLog({ entries, activeOperation, streamingText }: Operat
         <OperationEntry key={i} entry={entry} />
       ))}
 
-      {activeOperation && (
-        <Box marginBottom={1}>
-          <Spinner label={activeOperation.name} startTime={activeOperation.startTime} />
-        </Box>
-      )}
-
       {streamingText && (
         <Box marginBottom={1}>
           <Text color={THEME.text}>{streamingText}</Text>
           <Text color={THEME.dim}>{'\u258C'}</Text>
+        </Box>
+      )}
+
+      {activeOperation && (
+        <Box marginBottom={1}>
+          <ShimmerSpinner isActive={true} />
         </Box>
       )}
     </Box>

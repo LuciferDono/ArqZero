@@ -3,31 +3,58 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 // Import theme and types to verify they're well-formed
-import { THEME } from './theme.js';
+import { THEME, SPINNER_VERBS } from './theme.js';
 import type { OperationEntryData, EntryType } from './components/index.js';
 
 describe('Theme', () => {
   it('has all required symbols', () => {
-    assert.equal(THEME.diamond, '◆');
-    assert.equal(THEME.arrow, '▸');
-    assert.equal(THEME.pipe, '┊');
-    assert.equal(THEME.prompt, '›');
+    assert.equal(THEME.diamond, '\u25C6');
+    assert.equal(THEME.arrow, '\u25B8');
+    assert.equal(THEME.pipe, '\u250A');
+    assert.equal(THEME.prompt, '\u203A');
+    assert.equal(THEME.branch, '\u23BF');
+    assert.ok(THEME.dot.length > 0);
+    assert.equal(THEME.successDot, '\u25CF');
+    assert.equal(THEME.failureMark, '\u00D7');
   });
 
   it('has all required colors', () => {
-    assert.equal(THEME.primary, 'yellow');
+    assert.equal(THEME.primary, '#FFB800');
+    assert.equal(THEME.primaryShimmer, '#FFD54F');
     assert.equal(THEME.text, 'white');
     assert.equal(THEME.dim, 'gray');
     assert.equal(THEME.success, 'green');
     assert.equal(THEME.error, 'red');
     assert.equal(THEME.warning, 'yellow');
     assert.equal(THEME.info, 'cyan');
+    assert.equal(THEME.toolBorder, '#5769F7');
+    assert.equal(THEME.bashBorder, '#FF0087');
+    assert.equal(THEME.diffAdded, '#69DB7C');
+    assert.equal(THEME.diffRemoved, '#FFA8B4');
   });
 
   it('has app identity', () => {
     assert.equal(THEME.appName, 'ArqZero');
-    assert.equal(THEME.promptPrefix, '◆ arq ›');
+    assert.equal(THEME.promptPrefix, '\u25C6 arq \u203A');
     assert.equal(THEME.version, '2.0.0');
+  });
+});
+
+describe('SPINNER_VERBS', () => {
+  it('has a substantial list of verbs', () => {
+    assert.ok(SPINNER_VERBS.length >= 80, `Expected >= 80 verbs, got ${SPINNER_VERBS.length}`);
+  });
+
+  it('all verbs end in -ing', () => {
+    for (const verb of SPINNER_VERBS) {
+      assert.ok(verb.endsWith('ing'), `Verb "${verb}" does not end in -ing`);
+    }
+  });
+
+  it('contains ArqZero-specific verbs', () => {
+    assert.ok(SPINNER_VERBS.includes('Gridlining'));
+    assert.ok(SPINNER_VERBS.includes('Zeroing'));
+    assert.ok(SPINNER_VERBS.includes('Forging'));
   });
 });
 
@@ -50,10 +77,12 @@ describe('OperationEntryData types', () => {
       toolName: 'Glob',
       elapsed: 200,
       diffLines: ['+ new line', '- old line'],
+      success: true,
     };
     assert.equal(entry.toolName, 'Glob');
     assert.equal(entry.elapsed, 200);
     assert.equal(entry.diffLines!.length, 2);
+    assert.equal(entry.success, true);
   });
 
   it('text entry renders content', () => {
@@ -75,7 +104,6 @@ describe('OperationEntryData types', () => {
 
 describe('Header model name formatting', () => {
   it('strips fireworks prefix from model names', () => {
-    // Test the logic directly
     const name = 'accounts/fireworks/models/llama-v3p1-70b-instruct';
     const prefixes = ['accounts/fireworks/models/', 'accounts/', 'models/'];
     let short = name;

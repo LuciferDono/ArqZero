@@ -1,33 +1,76 @@
 // src/cli/components/Spinner.tsx
-import React, { useState, useEffect } from 'react';
-import { Text } from 'ink';
-import { THEME } from '../theme.js';
-
-const FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+import React, { useState, useEffect, useRef } from 'react';
+import { Text, Box } from 'ink';
+import { THEME, SPINNER_VERBS } from '../theme.js';
+import { runtime } from '../../config/runtime.js';
 
 export interface SpinnerProps {
-  label: string;
-  startTime: number;
+  label?: string;
+  startTime?: number;
+  isActive?: boolean;
 }
 
-export function Spinner({ label, startTime }: SpinnerProps) {
-  const [frame, setFrame] = useState(0);
+export function ShimmerSpinner({ isActive = true }: { isActive: boolean }) {
+  const [verb] = useState(() => SPINNER_VERBS[Math.floor(Math.random() * SPINNER_VERBS.length)]);
+  const [glimmerIndex, setGlimmerIndex] = useState(0);
+  const [dotVisible, setDotVisible] = useState(true);
   const [elapsed, setElapsed] = useState(0);
+  const startTime = useRef(Date.now());
 
+  // Shimmer animation at 50ms
   useEffect(() => {
+    if (!isActive) return;
     const interval = setInterval(() => {
-      setFrame((f) => (f + 1) % FRAMES.length);
-      setElapsed(Date.now() - startTime);
-    }, 80);
-
+      setGlimmerIndex(i => (i + 1) % (verb.length + 6));
+    }, 50);
     return () => clearInterval(interval);
-  }, [startTime]);
+  }, [isActive, verb]);
 
-  const seconds = (elapsed / 1000).toFixed(1);
+  // Dot blink at 600ms
+  useEffect(() => {
+    if (!isActive) return;
+    const interval = setInterval(() => {
+      setDotVisible(v => !v);
+    }, 600);
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  // Elapsed time at 1s
+  useEffect(() => {
+    if (!isActive) return;
+    const interval = setInterval(() => {
+      setElapsed(Math.floor((Date.now() - startTime.current) / 1000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isActive]);
+
+  if (!isActive) return null;
+
+  const fullText = `${verb}...`;
+
+  // Render each character with shimmer color
+  const chars = fullText.split('').map((char, i) => {
+    const distance = Math.abs(i - glimmerIndex);
+    const isShimmer = distance < 3;
+    return (
+      <Text key={i} color={isShimmer ? THEME.primaryShimmer : THEME.primary}>
+        {char}
+      </Text>
+    );
+  });
+
+  const elapsedStr = elapsed > 0 ? ` ${elapsed}s` : '';
 
   return (
-    <Text color={THEME.primary}>
-      {FRAMES[frame]} Running {label}... {seconds}s
-    </Text>
+    <Box>
+      <Text color={THEME.primary}>{dotVisible ? THEME.dot : ' '} </Text>
+      {chars}
+      <Text color={THEME.dim}>{elapsedStr}</Text>
+    </Box>
   );
+}
+
+// Backward-compatible Spinner wrapper
+export function Spinner({ label, startTime }: SpinnerProps) {
+  return <ShimmerSpinner isActive={true} />;
 }

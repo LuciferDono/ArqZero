@@ -15,14 +15,16 @@ export function CommandInput({ value, onChange, onSubmit, disabled }: CommandInp
   if (disabled) {
     return (
       <Box>
-        <Text color={THEME.dim}>{THEME.promptPrefix} </Text>
+        <Text color={THEME.dim}>{THEME.diamond} arq {THEME.prompt} </Text>
       </Box>
     );
   }
 
   return (
     <Box>
-      <Text color={THEME.primary} bold>{THEME.diamond} arq {THEME.prompt} </Text>
+      <Text color={THEME.primary} bold>{THEME.diamond}</Text>
+      <Text color={THEME.primary}> arq </Text>
+      <Text color={THEME.primary} bold>{THEME.prompt} </Text>
       <TextInput
         value={value}
         onChange={onChange}

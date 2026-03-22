@@ -1,20 +1,36 @@
 // src/cli/markdown.ts
 import { Marked } from 'marked';
 import { markedTerminal } from 'marked-terminal';
+import hljs from 'highlight.js';
+import { runtime } from '../config/runtime.js';
 
-const marked = new Marked();
-marked.use(
-  markedTerminal({
-    // No top-level heading transforms — keep it clean
-    showSectionPrefix: false,
-    // Code block styling
-    code: (code: string) => code,
-    // Muted horizontal rules
-    hr: () => '─'.repeat(40) + '\n',
-    // Keep lists tight
-    listitem: (text: string) => `  • ${text}`,
-  }) as any,
-);
+function createMarked(): Marked {
+  const m = new Marked();
+  m.use(
+    markedTerminal({
+      showSectionPrefix: false,
+      // Use highlight.js for code blocks (unless disabled)
+      code: (code: string, lang?: string) => {
+        if (runtime.syntaxHighlightingDisabled) return code;
+        try {
+          if (lang && hljs.getLanguage(lang)) {
+            return hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
+          }
+          return hljs.highlightAuto(code).value;
+        } catch {
+          return code;
+        }
+      },
+      // Muted horizontal rules
+      hr: () => '\u2500'.repeat(40) + '\n',
+      // Keep lists tight
+      listitem: (text: string) => `  \u2022 ${text}`,
+    }) as any,
+  );
+  return m;
+}
+
+let marked = createMarked();
 
 /**
  * Render markdown to terminal-formatted string.
