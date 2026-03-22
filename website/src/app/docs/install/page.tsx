@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function InstallPage() {
   return (
     <div>
@@ -51,16 +53,24 @@ export default function InstallPage() {
       <h2 className="text-xl font-bold mb-4 text-white">What&apos;s Next</h2>
       <ul className="space-y-2 text-sm" style={{ color: 'var(--text-dim)' }}>
         <li>
-          <span style={{ color: 'var(--brand)' }}>+</span> Tools reference{' '}
-          <span className="text-xs">(coming soon)</span>
+          <span style={{ color: 'var(--brand)' }}>+</span>{' '}
+          <Link href="/docs/tools" className="text-white hover:underline">Tools reference</Link>
+          {' '}&mdash; all 18 built-in tools
         </li>
         <li>
-          <span style={{ color: 'var(--brand)' }}>+</span> Capabilities guide{' '}
-          <span className="text-xs">(coming soon)</span>
+          <span style={{ color: 'var(--brand)' }}>+</span>{' '}
+          <Link href="/docs/capabilities" className="text-white hover:underline">Capabilities guide</Link>
+          {' '}&mdash; 42 engineering capabilities
         </li>
         <li>
-          <span style={{ color: 'var(--brand)' }}>+</span> Configuration deep-dive{' '}
-          <span className="text-xs">(coming soon)</span>
+          <span style={{ color: 'var(--brand)' }}>+</span>{' '}
+          <Link href="/docs/commands" className="text-white hover:underline">Commands</Link>
+          {' '}&mdash; 25+ slash commands
+        </li>
+        <li>
+          <span style={{ color: 'var(--brand)' }}>+</span>{' '}
+          <Link href="/docs/config" className="text-white hover:underline">Configuration</Link>
+          {' '}&mdash; settings, env vars, ARQZERO.md
         </li>
       </ul>
     </div>

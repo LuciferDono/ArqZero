@@ -3,9 +3,10 @@ import Link from 'next/link';
 const sidebarLinks = [
   { href: '/docs', label: 'Overview' },
   { href: '/docs/install', label: 'Installation' },
-  { href: '#', label: 'Tools', disabled: true },
-  { href: '#', label: 'Capabilities', disabled: true },
-  { href: '#', label: 'Configuration', disabled: true },
+  { href: '/docs/tools', label: 'Tools' },
+  { href: '/docs/capabilities', label: 'Capabilities' },
+  { href: '/docs/commands', label: 'Commands' },
+  { href: '/docs/config', label: 'Configuration' },
 ];
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
@@ -26,16 +27,10 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
               href={link.href}
               className="block px-3 py-2 rounded-lg text-sm transition-colors hover:bg-white/5"
               style={{
-                color: link.disabled ? 'var(--text-dim)' : 'var(--text)',
-                pointerEvents: link.disabled ? 'none' : undefined,
+                color: 'var(--text)',
               }}
             >
               {link.label}
-              {link.disabled && (
-                <span className="ml-2 text-xs" style={{ color: 'var(--text-dim)' }}>
-                  soon
-                </span>
-              )}
             </Link>
           ))}
         </nav>
