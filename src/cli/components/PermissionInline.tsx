@@ -9,11 +9,77 @@ export interface PermissionInlineProps {
   onRespond: (response: PermissionResponse) => void;
 }
 
-function isBashTool(name: string): boolean {
-  return name === 'Bash' || name === 'bash';
+export interface PermissionOption {
+  label: string;
+  value: PermissionResponse;
+  hotkey?: string;
 }
 
-function formatInput(input: unknown): string {
+export function getOptionsForTool(request: PermissionRequest): PermissionOption[] {
+  const toolName = request.tool;
+
+  if (toolName === 'Bash' || toolName === 'bash') {
+    const cmd =
+      typeof request.input === 'object' &&
+      request.input !== null &&
+      'command' in (request.input as Record<string, unknown>)
+        ? String((request.input as Record<string, unknown>).command).split(' ')[0]
+        : '';
+    return [
+      { label: 'Yes, allow this command', value: { allowed: true }, hotkey: 'y' },
+      {
+        label: `Yes, always allow "${cmd}" commands this session`,
+        value: { allowed: true, remember: 'session' },
+        hotkey: 'a',
+      },
+      { label: 'No', value: { allowed: false }, hotkey: 'n' },
+    ];
+  }
+
+  if (toolName === 'Edit' || toolName === 'MultiEdit' || toolName === 'Write') {
+    const path =
+      typeof request.input === 'object' &&
+      request.input !== null &&
+      'file_path' in (request.input as Record<string, unknown>)
+        ? String((request.input as Record<string, unknown>).file_path)
+        : '';
+    const dir = path ? path.split('/').slice(0, -1).join('/') + '/' : '';
+    return [
+      { label: 'Yes, allow this edit', value: { allowed: true }, hotkey: 'y' },
+      {
+        label: `Yes, allow all edits${dir ? ` in ${dir}` : ''} this session`,
+        value: { allowed: true, remember: 'session' },
+        hotkey: 'a',
+      },
+      { label: 'No', value: { allowed: false }, hotkey: 'n' },
+    ];
+  }
+
+  // Default for any other tool
+  return [
+    { label: 'Yes', value: { allowed: true }, hotkey: 'y' },
+    { label: 'Yes, always this session', value: { allowed: true, remember: 'session' }, hotkey: 'a' },
+    { label: 'No', value: { allowed: false }, hotkey: 'n' },
+  ];
+}
+
+export function getToolLabel(toolName: string): string {
+  switch (toolName) {
+    case 'Bash':
+    case 'bash':
+      return 'Bash command';
+    case 'Edit':
+      return 'Edit file';
+    case 'MultiEdit':
+      return 'Edit file';
+    case 'Write':
+      return 'Write file';
+    default:
+      return `${toolName} operation`;
+  }
+}
+
+export function formatInput(input: unknown): string {
   if (input === null || input === undefined) return '';
 
   if (typeof input === 'string') {
@@ -51,7 +117,10 @@ function borderColor(level: PermissionLevel): string {
 }
 
 export function PermissionInline({ request, onRespond }: PermissionInlineProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [answered, setAnswered] = useState(false);
+
+  const options = getOptionsForTool(request);
 
   const respond = useCallback(
     (response: PermissionResponse) => {
@@ -62,9 +131,24 @@ export function PermissionInline({ request, onRespond }: PermissionInlineProps) 
     [answered, onRespond],
   );
 
-  useInput((input, _key) => {
+  useInput((input, key) => {
     if (answered) return;
 
+    // Arrow-key navigation
+    if (key.upArrow) {
+      setSelectedIndex((i) => Math.max(0, i - 1));
+      return;
+    }
+    if (key.downArrow) {
+      setSelectedIndex((i) => Math.min(options.length - 1, i + 1));
+      return;
+    }
+    if (key.return) {
+      respond(options[selectedIndex].value);
+      return;
+    }
+
+    // Hotkeys still work
     switch (input.toLowerCase()) {
       case 'y':
         respond({ allowed: true });
@@ -83,31 +167,49 @@ export function PermissionInline({ request, onRespond }: PermissionInlineProps) 
   }
 
   const inputDisplay = formatInput(request.input);
-  const bash = isBashTool(request.tool);
+  const isBash = request.tool === 'Bash' || request.tool === 'bash';
   const bColor = borderColor(request.level);
-  const toolLabel = bash ? 'Bash command' : request.tool;
+  const toolLabel = getToolLabel(request.tool);
 
   return (
-    <Box flexDirection="column" marginBottom={1}
-      borderStyle="round" borderColor={bColor}
-      paddingLeft={1} paddingRight={1}
+    <Box
+      flexDirection="column"
+      marginBottom={1}
+      borderStyle="round"
+      borderColor={bColor}
+      paddingLeft={1}
+      paddingRight={1}
     >
-      <Text color={THEME.text} bold>{toolLabel}</Text>
-      <Box marginTop={0}>
-        {bash ? (
-          <Text color={THEME.bashBorder}>{'! '}{inputDisplay}</Text>
-        ) : (
+      {/* Header */}
+      <Text color={bColor} bold>
+        {toolLabel}
+      </Text>
+
+      {/* Input preview */}
+      {inputDisplay && (
+        <Box marginTop={1}>
+          {isBash && (
+            <Text color={THEME.bashBorder} bold>
+              {'! '}
+            </Text>
+          )}
           <Text color={THEME.dim}>{inputDisplay}</Text>
-        )}
-      </Box>
-      <Box marginTop={0}>
-        <Text color={THEME.dim}>Allow? </Text>
-        <Text color={THEME.success} bold>[y]</Text>
-        <Text color={THEME.dim}>es </Text>
-        <Text color={THEME.error} bold>[n]</Text>
-        <Text color={THEME.dim}>o </Text>
-        <Text color={THEME.info} bold>[a]</Text>
-        <Text color={THEME.dim}>lways this session</Text>
+        </Box>
+      )}
+
+      {/* Arrow-key options */}
+      <Box flexDirection="column" marginTop={1}>
+        {options.map((opt, i) => (
+          <Box key={i}>
+            <Text color={i === selectedIndex ? THEME.primary : THEME.dim}>
+              {i === selectedIndex ? '\u203A ' : '  '}
+            </Text>
+            <Text color={i === selectedIndex ? THEME.text : THEME.dim} bold={i === selectedIndex}>
+              {opt.label}
+            </Text>
+            {opt.hotkey && <Text color={THEME.dim}> ({opt.hotkey})</Text>}
+          </Box>
+        ))}
       </Box>
     </Box>
   );
