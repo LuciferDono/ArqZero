@@ -77,9 +77,10 @@ function summarizeToolResult(name: string, result: ToolResult, input?: Record<st
     case 'MultiEdit':
       return path ? `${path}` : 'file edited';
     case 'Bash': {
-      const cmd = (input?.command as string) ?? '';
+      const cmd = (input?.command as string)?.toLowerCase() ?? '';
       const short = cmd.length > 60 ? cmd.slice(0, 57) + '...' : cmd;
-      return short || '(command)';
+      // Wrap in ANSI italic
+      return short ? `\x1b[3m${short}\x1b[23m` : '\x1b[3m(command)\x1b[23m';
     }
     case 'Glob': {
       const pattern = (input?.pattern as string) ?? '';

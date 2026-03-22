@@ -12,9 +12,6 @@ export interface CommandInputProps {
 }
 
 export function CommandInput({ value, onChange, onSubmit, disabled }: CommandInputProps) {
-  // No useInput here — all key handling is done in app.tsx to avoid
-  // conflicting with ink-text-input's internal keystroke handling.
-
   const handleSubmit = useCallback((_val: string) => {
     onSubmit(value);
   }, [value, onSubmit]);
@@ -23,7 +20,7 @@ export function CommandInput({ value, onChange, onSubmit, disabled }: CommandInp
     return (
       <Box flexDirection="column">
         <Box>
-          <Text color={THEME.dim}>{THEME.diamond} arq {THEME.prompt} </Text>
+          <Text color={THEME.dim}>&gt; </Text>
         </Box>
         <Box>
           <Text color={THEME.dim}>{'─'.repeat(Math.min(process.stdout.columns || 80, 80))}</Text>
@@ -35,9 +32,7 @@ export function CommandInput({ value, onChange, onSubmit, disabled }: CommandInp
   return (
     <Box flexDirection="column">
       <Box>
-        <Text color={THEME.primary} bold>{THEME.diamond}</Text>
-        <Text color={THEME.primary}> arq </Text>
-        <Text color={THEME.primary} bold>{THEME.prompt} </Text>
+        <Text color={THEME.primary} bold>&gt; </Text>
         <TextInput
           value={value}
           onChange={onChange}

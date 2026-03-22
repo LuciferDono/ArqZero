@@ -32,17 +32,17 @@ export const COLORS = {
   ctxCritical:     '#C83030',
   ctxTrack:        '#0d1520',
 
-  // Chrome — neutral, invisible structure
-  bg:              '#04080f',
-  username:        '#607890',
-  structural:      '#253545',
-  badgeBg:         '#161616',
+  // Chrome — warm neutral, invisible structure
+  bg:              '#1a1a1a',
+  username:        '#6B7280',
+  structural:      '#374151',
+  badgeBg:         '#1f1f1f',
 
-  // Text levels
-  textPrimary:     '#E0E8F0',
-  textSecondary:   '#607890',
-  textDim:         '#253545',
-  textInvisible:   '#1a3050',
+  // Text levels — warm greys, not cold blue
+  textPrimary:     '#D4D4D4',
+  textSecondary:   '#6B7280',
+  textDim:         '#374151',
+  textInvisible:   '#2a2a2a',
 
   // Permission
   permYes:         '#3AAF60',

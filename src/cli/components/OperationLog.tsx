@@ -1,6 +1,6 @@
 // src/cli/components/OperationLog.tsx
 import React from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, Static } from 'ink';
 import { OperationEntry } from './OperationEntry.js';
 import { GroupedOperationEntry } from './GroupedOperationEntry.js';
 import { ShimmerSpinner } from './Spinner.js';
@@ -66,15 +66,18 @@ export interface OperationLogProps {
 export function OperationLog({ entries, activeOperation, streamingText, expanded = false }: OperationLogProps) {
   const displayEntries = groupConsecutiveTools(entries);
 
+  // Use Ink's <Static> for completed entries — they render once and don't
+  // re-render on state changes, preventing scroll jumps during streaming.
   return (
     <Box flexDirection="column">
-      {/* Index keys are acceptable here: entries are append-only, never reordered or deleted mid-session */}
-      {displayEntries.map((entry, i) => {
-        if (entry.type === 'grouped') {
-          return <GroupedOperationEntry key={i} group={entry} expanded={expanded} />;
-        }
-        return <OperationEntry key={i} entry={entry} />;
-      })}
+      <Static items={displayEntries.map((entry, i) => ({ ...entry, _key: i }))}>
+        {(entry) => {
+          if (entry.type === 'grouped') {
+            return <GroupedOperationEntry key={entry._key} group={entry as GroupedEntry} expanded={expanded} />;
+          }
+          return <OperationEntry key={entry._key} entry={entry as OperationEntryData} />;
+        }}
+      </Static>
 
       {streamingText && (
         <Box marginBottom={1} flexDirection="column">
