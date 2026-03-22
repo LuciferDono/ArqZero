@@ -61,28 +61,26 @@ function getCwd(): string {
   return cwd.replace(/\\/g, '/');
 }
 
-// Gradient ASCII art logo
+// Large-format block pixel art logo — retro LCD/terminal style
+// Only "ARQ" rendered large, dominant. Hollow interior segments.
 const LOGO_LINES = [
-  '   ▄▀▀▄ █▀▀▄ █▀▀█ ▀▀█ █▀▀ █▀▀▄ █▀▀█',
-  '   █▀▀█ █▄▄▀ █ ▄▀  ▄▀ █▀▀ █▄▄▀ █  █',
-  '   ▀  ▀ ▀ ▀▀  ▀▀▀ █▄▄ ▀▀▀ ▀ ▀▀ ▀▀▀▀',
+  ' ╔═══╗   ╔═══╗   ╔═══╗  ',
+  ' ║   ║   ║   ║   ║   ║  ',
+  ' ║   ║   ║   ║   ║   ║  ',
+  ' ╠═══╣   ╠═══╝   ║   ║  ',
+  ' ║   ║   ║  ╚╗   ║  ╔╝  ',
+  ' ║   ║   ║   ║   ╚══╝▄  ',
+  ' ╚═══╝   ╚═══╝    ▀▀▀   ',
 ];
 
-const GRADIENT = ['#FF6B00', '#FF8C00', '#FFB800', '#FFD54F', '#FFF176', '#FFD54F', '#FFB800', '#FF8C00'];
+const LOGO_COLOR = '#00d4aa';
 
 function Logo() {
   return (
     <Box flexDirection="column">
       {LOGO_LINES.map((line, lineIdx) => (
         <Box key={lineIdx}>
-          {line.split('').map((char, i) => {
-            const colorIdx = Math.floor((i / line.length) * GRADIENT.length);
-            return (
-              <Text key={i} color={GRADIENT[colorIdx]} bold>
-                {char}
-              </Text>
-            );
-          })}
+          <Text color={LOGO_COLOR} bold>{line}</Text>
         </Box>
       ))}
     </Box>
@@ -150,13 +148,10 @@ export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: 
         </Box>
       </Box>
 
-      {/* Gradient separator */}
+      {/* Separator */}
       <Box>
-        <Text color="#FF6B00">{'━━'}</Text>
-        <Text color="#FF8C00">{'━━━'}</Text>
-        <Text color="#FFB800">{'━━━━'}</Text>
-        <Text color="#FFD54F">{'━━━━━'}</Text>
-        <Text color="#444444">{'━'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 14))}</Text>
+        <Text color={LOGO_COLOR}>{'━━━━━'}</Text>
+        <Text color="#0a3d32">{'━'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 5))}</Text>
       </Box>
     </Box>
   );
