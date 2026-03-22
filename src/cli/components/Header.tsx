@@ -61,21 +61,36 @@ function getCwd(): string {
   return cwd.replace(/\\/g, '/');
 }
 
-// Smooth compact logo — modern, minimal half-block style
-const LOGO_LINES = [
-  ' ▄▀█ █▀█ █▀█ ▀█ █▀▀ █▀█ █▀█',
-  ' █▀█ █▀▄ ▀▀█ █▄ ██▄ █▀▄ █▄█',
+// Deep space logo — "ARQ" in cyan, "ZERO" in purple, same block style
+const LOGO_ARQ = [
+  ' ░█████╗░██████╗░░██████╗░',
+  ' ██╔══██╗██╔══██╗██╔═══██╗',
+  ' ███████║██████╔╝██║██╗██║',
+  ' ██╔══██║██╔══██╗╚██████╔╝',
+  ' ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═══╝╚═╝',
 ];
 
-const LOGO_COLOR = '#00d4aa';
+const LOGO_ZERO = [
+  ' ███████╗███████╗██████╗░░█████╗░',
+  ' ╚══███╔╝██╔════╝██╔══██╗██╔══██╗',
+  '   ███╔╝ █████╗  ██████╔╝██║  ██║',
+  '  ███╔╝  ██╔══╝  ██╔══██╗██║  ██║',
+  ' ███████╗███████╗██║  ██║╚█████╔╝',
+  ' ╚══════╝╚══════╝╚═╝  ╚═╝ ╚════╝ ',
+];
 
-function Logo() {
+const COLOR_CYAN = '#00e5c0';
+const COLOR_PURPLE = '#a78bfa';
+const COLOR_MUTED = '#2d3a55';
+
+function LogoBlock() {
   return (
     <Box flexDirection="column">
-      {LOGO_LINES.map((line, lineIdx) => (
-        <Box key={lineIdx}>
-          <Text color={LOGO_COLOR} bold>{line}</Text>
-        </Box>
+      {LOGO_ARQ.map((line, i) => (
+        <Box key={`a${i}`}><Text color={COLOR_CYAN} bold>{line}</Text></Box>
+      ))}
+      {LOGO_ZERO.map((line, i) => (
+        <Box key={`z${i}`}><Text color={COLOR_PURPLE} bold>{line}</Text></Box>
       ))}
     </Box>
   );
@@ -108,7 +123,7 @@ export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: 
       {/* Main header: Logo left, info right */}
       <Box>
         <Box flexGrow={1}>
-          <Logo />
+          <LogoBlock />
         </Box>
         <Box flexDirection="column" alignItems="flex-end" justifyContent="flex-end">
           {/* User + path */}
@@ -144,8 +159,8 @@ export function Header({ modelName, tokenUsage, costEstimate, contextPercent }: 
 
       {/* Separator */}
       <Box>
-        <Text color={LOGO_COLOR}>{'─'}</Text>
-        <Text color="#0a3d32">{'─'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 1))}</Text>
+        <Text color={COLOR_CYAN}>{'─'}</Text>
+        <Text color={COLOR_MUTED}>{'─'.repeat(Math.max(0, Math.min(process.stdout.columns || 80, 120) - 1))}</Text>
       </Box>
     </Box>
   );
