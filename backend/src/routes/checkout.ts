@@ -1,3 +1,7 @@
+// DEFERRED: Payment gateway integration pending.
+// Currently contains Stripe placeholder code.
+// Will be replaced with Lemon Squeezy, Paddle, or Stripe Pioneer when available.
+
 import { Hono } from 'hono';
 import { z } from 'zod';
 import Stripe from 'stripe';

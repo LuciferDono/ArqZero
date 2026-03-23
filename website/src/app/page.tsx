@@ -1,3 +1,5 @@
+import TerminalDemo from '@/components/TerminalDemo';
+
 export default function Home() {
   return (
     <main className="max-w-4xl mx-auto px-6 py-16">
@@ -7,6 +9,7 @@ export default function Home() {
         <div className="flex gap-6 text-sm text-text-dim">
           <a href="/pricing" className="hover:text-brand transition-colors">pricing</a>
           <a href="/docs" className="hover:text-brand transition-colors">docs</a>
+          <a href="/blog" className="hover:text-brand transition-colors">blog</a>
           <a href="https://github.com/LuciferDono/ArqZero" className="hover:text-brand transition-colors">github</a>
         </div>
       </nav>
@@ -38,19 +41,7 @@ export default function Home() {
       {/* Terminal demo */}
       <section className="mb-24">
         <div className="text-text-dim text-sm mb-4">$ arqzero</div>
-        <div className="bg-surface border border-border p-6 font-mono text-sm leading-relaxed">
-          <div className="text-brand mb-4">◆ ArqZero v2.0.0</div>
-          <div className="text-text-dim mb-2 italic">Engaging debugging + security</div>
-          <div className="mb-1"><span className="text-[#3AAF60]">●</span> <span className="text-[#4A7CF0]">Read</span> <span className="text-text-dim">src/auth/login.ts (42 lines)</span> <span className="text-text-dim float-right">0.2s</span></div>
-          <div className="mb-1"><span className="text-[#3AAF60]">●</span> <span className="text-[#4A7CF0]">Grep</span> <span className="text-text-dim">&quot;token&quot; → 12 matches</span> <span className="text-text-dim float-right">0.3s</span></div>
-          <div className="mb-1"><span className="text-[#3AAF60]">●</span> <span className="text-[#4A7CF0]">Edit</span> <span className="text-text-dim">src/auth/login.ts</span> <span className="text-text-dim float-right">0.1s</span></div>
-          <div className="ml-4 mb-1"><span className="text-text-dim">⎿</span> <span className="text-[#2E9E50] bg-[#0a2e1a] px-1">+ const token = await verifyJWT(req);</span></div>
-          <div className="ml-4 mb-1"><span className="text-text-dim">⎿</span> <span className="text-[#B03A3A] bg-[#2e0a0a] px-1">- const token = req.headers.auth;</span></div>
-          <div className="mb-1"><span className="text-[#3AAF60]">●</span> <span className="text-[#D42E8A]">Bash</span> <span className="text-text-dim italic">npm test</span> <span className="text-text-dim float-right">1.4s</span></div>
-          <div className="ml-4 mb-3"><span className="text-text-dim">⎿</span> <span className="text-[#3AAF60]">42 passing</span>, 0 failing</div>
-          <div>Auth now validates JWT properly. Bug fixed.</div>
-          <div className="mt-3 text-brand">{'>'} <span className="cursor-blink">▌</span></div>
-        </div>
+        <TerminalDemo />
       </section>
 
       {/* How it works — three "commands" */}
@@ -148,6 +139,7 @@ export default function Home() {
         <div className="flex gap-6">
           <a href="/pricing" className="hover:text-brand transition-colors">pricing</a>
           <a href="/docs" className="hover:text-brand transition-colors">docs</a>
+          <a href="/blog" className="hover:text-brand transition-colors">blog</a>
           <a href="https://github.com/LuciferDono/ArqZero" className="hover:text-brand transition-colors">github</a>
         </div>
       </footer>

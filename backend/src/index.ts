@@ -22,8 +22,9 @@ app.get('/health', (c) => c.json({ status: 'ok', version: '0.1.0' }));
 app.route('/auth', authRoutes);
 app.route('/license', licenseRoutes);
 app.route('/usage', usageRoutes);
-app.route('/checkout', checkoutRoutes);
-app.route('/webhooks', webhookRoutes);
+// DEFERRED: Payment gateway routes — uncomment when payment provider is configured
+// app.route('/checkout', checkoutRoutes);
+// app.route('/webhooks', webhookRoutes);
 app.route('/team', teamRoutes);
 app.route('/team-memory', teamMemoryRoutes);
 app.route('/users', userRoutes);

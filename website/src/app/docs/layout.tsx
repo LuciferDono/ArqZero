@@ -7,6 +7,7 @@ const sidebarLinks = [
   { href: '/docs/capabilities', label: 'Capabilities' },
   { href: '/docs/commands', label: 'Commands' },
   { href: '/docs/config', label: 'Configuration' },
+  { href: '/blog', label: 'Blog' },
 ];
 
 export default function DocsLayout({ children }: { children: React.ReactNode }) {

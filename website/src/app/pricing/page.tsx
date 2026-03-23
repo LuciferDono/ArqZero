@@ -6,6 +6,7 @@ export default function Pricing() {
         <div className="flex gap-6 text-sm text-text-dim">
           <a href="/pricing" className="text-brand">pricing</a>
           <a href="/docs" className="hover:text-brand transition-colors">docs</a>
+          <a href="/blog" className="hover:text-brand transition-colors">blog</a>
         </div>
       </nav>
 

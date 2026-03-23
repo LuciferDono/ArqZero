@@ -2,4 +2,7 @@ node_modules/
 dist/
 *.js.map
 .env
+.env.local
+*.tmp
+tetris-game/
 src/api/cursor/protobuf/generated/
