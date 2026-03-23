@@ -10,7 +10,7 @@ export default function IntroducingArqZero() {
 
       <article>
         <div className="text-[#6B7280] text-sm mb-2">2026-03-23</div>
-        <h1 className="text-3xl font-bold mb-8">Introducing ArqZero</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-8">Introducing ArqZero</h1>
 
         <div className="space-y-6 text-[#D4D4D4] leading-relaxed">
           <p>

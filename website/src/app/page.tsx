@@ -6,18 +6,18 @@ export default function Home() {
       {/* Nav */}
       <nav className="flex items-center justify-between mb-20">
         <span className="text-brand font-bold text-lg">◆ ArqZero</span>
-        <div className="flex gap-6 text-sm text-text-dim">
-          <a href="/pricing" className="hover:text-brand transition-colors">pricing</a>
-          <a href="/docs" className="hover:text-brand transition-colors">docs</a>
-          <a href="/blog" className="hover:text-brand transition-colors">blog</a>
-          <a href="https://github.com/LuciferDono/ArqZero" className="hover:text-brand transition-colors">github</a>
+        <div className="flex gap-4 sm:gap-6 text-sm text-text-dim">
+          <a href="/pricing" className="hover:text-brand transition-colors py-1">pricing</a>
+          <a href="/docs" className="hover:text-brand transition-colors py-1">docs</a>
+          <a href="/blog" className="hover:text-brand transition-colors py-1">blog</a>
+          <a href="https://github.com/LuciferDono/ArqZero" className="hover:text-brand transition-colors py-1">github</a>
         </div>
       </nav>
 
       {/* Hero — looks like a terminal prompt */}
       <section className="mb-24 animate-fade-in-up">
         <div className="text-text-dim text-sm mb-4">$ arqzero --about</div>
-        <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 leading-tight">
           The coding agent that follows<br />
           <span className="text-brand glow">engineering methodology.</span>
         </h1>
@@ -26,13 +26,13 @@ export default function Home() {
           TDD protocols, debugging procedures, verification gates that
           won&apos;t let it claim done until tests pass.
         </p>
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row gap-4">
           <a href="/docs/install"
-            className="bg-brand text-black font-bold px-6 py-3 text-sm hover:bg-brand-light transition-colors">
+            className="bg-brand text-black font-bold px-6 py-3 text-sm text-center hover:bg-brand-light transition-colors">
             npm i -g arqzero
           </a>
           <a href="/pricing"
-            className="border border-border px-6 py-3 text-sm text-text-dim hover:border-brand hover:text-brand transition-colors">
+            className="border border-border px-6 py-3 text-sm text-center text-text-dim hover:border-brand hover:text-brand transition-colors">
             view pricing →
           </a>
         </div>
@@ -48,7 +48,7 @@ export default function Home() {
       <section className="mb-24 stagger">
         <div className="text-text-dim text-sm mb-8">$ arqzero --how-it-works</div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           <div className="bg-surface border border-border p-5">
             <div className="text-brand text-sm mb-2">01</div>
             <div className="font-bold mb-2">You describe the task</div>
@@ -71,7 +71,7 @@ export default function Home() {
       <section className="mb-24 stagger">
         <div className="text-text-dim text-sm mb-8">$ arqzero --features</div>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {[
             ['42 Capabilities', 'TDD, debugging, code review, planning, migration — each with 8-10 step imperative protocols.'],
             ['Verification Gates', 'Mandatory completion checks. Run tests, check coverage, validate security before claiming done.'],
@@ -134,13 +134,13 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border pt-8 pb-16 flex justify-between text-text-dim text-xs">
+      <footer className="border-t border-border pt-8 pb-16 flex flex-col sm:flex-row justify-between items-center gap-4 text-text-dim text-xs">
         <span>◆ ArqZero v2.0.0</span>
-        <div className="flex gap-6">
-          <a href="/pricing" className="hover:text-brand transition-colors">pricing</a>
-          <a href="/docs" className="hover:text-brand transition-colors">docs</a>
-          <a href="/blog" className="hover:text-brand transition-colors">blog</a>
-          <a href="https://github.com/LuciferDono/ArqZero" className="hover:text-brand transition-colors">github</a>
+        <div className="flex gap-4 sm:gap-6">
+          <a href="/pricing" className="hover:text-brand transition-colors py-1">pricing</a>
+          <a href="/docs" className="hover:text-brand transition-colors py-1">docs</a>
+          <a href="/blog" className="hover:text-brand transition-colors py-1">blog</a>
+          <a href="https://github.com/LuciferDono/ArqZero" className="hover:text-brand transition-colors py-1">github</a>
         </div>
       </footer>
     </main>

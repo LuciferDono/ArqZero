@@ -117,7 +117,7 @@ export default function CommandsPage() {
             {group.commands.map((cmd) => (
               <div
                 key={cmd.name}
-                className="rounded-lg border px-4 py-3 flex items-center gap-4"
+                className="rounded-lg border px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4"
                 style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
               >
                 <span className="font-mono text-sm font-bold shrink-0" style={{ color: group.color }}>

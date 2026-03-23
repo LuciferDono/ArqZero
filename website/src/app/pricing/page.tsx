@@ -3,16 +3,16 @@ export default function Pricing() {
     <main className="max-w-4xl mx-auto px-6 py-16">
       <nav className="flex items-center justify-between mb-16">
         <a href="/" className="text-brand font-bold text-lg">◆ ArqZero</a>
-        <div className="flex gap-6 text-sm text-text-dim">
-          <a href="/pricing" className="text-brand">pricing</a>
-          <a href="/docs" className="hover:text-brand transition-colors">docs</a>
-          <a href="/blog" className="hover:text-brand transition-colors">blog</a>
+        <div className="flex gap-4 sm:gap-6 text-sm text-text-dim">
+          <a href="/pricing" className="text-brand py-1">pricing</a>
+          <a href="/docs" className="hover:text-brand transition-colors py-1">docs</a>
+          <a href="/blog" className="hover:text-brand transition-colors py-1">blog</a>
         </div>
       </nav>
 
       <div className="text-text-dim text-sm mb-8">$ arqzero --pricing</div>
 
-      <div className="grid gap-6 md:grid-cols-3 mb-16 stagger">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3 mb-16 stagger">
         {/* Free */}
         <div className="border border-border p-6">
           <div className="text-text-dim text-xs mb-1">FREE</div>

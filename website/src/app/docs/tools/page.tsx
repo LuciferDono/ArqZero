@@ -143,7 +143,7 @@ export default function ToolsPage() {
 
       {/* Permission legend */}
       <div
-        className="rounded-lg border p-4 mb-10 flex gap-6 text-sm"
+        className="rounded-lg border p-4 mb-10 flex flex-col sm:flex-row gap-3 sm:gap-6 text-sm"
         style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}
       >
         <div className="flex items-center gap-2">

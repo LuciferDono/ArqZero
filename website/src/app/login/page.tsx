@@ -54,9 +54,9 @@ export default function Login() {
 
   return (
     <main className="max-w-md mx-auto px-6 py-16">
-      <a href="/" className="text-[#00D4AA] font-bold text-lg block mb-12">◆ ArqZero</a>
+      <a href="/" className="text-brand font-bold text-lg block mb-12">◆ ArqZero</a>
 
-      <div className="text-[#6B7280] text-sm mb-6">$ arqzero login</div>
+      <div className="text-text-dim text-sm mb-6">$ arqzero login</div>
 
       {step === 'email' ? (
         <form onSubmit={handleEmailSubmit}>
@@ -67,20 +67,20 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             required
-            className="w-full bg-[#141414] border border-[#1e1e1e] text-[#D4D4D4] px-4 py-3 text-sm font-mono focus:border-[#00D4AA] focus:outline-none mb-4"
+            className="w-full bg-surface border border-border text-text px-4 py-3 text-sm font-mono focus:border-brand focus:outline-none mb-4"
           />
-          {error && <p className="text-[#D04545] text-sm mb-4">{error}</p>}
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#00D4AA] text-black font-bold py-3 text-sm hover:bg-[#4EECD0] transition-colors disabled:opacity-50"
+            className="w-full bg-brand text-black font-bold py-3 text-sm hover:bg-brand-light transition-colors disabled:opacity-50"
           >
             {loading ? 'Sending...' : 'Send verification code'}
           </button>
         </form>
       ) : (
         <form onSubmit={handleCodeSubmit}>
-          <p className="text-[#6B7280] text-sm mb-4">Code sent to {email}</p>
+          <p className="text-text-dim text-sm mb-4">Code sent to {email}</p>
           <label className="block text-sm mb-2">Verification code</label>
           <input
             type="text"
@@ -89,20 +89,20 @@ export default function Login() {
             placeholder="000000"
             maxLength={6}
             required
-            className="w-full bg-[#141414] border border-[#1e1e1e] text-[#D4D4D4] px-4 py-3 text-sm font-mono text-center text-2xl tracking-[0.5em] focus:border-[#00D4AA] focus:outline-none mb-4"
+            className="w-full bg-surface border border-border text-text px-4 py-3 text-sm font-mono text-center text-2xl tracking-[0.5em] focus:border-brand focus:outline-none mb-4"
           />
-          {error && <p className="text-[#D04545] text-sm mb-4">{error}</p>}
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#00D4AA] text-black font-bold py-3 text-sm hover:bg-[#4EECD0] transition-colors disabled:opacity-50"
+            className="w-full bg-brand text-black font-bold py-3 text-sm hover:bg-brand-light transition-colors disabled:opacity-50"
           >
             {loading ? 'Verifying...' : 'Verify'}
           </button>
           <button
             type="button"
             onClick={() => { setStep('email'); setCode(''); setError(''); }}
-            className="w-full text-[#6B7280] text-sm mt-3 hover:text-[#00D4AA] transition-colors"
+            className="w-full text-text-dim text-sm mt-3 hover:text-brand transition-colors"
           >
             ← Different email
           </button>

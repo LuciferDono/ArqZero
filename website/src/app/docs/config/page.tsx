@@ -26,14 +26,14 @@ export default function ConfigPage() {
             { level: '3', label: 'Environment vars', path: 'ARQZERO_*', color: '#F59E0B' },
             { level: '4', label: 'CLI arguments', path: '--model, --auto-approve', color: '#00D4AA' },
           ].map((item) => (
-            <div key={item.level} className="flex items-center gap-3">
+            <div key={item.level} className="flex items-center gap-3 flex-wrap">
               <span
                 className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold"
                 style={{ backgroundColor: 'var(--border)', color: 'var(--text)' }}
               >
                 {item.level}
               </span>
-              <span className="text-white w-36">{item.label}</span>
+              <span className="text-white w-28 sm:w-36 shrink-0">{item.label}</span>
               <span style={{ color: item.color }}>{item.path}</span>
             </div>
           ))}
@@ -113,10 +113,10 @@ Never modify files in /generated/.
         All environment variables use the <code className="text-white">ARQZERO_</code> prefix.
       </p>
       <div
-        className="rounded-lg border overflow-hidden mb-10"
+        className="rounded-lg border overflow-hidden mb-10 overflow-x-auto"
         style={{ borderColor: 'var(--border)' }}
       >
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-[400px]">
           <thead>
             <tr style={{ backgroundColor: 'var(--surface)' }}>
               <th className="text-left px-4 py-3 font-mono text-white">Variable</th>
