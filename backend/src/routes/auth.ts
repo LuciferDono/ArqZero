@@ -11,7 +11,7 @@ export const authRoutes = new Hono();
 
 // POST /auth/login — send 6-digit code to email
 authRoutes.post('/login',
-  rateLimit({ keyFn: (c) => c.req.header('x-forwarded-for') ?? 'unknown', max: 10, windowMs: 60000 }),
+  rateLimit({ keyFn: (c) => c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown', max: 10, windowMs: 60000 }),
   async (c) => {
     const { email } = z.object({ email: z.string().email() }).parse(await c.req.json());
     const normalEmail = email.toLowerCase().trim();
@@ -42,7 +42,7 @@ authRoutes.post('/login',
 
 // POST /auth/verify — exchange code for tokens
 authRoutes.post('/verify',
-  rateLimit({ keyFn: (c) => c.req.header('x-forwarded-for') ?? 'unknown', max: 10, windowMs: 60000 }),
+  rateLimit({ keyFn: (c) => `verify:${c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown'}`, max: 5, windowMs: 600000 }),
   async (c) => {
     const schema = z.object({
       email: z.string().email(),
@@ -69,7 +69,16 @@ authRoutes.post('/verify',
       ),
     });
 
-    if (!token) return c.json({ error: 'Invalid or expired code' }, 401);
+    if (!token) {
+      // Invalidate all unused tokens for this user on wrong code
+      await db.update(verificationTokens)
+        .set({ used: true })
+        .where(and(
+          eq(verificationTokens.userId, user.id),
+          eq(verificationTokens.used, false),
+        ));
+      return c.json({ error: 'Invalid or expired code' }, 401);
+    }
 
     // Mark token as used
     await db.update(verificationTokens).set({ used: true }).where(eq(verificationTokens.id, token.id));

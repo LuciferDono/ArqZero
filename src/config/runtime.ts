@@ -4,6 +4,8 @@ export const runtime = {
   syntaxHighlightingDisabled: false,
   verbose: false,
   theme: 'dark' as 'dark' | 'light',
+  // NOTE: runtime.tier is set once at startup. If subscription changes mid-session,
+  // the user needs to restart ArqZero. A periodic re-evaluation is a v2 enhancement.
   tier: 'free' as 'free' | 'pro' | 'team',
 };
 

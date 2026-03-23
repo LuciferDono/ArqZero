@@ -1,7 +1,11 @@
 import { SignJWT, jwtVerify } from 'jose';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, randomBytes, randomInt } from 'node:crypto';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET ?? 'dev-secret-change-in-production');
+const secret = process.env.JWT_SECRET ?? (process.env.NODE_ENV === 'test' ? 'test-secret-at-least-32-characters-long' : '');
+if (!secret || secret.length < 32) {
+  throw new Error('JWT_SECRET env var is required (min 32 characters). Set it in your .env file.');
+}
+const JWT_SECRET = new TextEncoder().encode(secret);
 
 export interface TokenPayload {
   sub: string;      // user ID
@@ -32,6 +36,5 @@ export function hashToken(token: string): string {
 }
 
 export function generateVerificationCode(): string {
-  // 6-digit code
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(randomInt(100000, 1000000));
 }

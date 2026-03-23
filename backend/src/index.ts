@@ -4,8 +4,9 @@ import { cors } from 'hono/cors';
 import { authRoutes } from './routes/auth.js';
 import { licenseRoutes } from './routes/license.js';
 import { usageRoutes } from './routes/usage.js';
-import { checkoutRoutes } from './routes/checkout.js';
-import { webhookRoutes } from './routes/webhook.js';
+// DEFERRED: Payment gateway — uncomment when Stripe is configured
+// import { checkoutRoutes } from './routes/checkout.js';
+// import { webhookRoutes } from './routes/webhook.js';
 import { teamRoutes } from './routes/team.js';
 import { teamMemoryRoutes } from './routes/team-memory.js';
 import { userRoutes } from './routes/users.js';

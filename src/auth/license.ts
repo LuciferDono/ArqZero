@@ -55,10 +55,16 @@ async function refreshInBackground(auth: ReturnType<typeof loadAuth>): Promise<v
   if (!auth) return;
   try {
     const result = await refreshAccessToken(auth.refreshToken);
+    let tier = auth.tier;
+    try {
+      const license = await fetchLicense(result.accessToken);
+      tier = license.tier as Tier;
+    } catch {}
     saveAuth({
       ...auth,
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
+      tier,
       expiresAt: Date.now() + result.expiresIn * 1000,
       lastValidated: Date.now(),
     });

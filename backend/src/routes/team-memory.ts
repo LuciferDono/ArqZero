@@ -59,7 +59,7 @@ teamMemoryRoutes.put('/:key', async (c) => {
   }
 
   const body = z.object({
-    value: z.string(),
+    value: z.string().max(65536),
   }).parse(await c.req.json());
 
   // Upsert: try update first, insert if not found
