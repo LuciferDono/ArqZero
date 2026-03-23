@@ -53,7 +53,7 @@ export default function Login() {
   }
 
   return (
-    <main className="max-w-md mx-auto px-6 py-16">
+    <main className="max-w-md mx-auto px-4 sm:px-6 py-16">
       <a href="/" className="text-brand font-bold text-lg block mb-12">◆ ArqZero</a>
 
       <div className="text-text-dim text-sm mb-6">$ arqzero login</div>

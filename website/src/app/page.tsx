@@ -2,7 +2,7 @@ import TerminalDemo from '@/components/TerminalDemo';
 
 export default function Home() {
   return (
-    <main className="max-w-4xl mx-auto px-6 py-16">
+    <main className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
       {/* Nav */}
       <nav className="flex items-center justify-between mb-20">
         <span className="text-brand font-bold text-lg">◆ ArqZero</span>

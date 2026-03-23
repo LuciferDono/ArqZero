@@ -11,24 +11,24 @@ const posts = [
 
 export default function Blog() {
   return (
-    <main className="max-w-4xl mx-auto px-6 py-16">
+    <main className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
       <nav className="flex items-center justify-between mb-16">
-        <Link href="/" className="text-[#00D4AA] font-bold text-lg">◆ ArqZero</Link>
-        <div className="flex gap-6 text-sm text-[#6B7280]">
-          <Link href="/pricing" className="hover:text-[#00D4AA] transition-colors">pricing</Link>
-          <Link href="/docs" className="hover:text-[#00D4AA] transition-colors">docs</Link>
-          <Link href="/blog" className="text-[#00D4AA]">blog</Link>
+        <Link href="/" className="text-brand font-bold text-lg">◆ ArqZero</Link>
+        <div className="flex gap-4 sm:gap-6 text-sm text-text-dim">
+          <Link href="/pricing" className="hover:text-brand transition-colors py-1">pricing</Link>
+          <Link href="/docs" className="hover:text-brand transition-colors py-1">docs</Link>
+          <Link href="/blog" className="text-brand py-1">blog</Link>
         </div>
       </nav>
 
-      <div className="text-[#6B7280] text-sm mb-8">$ arqzero --blog</div>
+      <div className="text-text-dim text-sm mb-8">$ arqzero --blog</div>
 
       <div className="space-y-8">
         {posts.map((post) => (
-          <Link key={post.slug} href={`/blog/${post.slug}`} className="block border border-[#1e1e1e] p-6 hover:border-[#00D4AA]/30 transition-colors">
-            <div className="text-[#6B7280] text-xs mb-2">{post.date}</div>
+          <Link key={post.slug} href={`/blog/${post.slug}`} className="block border border-border p-6 hover:border-brand/30 transition-colors">
+            <div className="text-text-dim text-xs mb-2">{post.date}</div>
             <h2 className="text-lg font-bold mb-2">{post.title}</h2>
-            <p className="text-[#6B7280] text-sm">{post.summary}</p>
+            <p className="text-text-dim text-sm">{post.summary}</p>
           </Link>
         ))}
       </div>
