@@ -13,8 +13,12 @@ import { userRoutes } from './routes/users.js';
 
 const app = new Hono();
 
+const corsOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://arqzero.dev']
+  : ['https://arqzero.dev', 'http://localhost:3000'];
+
 app.use('/*', cors({
-  origin: ['https://arqzero.dev', 'http://localhost:3000'],
+  origin: corsOrigins,
   credentials: true,
 }));
 

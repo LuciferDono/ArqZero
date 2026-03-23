@@ -23,6 +23,7 @@ export const TIER_CONFIG = {
       '/memory', '/undo', '/think', '/agents', '/loop', '/vim',
       '/context', '/cost', '/export', '/permissions', '/tools',
       '/check', '/setup', '/session', '/reload-plugins', '/plugin',
+      '/compress', '/skill',
       '/login', '/logout', '/upgrade',
     ],
     capabilityLimit: 42,

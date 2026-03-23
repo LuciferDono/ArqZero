@@ -23,6 +23,14 @@ authRoutes.post('/login',
       user = newUser;
     }
 
+    // Invalidate old unused verification tokens before creating new one
+    await db.update(verificationTokens)
+      .set({ used: true })
+      .where(and(
+        eq(verificationTokens.userId, user.id),
+        eq(verificationTokens.used, false),
+      ));
+
     // Generate code, hash it, store it
     const code = generateVerificationCode();
     const codeHash = hashToken(code);
@@ -122,7 +130,9 @@ authRoutes.post('/verify',
 );
 
 // POST /auth/refresh — exchange refresh token for new access token
-authRoutes.post('/refresh', async (c) => {
+authRoutes.post('/refresh',
+  rateLimit({ keyFn: (c) => `refresh:${c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'unknown'}`, max: 20, windowMs: 60000 }),
+  async (c) => {
   const { refreshToken, machineId } = z.object({
     refreshToken: z.string(),
     machineId: z.string().max(64).optional(),

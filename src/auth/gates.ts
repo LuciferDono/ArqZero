@@ -27,14 +27,15 @@ const TEAM_FEATURES = new Set([
 // Tools that require Pro
 export const PRO_TOOLS = new Set([
   'MultiEdit', 'NotebookRead', 'NotebookEdit',
-  'TodoWrite', 'TodoRead', 'BashOutput', 'KillShell', 'Dispatch',
+  'TodoWrite', 'TodoRead', 'BashOutput', 'KillShell', 'Dispatch', 'Prompt',
 ]);
 
 // Commands that require Pro
 export const PRO_COMMANDS = new Set([
   '/memory', '/undo', '/think', '/agents', '/loop',
   '/vim', '/reload-plugins', '/plugin', '/session',
-  '/export', '/context', '/cost',
+  '/export', '/context', '/cost', '/compress', '/skill',
+  '/permissions', '/tools', '/check', '/setup',
 ]);
 
 // Free tier gets 10 capabilities, Pro gets all 42
