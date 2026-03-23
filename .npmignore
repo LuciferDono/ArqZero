@@ -1,0 +1,30 @@
+# Dev files
+backend/
+website/
+docs/
+.claude/
+.git/
+*.test.ts
+test/
+demo_test/
+tetris-game/
+
+# Config
+.env
+.env.local
+*.tmp
+drizzle.config.ts
+
+# Build artifacts
+dist/
+*.map
+
+# Media
+*.jpeg
+*.jpg
+*.png
+*.gif
+
+# Misc
+master.md
+serve.sh
