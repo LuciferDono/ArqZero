@@ -1,9 +1,14 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const apiKey = process.env.RESEND_API_KEY;
+const resend = apiKey && !apiKey.startsWith('re_placeholder') ? new Resend(apiKey) : null;
 const FROM = 'ArqZero <noreply@arqzero.dev>';
 
 export async function sendVerificationCode(email: string, code: string): Promise<void> {
+  if (!resend) {
+    console.log(`[DEV] Verification code for ${email}: ${code}`);
+    return;
+  }
   await resend.emails.send({
     from: FROM,
     to: email,
@@ -26,6 +31,10 @@ export async function sendTeamInviteEmail(
   ownerEmail: string,
   ownerId: string,
 ): Promise<void> {
+  if (!resend) {
+    console.log(`[DEV] Team invite for ${inviteeEmail} from ${ownerEmail}`);
+    return;
+  }
   const acceptUrl = `${process.env.FRONTEND_URL ?? 'https://arqzero.dev'}/team/accept?owner=${ownerId}`;
   await resend.emails.send({
     from: FROM,
