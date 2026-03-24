@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ArqZero — Launch Priorities</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a1a1a;
+    color: #d4d4d4;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    padding: 40px 50px;
+  }
+
+  h1 {
+    color: #00D4AA;
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    color: #6B7280;
+    font-size: 12px;
+    margin-bottom: 30px;
+  }
+
+  h2 {
+    color: #00D4AA;
+    font-size: 15px;
+    margin-top: 30px;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #374151;
+  }
+
+  h3 {
+    color: #d4d4d4;
+    font-size: 12px;
+    margin-top: 16px;
+    margin-bottom: 6px;
+  }
+
+  p { margin-bottom: 8px; }
+
+  strong { color: #e0e0e0; }
+
+  .brand { color: #00D4AA; }
+  .dim { color: #6B7280; }
+  .warn { color: #C47F00; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+    font-size: 10px;
+  }
+
+  th {
+    background: #252525;
+    color: #00D4AA;
+    text-align: left;
+    padding: 6px 10px;
+    border: 1px solid #374151;
+    font-weight: 500;
+  }
+
+  td {
+    padding: 5px 10px;
+    border: 1px solid #2a2a2a;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) { background: #1f1f1f; }
+
+  ol, ul {
+    margin: 6px 0 10px 20px;
+  }
+
+  li { margin-bottom: 4px; }
+
+  code {
+    background: #252525;
+    color: #00D4AA;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+  }
+
+  .priority-box {
+    background: #1f1f1f;
+    border-left: 3px solid #00D4AA;
+    padding: 12px 16px;
+    margin: 12px 0;
+  }
+
+  .priority-box.high {
+    border-left-color: #D04545;
+  }
+
+  .priority-box.med {
+    border-left-color: #C47F00;
+  }
+
+  .page-break { page-break-before: always; }
+
+  .footer {
+    margin-top: 40px;
+    padding-top: 12px;
+    border-top: 1px solid #374151;
+    color: #6B7280;
+    font-size: 9px;
+    text-align: center;
+  }
+
+  .timeline-row {
+    display: flex;
+    gap: 8px;
+    margin: 4px 0;
+  }
+
+  .timeline-week {
+    color: #00D4AA;
+    min-width: 80px;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<h1>&#9670; ArqZero Launch Priorities</h1>
+<p class="subtitle">Comprehensive launch plan — from open-source to revenue | March 2026 | 80+ sources</p>
+
+<h2>Executive Summary</h2>
+<p>The AI coding tools market is <strong>$8-13B in 2026</strong>, growing 20-27% CAGR. 73% of developers use AI tools daily. ArqZero sits in a genuine gap: <strong class="brand">terminal-native + multi-provider + plugin ecosystem</strong>. No competitor has all three. Launch as open-core, price Pro at $15/mo, target HN + r/LocalLLaMA.</p>
+
+<h2>Priority 1: Open-Source the Core</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> Push the ArqZero repo to public on GitHub under Apache 2.0.</p>
+  <p><strong>Why:</strong> 57% of developers prefer open-source. GitHub stars are the #1 trust signal. Every day without a public repo is wasted distribution.</p>
+  <p><strong>Timeline:</strong> Day 1.</p>
+</div>
+<h3>Steps</h3>
+<ol>
+  <li>Change GitHub repo from private to public</li>
+  <li>Add <code>LICENSE</code> file (Apache 2.0)</li>
+  <li>Add <code>CONTRIBUTING.md</code> with contributor onboarding</li>
+  <li>Add <code>CODE_OF_CONDUCT.md</code></li>
+  <li>Add GitHub issue templates (bug report, feature request)</li>
+  <li>Add <code>.github/FUNDING.yml</code> for GitHub Sponsors</li>
+  <li>Create "good first issue" labels on 5-10 issues</li>
+</ol>
+
+<h2>Priority 2: Update Pricing to $15/mo</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> Change Pro from $12 to $15/mo. Annual at $144/yr ($12/mo effective).</p>
+  <p><strong>Why:</strong> $12 signals "cheaper." $15 matches Windsurf, undercuts Cursor by $5. Annual rewards commitment.</p>
+  <p><strong>Timeline:</strong> Day 1.</p>
+</div>
+
+<table>
+  <tr><th>Tier</th><th>Price</th><th>Annual</th><th>Key Features</th></tr>
+  <tr><td class="brand">Free</td><td>$0</td><td>—</td><td>9 tools, 10 capabilities, 50 msg/day, no account</td></tr>
+  <tr><td class="brand">Pro</td><td>$15/mo</td><td>$144/yr</td><td>18 tools, 42 capabilities, verification gates, subagents, memory, unlimited</td></tr>
+  <tr><td class="brand">Team</td><td>$30/user/mo</td><td>$300/yr</td><td>Pro + shared memory, team sync, admin dashboard</td></tr>
+  <tr><td class="brand">Enterprise</td><td>Custom</td><td>—</td><td>SSO, audit logs, SLA, dedicated support</td></tr>
+</table>
+
+<h2>Priority 3: Fix First-Run Experience</h2>
+<div class="priority-box high">
+  <p><strong>What:</strong> Make <code>npx arqzero</code> flawless. Zero config for free tier. Complete a real task in 60 seconds.</p>
+  <p><strong>Why:</strong> This is the #1 priority. 97% of adoption is bottom-up. If the first 60 seconds are bad, nothing else matters.</p>
+  <p><strong>Timeline:</strong> Days 2-3.</p>
+</div>
+<ol>
+  <li>Test <code>npx arqzero</code> from scratch on clean terminal</li>
+  <li>Setup wizard: detect no config → ask for API key → start immediately</li>
+  <li>Add <code>npx arqzero --demo</code> mode (works without API key)</li>
+  <li>Shimmer spinner animates smoothly on first response</li>
+  <li>Tool results display cleanly, not raw data</li>
+</ol>
+
+<h2>Priority 4: Deploy Backend to Railway</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> Get auth API live so login/upgrade works.</p>
+  <p><strong>Why:</strong> Without running backend, Pro conversion is impossible.</p>
+  <p><strong>Timeline:</strong> Days 3-4.</p>
+</div>
+<p>Env vars needed: <code>DATABASE_URL</code>, <code>JWT_SECRET</code>, <code>RESEND_API_KEY</code>, <code>FRONTEND_URL</code>, <code>NODE_ENV=production</code></p>
+
+<h2>Priority 5: Set Up Resend for Email</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> Enable 6-digit verification code emails.</p>
+  <p><strong>Timeline:</strong> Day 4. 30 minutes.</p>
+</div>
+
+<h2>Priority 6: npm Publish</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> Publish <code>arqzero</code> to npm. Make <code>npm i -g arqzero</code> work globally.</p>
+  <p><strong>Timeline:</strong> Days 4-5.</p>
+</div>
+
+<h2>Priority 7: Set Up Community Channels</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> Discord server, Twitter/X @ArqZero, dev.to profile.</p>
+  <p><strong>Why:</strong> Community is the moat against $30B-funded competitors.</p>
+  <p><strong>Timeline:</strong> Day 5.</p>
+</div>
+
+<table>
+  <tr><th>Channel</th><th>Purpose</th></tr>
+  <tr><td>Discord</td><td>#general, #support, #plugins, #showcase, #feature-requests, #contributing</td></tr>
+  <tr><td>Twitter/X</td><td>Build-in-public threads, competitor commentary, launch announcements</td></tr>
+  <tr><td>dev.to</td><td>Technical articles, SEO, developer audience</td></tr>
+</table>
+
+<h2 class="page-break">Priority 8: Publish Origin Story</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> "Why I Built ArqZero" on dev.to + Reddit.</p>
+  <p><strong>Why:</strong> Developers trust stories over marketing. The origin story is your most effective content piece.</p>
+  <p><strong>Timeline:</strong> Week 2.</p>
+</div>
+<p><strong>Outlets:</strong> dev.to (primary), r/LocalLLaMA (local model angle), r/commandline (TUI angle), Twitter/X thread</p>
+
+<h2>Priority 9: Pre-Launch Community Building</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> 2+ weeks of engagement before HN launch.</p>
+  <p><strong>Timeline:</strong> Weeks 2-4.</p>
+</div>
+<ul>
+  <li>Comment on AI tool discussions on HN (2-3/week)</li>
+  <li>Post to r/LocalLLaMA, r/commandline</li>
+  <li>Publish 2 more dev.to articles</li>
+  <li>Submit to BetaList (expect 100-600 visits)</li>
+</ul>
+
+<h2>Priority 10: Hacker News Launch</h2>
+<div class="priority-box high">
+  <p><strong>What:</strong> "Show HN: ArqZero — Open-source terminal AI agent that works with any model"</p>
+  <p><strong>Why:</strong> Front-page HN drives 10,000-30,000 visitors. 150-750 new users from one post.</p>
+  <p><strong>Timeline:</strong> Week 5. Tuesday/Wednesday, 8-9 AM ET.</p>
+</div>
+
+<h2>Priority 11: Product Hunt Launch</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> Launch on PH one week after HN. Target Top 5.</p>
+  <p><strong>Timeline:</strong> Week 6.</p>
+</div>
+
+<h2>Priority 12: Sustained Growth</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> Consistent content + community engagement.</p>
+  <p><strong>Timeline:</strong> Weeks 7-16 (ongoing).</p>
+</div>
+<table>
+  <tr><th>Cadence</th><th>Action</th></tr>
+  <tr><td>Weekly</td><td>dev.to article</td></tr>
+  <tr><td>3x/week</td><td>Twitter/X threads</td></tr>
+  <tr><td>Bi-weekly</td><td>Reddit post, YouTube demo, npm update</td></tr>
+  <tr><td>Daily</td><td>Discord engagement, GitHub issue responses (&lt;72h)</td></tr>
+</table>
+
+<h2>Priority 13: Pro Tier Live (Month 4)</h2>
+<div class="priority-box med">
+  <p><strong>What:</strong> Turn on payment gate. Lemon Squeezy or Stripe Pioneer.</p>
+  <p><strong>Why:</strong> First 3 months = pure adoption. Month 4 = start converting.</p>
+</div>
+
+<h2>Priority 14: Device Auth Flow (Month 4-5)</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> Replace email+code with OAuth link (like <code>gh auth login</code>).</p>
+  <p>Terminal gives URL → user opens in browser → authorizes via GitHub OAuth → CLI picks it up.</p>
+</div>
+
+<h2>Priority 15: Team + Enterprise (Month 6+)</h2>
+<div class="priority-box">
+  <p><strong>What:</strong> Team at $30/user/mo. Shared memory, admin dashboard, SSO.</p>
+  <p><strong>Why:</strong> One team of 10 = $300/mo vs one Pro at $15/mo.</p>
+</div>
+
+<h2 class="page-break">Summary Timeline</h2>
+<table>
+  <tr><th>When</th><th>Priority</th><th>Deliverable</th></tr>
+  <tr><td class="brand">Day 1</td><td>1, 2</td><td>Repo public, price $15</td></tr>
+  <tr><td class="brand">Days 2-3</td><td>3</td><td>First-run experience polished</td></tr>
+  <tr><td class="brand">Days 3-4</td><td>4, 5</td><td>Backend on Railway, Resend live</td></tr>
+  <tr><td class="brand">Days 4-5</td><td>6</td><td>npm published</td></tr>
+  <tr><td class="brand">Day 5</td><td>7</td><td>Discord, Twitter/X, dev.to</td></tr>
+  <tr><td class="brand">Week 2</td><td>8</td><td>"Why I Built ArqZero" published</td></tr>
+  <tr><td class="brand">Weeks 2-4</td><td>9</td><td>Community building, BetaList</td></tr>
+  <tr><td class="brand">Week 5</td><td>10</td><td>Hacker News launch</td></tr>
+  <tr><td class="brand">Week 6</td><td>11</td><td>Product Hunt launch</td></tr>
+  <tr><td class="brand">Weeks 7-16</td><td>12</td><td>Sustained content + community</td></tr>
+  <tr><td class="brand">Month 4</td><td>13, 14</td><td>Pro tier + device auth</td></tr>
+  <tr><td class="brand">Month 6+</td><td>15</td><td>Team tier + enterprise</td></tr>
+</table>
+
+<h2>3-Month Targets</h2>
+<table>
+  <tr><th>Metric</th><th>Target</th></tr>
+  <tr><td>GitHub stars</td><td>1,000</td></tr>
+  <tr><td>npm weekly downloads</td><td>2,000</td></tr>
+  <tr><td>Discord members</td><td>500</td></tr>
+  <tr><td>Active weekly users</td><td>300</td></tr>
+  <tr><td>HN front page</td><td>1 post, 100+ points</td></tr>
+  <tr><td>Product Hunt</td><td>Top 5 of the day</td></tr>
+  <tr><td>Contributors</td><td>15</td></tr>
+</table>
+
+<h2>Competitive Position</h2>
+<table>
+  <tr><th>Tool</th><th>Stars</th><th>Provider Lock</th><th>TUI</th><th>Plugins</th><th>Price</th></tr>
+  <tr><td>Claude Code</td><td>Closed</td><td>Anthropic only</td><td>Basic</td><td>Hooks+MCP</td><td>$20-200/mo</td></tr>
+  <tr><td>Aider</td><td>41.6K</td><td>None</td><td>Basic</td><td>None</td><td>Free (BYOK)</td></tr>
+  <tr><td>OpenCode</td><td>95K+</td><td>None</td><td>Minimal</td><td>None</td><td>Free (BYOK)</td></tr>
+  <tr><td>Cursor</td><td>N/A</td><td>Multi (credits)</td><td>N/A (IDE)</td><td>Extensions</td><td>$20-200/mo</td></tr>
+  <tr><td class="brand"><strong>ArqZero</strong></td><td class="brand"><strong>Launch</strong></td><td class="brand"><strong>None (BYOK)</strong></td><td class="brand"><strong>The Grid</strong></td><td class="brand"><strong>Yes</strong></td><td class="brand"><strong>Free + $15</strong></td></tr>
+</table>
+
+<div class="footer">
+  &#9670; ArqZero — Terminal-native AI engineering agent | 80+ sources | March 2026<br>
+  github.com/LuciferDono/ArqZero | luciferdono.github.io/ArqZero
+</div>
+
+</body>
+</html>
