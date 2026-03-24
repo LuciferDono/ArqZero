@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx tsx:*)",
+      "Bash(find:*)",
+      "Read(//c/Users/prana/Projekts/Workshop/Arq-CODE/$HOME/**)",
+      "Bash(nslookup:*)",
+      "Bash(curl:*)",
+      "Bash(gh api:*)",
+      "Bash(__NEW_LINE_baaa144958bcc019__ echo:*)",
+      "Read(//tmp/**)"
+    ]
+  }
+}
