@@ -1,8 +1,33 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
+out/
 *.js.map
+
+# Environment
 .env
-.env.local
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test / temp
 *.tmp
+coverage/
+
+# Project-specific
 tetris-game/
 src/api/cursor/protobuf/generated/
+
+# Local settings
+.claude/settings.local.json
