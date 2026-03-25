@@ -6,7 +6,7 @@ If you discover a security vulnerability in ArqZero, please report it responsibl
 
 **Do NOT open a public issue.**
 
-Email: **arqzero@proton.me**
+Email: **arqzerohq@gmail.com**
 
 Include:
 - Description of the vulnerability
