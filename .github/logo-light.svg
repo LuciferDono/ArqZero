@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 80" fill="none">
+  <defs>
+    <linearGradient id="brand" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00A886"/>
+      <stop offset="100%" stop-color="#00D4AA"/>
+    </linearGradient>
+  </defs>
+  <!-- Diamond icon -->
+  <path d="M30 40 L45 15 L60 40 L45 65 Z" fill="url(#brand)" opacity="0.9"/>
+  <path d="M38 40 L45 25 L52 40 L45 55 Z" fill="#ffffff"/>
+  <!-- ArqZero text -->
+  <text x="80" y="52" font-family="'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace" font-size="38" font-weight="bold" fill="url(#brand)">Arq</text>
+  <text x="188" y="52" font-family="'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace" font-size="38" font-weight="bold" fill="#2D5F7A">Zero</text>
+</svg>

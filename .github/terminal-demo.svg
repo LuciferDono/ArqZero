@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 520" fill="none">
+  <style>
+    @keyframes typing { from { width: 0 } to { width: 100% } }
+    @keyframes blink { 0%,100% { opacity: 1 } 50% { opacity: 0 } }
+    .cursor { animation: blink 1.2s infinite; }
+    text { font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', monospace; }
+  </style>
+  <!-- Window -->
+  <rect width="820" height="520" rx="12" fill="#1a1a1a"/>
+  <!-- Title bar -->
+  <rect width="820" height="36" rx="12" fill="#2a2a2a"/>
+  <rect y="24" width="820" height="12" fill="#2a2a2a"/>
+  <circle cx="20" cy="18" r="6" fill="#D04545"/>
+  <circle cx="40" cy="18" r="6" fill="#C47F00"/>
+  <circle cx="60" cy="18" r="6" fill="#3AAF60"/>
+  <text x="370" y="23" font-size="12" fill="#6B7280" text-anchor="middle">arqzero</text>
+
+  <!-- Logo -->
+  <text x="20" y="70" font-size="13" fill="#00D4AA" font-weight="bold"> ▄▀█ █▀█ █▀█ ▀█ █▀▀ █▀█ █▀█</text>
+  <text x="20" y="88" font-size="13" fill="#00D4AA" font-weight="bold"> █▀█ █▀▄ ▀▀█ █▄ ██▄ █▀▄ █▄█</text>
+  <text x="20" y="106" font-size="13" fill="#00D4AA">──</text>
+  <text x="55" y="106" font-size="13" fill="#4A8FD4" font-weight="bold">v2.0.0</text>
+
+  <!-- User line -->
+  <text x="20" y="130" font-size="13" fill="#6B7280">prana</text>
+  <text x="72" y="130" font-size="13" fill="#00D4AA"> ◈ </text>
+  <text x="100" y="130" font-size="13" fill="#D4D4D4">~/projects/my-app</text>
+  <text x="580" y="130" font-size="13" fill="#374151">▐</text>
+  <rect x="590" y="118" width="60" height="18" rx="2" fill="#00D4AA"/>
+  <text x="596" y="131" font-size="12" fill="#1a1a1a" font-weight="bold">Enso</text>
+
+  <!-- Separator -->
+  <text x="20" y="148" font-size="13" fill="#00D4AA">─</text>
+  <text x="30" y="148" font-size="13" fill="#374151">────────────────────────────────────────────────────────────────────────────────────</text>
+
+  <!-- User prompt -->
+  <text x="20" y="174" font-size="14" fill="#00D4AA" font-weight="bold">◆ arq ›</text>
+  <text x="110" y="174" font-size="14" fill="#D4D4D4">fix the auth bug and add tests for the login flow</text>
+
+  <!-- Capability match -->
+  <text x="30" y="200" font-size="13" fill="#00D4AA" font-style="italic">  Engaging debugging + security + tdd</text>
+
+  <!-- Tool calls -->
+  <text x="30" y="228" font-size="13">
+    <tspan fill="#3AAF60">●</tspan>
+    <tspan fill="#4A7CF0"> Read</tspan>
+    <tspan fill="#6B7280"> src/auth/login.ts</tspan>
+    <tspan fill="#374151"> (67 lines)</tspan>
+    <tspan fill="#374151" dx="180">0.2s</tspan>
+  </text>
+
+  <text x="30" y="252" font-size="13">
+    <tspan fill="#3AAF60">●</tspan>
+    <tspan fill="#4A7CF0"> Grep</tspan>
+    <tspan fill="#6B7280"> "verifyToken" → 4 matches</tspan>
+    <tspan fill="#374151" dx="141">0.1s</tspan>
+  </text>
+
+  <text x="30" y="276" font-size="13">
+    <tspan fill="#3AAF60">●</tspan>
+    <tspan fill="#4A7CF0"> Read</tspan>
+    <tspan fill="#6B7280"> src/auth/middleware.ts</tspan>
+    <tspan fill="#374151"> (34 lines)</tspan>
+    <tspan fill="#374151" dx="146">0.1s</tspan>
+  </text>
+
+  <text x="30" y="300" font-size="13">
+    <tspan fill="#3AAF60">●</tspan>
+    <tspan fill="#4A7CF0"> Edit</tspan>
+    <tspan fill="#6B7280"> src/auth/login.ts</tspan>
+  </text>
+  <!-- Diff -->
+  <text x="56" y="320" font-size="13" fill="#374151">⎿</text>
+  <text x="72" y="320" font-size="13" fill="#2E9E50">+ const token = await verifyJWT(req.cookies.session);</text>
+  <text x="56" y="338" font-size="13" fill="#374151">⎿</text>
+  <text x="72" y="338" font-size="13" fill="#B03A3A">- const token = req.headers.authorization;</text>
+
+  <text x="30" y="366" font-size="13">
+    <tspan fill="#3AAF60">●</tspan>
+    <tspan fill="#4A7CF0"> Write</tspan>
+    <tspan fill="#6B7280"> src/auth/login.test.ts</tspan>
+    <tspan fill="#374151"> (new, 48 lines)</tspan>
+  </text>
+
+  <text x="30" y="394" font-size="13">
+    <tspan fill="#3AAF60">●</tspan>
+    <tspan fill="#D42E8A"> Bash</tspan>
+    <tspan fill="#6B7280"> npm test</tspan>
+    <tspan fill="#374151" dx="273">2.1s</tspan>
+  </text>
+  <text x="56" y="414" font-size="13" fill="#374151">⎿</text>
+  <text x="72" y="414" font-size="13" fill="#3AAF60">  67 passing, 0 failing</text>
+
+  <!-- Verification gate -->
+  <text x="30" y="442" font-size="13">
+    <tspan fill="#3AAF60">●</tspan>
+    <tspan fill="#00D4AA"> Verification gate passed</tspan>
+    <tspan fill="#6B7280"> — tests green, no regressions</tspan>
+  </text>
+
+  <!-- Response -->
+  <text x="20" y="472" font-size="14" fill="#D4D4D4">Fixed JWT validation in login — was using raw header instead of</text>
+  <text x="20" y="490" font-size="14" fill="#D4D4D4">signed cookie. Added 6 tests covering happy path, expired token,</text>
+  <text x="20" y="508" font-size="14" fill="#D4D4D4">and missing session. All 67 tests green.</text>
+</svg>
