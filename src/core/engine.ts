@@ -314,7 +314,7 @@ export class ConversationEngine {
 
         // Apply modified input if provided
         if (preResult.modifiedInput !== undefined) {
-          block.input = preResult.modifiedInput;
+          block.input = (preResult.modifiedInput as Record<string, unknown>) ?? undefined;
         }
       }
 

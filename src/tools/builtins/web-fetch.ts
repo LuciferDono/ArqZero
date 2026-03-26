@@ -100,7 +100,7 @@ export const webFetchTool: Tool = {
       };
     }
 
-    let timeout: ReturnType<typeof setTimeout>;
+    let timeout: ReturnType<typeof setTimeout> = undefined!;
     try {
       const controller = new AbortController();
       timeout = setTimeout(() => controller.abort(), 15_000);

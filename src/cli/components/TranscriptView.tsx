@@ -43,7 +43,7 @@ export function TranscriptView({ messages }: TranscriptViewProps) {
       {messages.map((msg, i) => {
         const text = formatTranscriptMessage(msg);
         const color = msg.role === 'system' ? THEME.dim :
-          msg.role === 'user' ? THEME.accent :
+          msg.role === 'user' ? THEME.primary :
           msg.role === 'tool' ? THEME.success :
           THEME.text;
         return (

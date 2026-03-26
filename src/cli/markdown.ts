@@ -1,5 +1,6 @@
 // src/cli/markdown.ts
 import { Marked } from 'marked';
+// @ts-ignore no type declarations for marked-terminal
 import { markedTerminal } from 'marked-terminal';
 import hljs from 'highlight.js';
 import { runtime } from '../config/runtime.js';
@@ -24,7 +25,7 @@ marked.use(
       }
     },
     hr: () => '─'.repeat(40) + '\n',
-  // @ts-expect-error marked-terminal type mismatch with Marked extension interface
+  // @ts-ignore marked-terminal type mismatch with Marked extension interface
   }),
 );
 

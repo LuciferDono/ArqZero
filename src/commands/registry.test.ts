@@ -284,7 +284,7 @@ describe('Built-in commands', () => {
       const output = await modelCommand.execute('enso how good are you', ctx);
 
       assert.equal(changedTo, 'accounts/fireworks/models/glm-4p7');
-      assert.ok(output.includes('Enso'));
+      assert.ok(output!.includes('Enso'));
     });
   });
 
