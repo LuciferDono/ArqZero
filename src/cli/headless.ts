@@ -25,8 +25,11 @@ export async function runHeadless(options: HeadlessOptions): Promise<void> {
     process.stderr.write('⚠ Headless mode: auto-approving all tool permissions (trust mode)\n');
     promptUser = async () => ({ allowed: true });
   } else {
-    // 'ask' or 'locked' — cannot prompt in headless mode, deny non-safe tools
-    promptUser = async () => ({ allowed: false });
+    // 'ask' or 'locked' — cannot prompt in headless mode, deny non-safe tools with warning
+    promptUser = async (req) => {
+      process.stderr.write(`⚠ Headless mode: denied ${req.tool} (no --auto-approve). Use --auto-approve to allow tool execution.\n`);
+      return { allowed: false };
+    };
   }
 
   const engine = new ConversationEngine({

@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { Tool, ToolContext, ToolResult } from '../types.js';
+import { guardPath } from '../path-guard.js';
 
 interface LsInput {
   path?: string;
@@ -19,8 +20,14 @@ export const lsTool: Tool = {
   permissionLevel: 'safe',
 
   async execute(input: unknown, ctx: ToolContext): Promise<ToolResult> {
-    const { path } = input as LsInput;
-    const dirPath = path ? resolve(path) : ctx.cwd;
+    const { path: inputPath } = input as LsInput;
+
+    let dirPath: string;
+    try {
+      dirPath = inputPath ? guardPath(inputPath, ctx.cwd) : ctx.cwd;
+    } catch (err: any) {
+      return { content: err.message, isError: true };
+    }
 
     let entries: string[];
     try {

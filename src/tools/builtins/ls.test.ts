@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { tmpdir, homedir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { lsTool } from './ls.js';
 import type { ToolContext } from '../types.js';
@@ -71,5 +71,18 @@ describe('lsTool', () => {
 
   it('should have safe permission level', () => {
     assert.equal(lsTool.permissionLevel, 'safe');
+  });
+
+  it('should block listing sensitive directories', async () => {
+    const home = homedir();
+    const result = await lsTool.execute({ path: join(home, '.ssh') }, ctx);
+    assert.equal(result.isError, true);
+    assert.ok(result.content.includes('sensitive'));
+  });
+
+  it('should block path traversal outside allowed dirs', async () => {
+    const result = await lsTool.execute({ path: '/etc' }, ctx);
+    assert.equal(result.isError, true);
+    assert.ok(result.content.includes('blocked') || result.content.includes('denied') || result.content.includes('outside'));
   });
 });

@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import type { Tool, ToolContext, ToolResult } from '../types.js';
+import { guardPath } from '../path-guard.js';
 
 interface NotebookEditInput {
   notebook_path: string;
@@ -57,12 +58,19 @@ export const notebookEditTool: Tool = {
   },
   permissionLevel: 'ask',
 
-  async execute(input: unknown, _ctx: ToolContext): Promise<ToolResult> {
+  async execute(input: unknown, ctx: ToolContext): Promise<ToolResult> {
     const { notebook_path, cell_index, new_source, cell_type, action = 'edit' } = input as NotebookEditInput;
+
+    let resolvedPath: string;
+    try {
+      resolvedPath = guardPath(notebook_path, ctx.cwd);
+    } catch (err: any) {
+      return { content: err.message, isError: true };
+    }
 
     let raw: string;
     try {
-      raw = readFileSync(notebook_path, 'utf-8');
+      raw = readFileSync(resolvedPath, 'utf-8');
     } catch (err: any) {
       return { content: `Error reading notebook: ${err.message}`, isError: true };
     }
@@ -123,7 +131,7 @@ export const notebookEditTool: Tool = {
     }
 
     try {
-      writeFileSync(notebook_path, JSON.stringify(notebook, null, 2) + '\n', 'utf-8');
+      writeFileSync(resolvedPath, JSON.stringify(notebook, null, 2) + '\n', 'utf-8');
     } catch (err: any) {
       return { content: `Error writing notebook: ${err.message}`, isError: true };
     }
