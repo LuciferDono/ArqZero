@@ -3,6 +3,7 @@
   <p align="center">
   <img src="icon.jpg" alt="ArqZero snapshot" width="100%" />
 </p>
+
 ### Terminal-native AI coding agent. Structured methodology. Any LLM.
 
 <p>
