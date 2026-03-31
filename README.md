@@ -1,7 +1,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".github/logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset=".github/logo-light.svg">
-  <img alt="ArqZero" src=".github/logo-dark.svg" width="320">
+  <img alt="ArqZero" src="icon.jpg" width="320">
 </picture>
 
 ### Terminal-native AI coding agent. Structured methodology. Any LLM.
