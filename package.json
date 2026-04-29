@@ -1,7 +1,7 @@
 {
   "name": "arqzero",
   "version": "2.0.0",
-  "description": "ArqZero — terminal-native AI engineering agent with structured methodologies",
+  "description": "ArqZero — terminal-native AI engineering agent with structured methodologies. Bring your own LLM key.",
   "type": "module",
   "bin": {
     "arqzero": "./bin/arqzero.mjs"
@@ -9,31 +9,60 @@
   "scripts": {
     "dev": "tsx bin/arq.ts",
     "build": "tsc",
-    "test": "node --test --experimental-strip-types src/**/*.test.ts"
+    "test": "node --test --experimental-strip-types src/**/*.test.ts",
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
-    "cli",
     "ai",
-    "coding-assistant",
     "coding-agent",
-    "arqzero",
-    "terminal"
+    "coding-assistant",
+    "cli",
+    "terminal",
+    "tui",
+    "llm",
+    "claude",
+    "openai",
+    "fireworks",
+    "anthropic",
+    "openrouter",
+    "ollama",
+    "byok",
+    "tdd",
+    "agent",
+    "subagent",
+    "developer-tools",
+    "arqzero"
   ],
   "files": [
     "bin/",
     "src/",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md",
     "!**/*.test.ts"
   ],
   "engines": {
     "node": ">=18.19.0"
   },
-  "homepage": "https://arqzero.dev",
+  "homepage": "https://github.com/LuciferDono/ArqZero#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LuciferDono/ArqZero"
+    "url": "git+https://github.com/LuciferDono/ArqZero.git"
+  },
+  "bugs": {
+    "url": "https://github.com/LuciferDono/ArqZero/issues",
+    "email": "arqzerohq@gmail.com"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/LuciferDono"
   },
   "author": "Pranav Jadhav <arqzerohq@gmail.com> (https://github.com/LuciferDono)",
   "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
     "commander": "^14.0.3",

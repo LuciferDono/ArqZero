@@ -31,3 +31,29 @@ src/api/cursor/protobuf/generated/
 
 # Local settings
 .claude/settings.local.json
+settings.local.json
+
+# Session artifacts (auto-saved continuations)
+*-session-continued-*.txt
+????-??-??-??????-this-session-is-being-continued-from-a-previous-*.txt
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor swap
+*.bak
+*~
+
+# macOS Finder
+.AppleDouble
+.LSOverride
+
+# Lockfile noise from forks (we use package-lock.json)
+yarn.lock
+pnpm-lock.yaml
+
+# Stray research / scratch
+profitable-niches-*.md

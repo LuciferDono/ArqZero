@@ -1,8 +1,8 @@
-
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset=".github/logo-light.svg">
+  <img alt="ArqZero" src=".github/logo-dark.svg" width="320">
 </picture>
-  <p align="center">
-  <img src="icon.jpg" alt="ArqZero snapshot" width="100%" />
-</p>
 
 ### Terminal-native AI coding agent. Structured methodology. Any LLM.
 
@@ -172,16 +172,49 @@ ArqZero doesn't just edit files. It **reads** the codebase, **identifies** the r
 
 ## Providers
 
-Any OpenAI-compatible endpoint works out of the box:
+Bring your own key. ArqZero ships first-class adapters for 11 providers plus a `custom` slot for any OpenAI-compatible endpoint.
 
-| Provider | Base URL | Notes |
-|----------|----------|-------|
-| **Fireworks AI** | `https://api.fireworks.ai/inference/v1` | Default. GLM-4.7 (Enso) + GLM-5 (PRIMUS) |
-| OpenAI | `https://api.openai.com/v1` | GPT-4o, o1, etc. |
-| Together AI | `https://api.together.xyz/v1` | Llama, Mistral, etc. |
-| Groq | `https://api.groq.com/openai/v1` | Ultra-fast inference |
-| Ollama | `http://localhost:11434/v1` | Fully local, fully private |
-| Any compatible | Any URL | If it speaks OpenAI, it works |
+| Provider | Default Model | Env Var | Notes |
+|----------|---------------|---------|-------|
+| **Fireworks AI** | `accounts/fireworks/models/glm-4p7` | `FIREWORKS_API_KEY` | Default. Fast inference for GLM, DeepSeek, Qwen, Llama. |
+| OpenAI | `gpt-4o` | `OPENAI_API_KEY` | GPT-4o, GPT-4 Turbo, o1 reasoning. |
+| **Anthropic** | `claude-sonnet-4-6` | `ANTHROPIC_API_KEY` | Claude Opus/Sonnet/Haiku — native Messages API adapter. |
+| Groq | `llama-3.3-70b-versatile` | `GROQ_API_KEY` | LPU inference, sub-second latency. |
+| Together AI | `meta-llama/Llama-3.3-70B-Instruct-Turbo` | `TOGETHER_API_KEY` | Hosted open-source models. |
+| DeepSeek | `deepseek-chat` | `DEEPSEEK_API_KEY` | DeepSeek-V3 + R1 reasoning. |
+| xAI | `grok-2-latest` | `XAI_API_KEY` | Grok models. |
+| Google Gemini | `gemini-2.0-flash` | `GEMINI_API_KEY` | Gemini 2.0/1.5 via OpenAI-compat endpoint. |
+| Mistral AI | `mistral-large-latest` | `MISTRAL_API_KEY` | Mistral Large, Codestral, Mixtral. |
+| Ollama | `llama3.3` | — | Fully local, no key required. |
+| **OpenRouter** | `anthropic/claude-sonnet-4` | `OPENROUTER_API_KEY` | Unified gateway to 100+ models. **Multi-key fallback chain supported.** |
+| Custom | (you specify) | `CUSTOM_API_KEY` | Any OpenAI-compatible endpoint. |
+
+### Switching providers
+
+Inside ArqZero:
+
+```
+/provider                          # list providers and current state
+/provider set openai sk-...        # store a key and switch active provider
+/provider anthropic                # switch (key already configured)
+/provider remove groq              # delete stored keys
+```
+
+Changes save to `~/.arqzero/config.json` immediately. Restart ArqZero to pick up the new provider — no mid-session hot-swap, by design (keeps token counters and model routing consistent).
+
+### OpenRouter multi-key fallback
+
+OpenRouter is the only provider that accepts a chain of keys. If key 1 fails with `401/402/403/429/5xx` or a network error, ArqZero rotates to key 2, then key 3, and so on — automatically and without losing your turn.
+
+```
+/provider set openrouter sk-or-primary
+/provider add openrouter sk-or-backup-1
+/provider add openrouter sk-or-backup-2
+```
+
+Or via env: `OPENROUTER_API_KEY="sk-1,sk-2,sk-3"` (comma-delimited).
+
+Bad-request errors (`400` / `404`) **do not** trigger rotation — those indicate a config problem (wrong model id, malformed payload) where retrying with another key would just waste credits.
 
 ---
 
