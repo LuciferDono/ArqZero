@@ -24,6 +24,8 @@ function createMockConfig(): AppConfig {
   return {
     provider: 'fireworks',
     model: 'test-model',
+    apiKeys: { fireworks: 'test-key' },
+    baseURLs: {},
     fireworksApiKey: 'test-key',
     maxTokens: 1024,
     permissions: {

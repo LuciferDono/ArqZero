@@ -9,6 +9,8 @@ function makeConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
     provider: 'fireworks',
     model: 'accounts/fireworks/models/glm-4p7',
+    apiKeys: { fireworks: 'test-key' },
+    baseURLs: {},
     fireworksApiKey: 'test-key',
     maxTokens: 8192,
     permissions: {

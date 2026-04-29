@@ -3,7 +3,7 @@ import React from 'react';
 import { render } from 'ink';
 import App from '../src/cli/app.js';
 import { MockAdapter } from '../src/api/mock/adapter.js';
-import { FireworksAdapter } from '../src/api/fireworks/adapter.js';
+import { buildProvider, ProviderConfigError } from '../src/api/factory.js';
 import { configExists, loadConfig } from '../src/config/loader.js';
 import { runInit } from '../src/config/init.js';
 import { createInterface } from 'node:readline';
@@ -110,23 +110,20 @@ async function main() {
   });
 
   let provider: LLMProvider;
-  if (config.fireworksApiKey) {
-    try {
-      const adapter = new FireworksAdapter(config.fireworksApiKey);
-      if (await adapter.isAvailable()) {
-        provider = adapter;
-      } else {
-        console.error('Warning: Fireworks API key is invalid or the API is unreachable.');
-        console.error('Falling back to mock adapter. Run "arqzero --help" or edit ~/.arqzero/config.json to fix.\n');
-        provider = new MockAdapter();
-      }
-    } catch (err) {
-      console.error(`Error connecting to Fireworks API: ${err instanceof Error ? err.message : String(err)}`);
-      console.error('Falling back to mock adapter.\n');
+  try {
+    provider = buildProvider(config);
+    const ok = await provider.isAvailable();
+    if (!ok) {
+      console.error(`Warning: ${config.provider} provider unavailable. Falling back to mock adapter.\n`);
       provider = new MockAdapter();
     }
-  } else {
-    console.error('Note: No API key configured. Using mock adapter. Set FIREWORKS_API_KEY or run setup.\n');
+  } catch (err) {
+    if (err instanceof ProviderConfigError) {
+      console.error(`Provider config error: ${err.message}`);
+    } else {
+      console.error(`Error initializing provider: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    console.error('Falling back to mock adapter. Run /provider to configure.\n');
     provider = new MockAdapter();
   }
 

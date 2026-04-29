@@ -11,6 +11,15 @@ import { MODELS, getModelByName } from '../config/model-router.js';
 import { listSessionsWithInfo, listSessions, loadSession, deleteSession } from '../session/history.js';
 import { logout as logoutApi, getCheckoutUrl } from '../auth/client.js';
 import { loadAuth, clearAuth } from '../auth/store.js';
+import {
+  PROVIDERS,
+  getProviderMeta,
+  isValidProviderId,
+  listProviderIds,
+  type ProviderId,
+} from '../api/registry.js';
+import { writeConfig } from '../config/loader.js';
+import { getProviderKeys } from '../config/schema.js';
 
 export const helpCommand: SlashCommand = {
   name: '/help',
@@ -387,7 +396,11 @@ export const doctorCommand: SlashCommand = {
 
     // Provider
     lines.push(`Provider:      ${ctx.config.provider}`);
-    lines.push(`API key:       ${ctx.config.fireworksApiKey ? 'set' : 'MISSING'}`);
+    const providerKeys = getProviderKeys(ctx.config, ctx.config.provider);
+    const keyState = providerKeys.length === 0
+      ? 'MISSING'
+      : providerKeys.length === 1 ? 'set' : `${providerKeys.length} keys (fallback chain)`;
+    lines.push(`API key:       ${keyState}`);
 
     // Tools
     const toolCount = ctx.toolRegistry?.getAll().length ?? 0;
@@ -630,6 +643,94 @@ export const upgradeCommand: SlashCommand = {
   },
 };
 
+export const providerCommand: SlashCommand = {
+  name: '/provider',
+  description: 'List or switch the active LLM provider',
+  async execute(args: string, ctx: SlashCommandContext): Promise<string> {
+    const argv = args.trim().split(/\s+/).filter(Boolean);
+    const sub = argv[0]?.toLowerCase();
+
+    // /provider             → list providers and current state
+    // /provider list        → same as above
+    // /provider <id>        → switch active provider (key must already exist)
+    // /provider set <id> <key> [<key2> ...]  → store key(s) for provider and switch
+    // /provider add <id> <key>               → append a key (OpenRouter chain only)
+    // /provider remove <id>                  → delete stored keys for a provider
+
+    if (!sub || sub === 'list') {
+      const lines = ['Available providers:', ''];
+      for (const id of listProviderIds()) {
+        const meta = PROVIDERS[id];
+        const keys = getProviderKeys(ctx.config, id);
+        const keyState = keys.length === 0
+          ? 'no key'
+          : keys.length === 1 ? 'key set' : `${keys.length} keys`;
+        const active = id === ctx.config.provider ? ' (active)' : '';
+        lines.push(`  ${id.padEnd(12)} ${meta.displayName.padEnd(24)} [${keyState}]${active}`);
+      }
+      lines.push('');
+      lines.push('Switch:  /provider <id>');
+      lines.push('Add key: /provider set <id> <key> [<extra-keys for openrouter>]');
+      lines.push('Remove:  /provider remove <id>');
+      lines.push('');
+      lines.push('Changes save immediately. Restart ArqZero to load the new provider.');
+      return lines.join('\n');
+    }
+
+    if (sub === 'remove') {
+      const id = argv[1];
+      if (!id || !isValidProviderId(id)) {
+        return `Usage: /provider remove <id>`;
+      }
+      if (id === ctx.config.provider) {
+        return `Cannot remove keys for active provider "${id}". Switch first.`;
+      }
+      delete ctx.config.apiKeys[id];
+      writeConfig(ctx.config);
+      return `Removed keys for ${id}.`;
+    }
+
+    if (sub === 'set' || sub === 'add') {
+      const id = argv[1];
+      const keys = argv.slice(2).filter(Boolean);
+      if (!id || !isValidProviderId(id) || keys.length === 0) {
+        return `Usage: /provider ${sub} <id> <key> [<key2> ...]`;
+      }
+      const meta = getProviderMeta(id);
+      if (sub === 'add') {
+        if (!meta.supportsKeyFallback) {
+          return `Provider "${id}" does not support multiple keys. Use /provider set instead.`;
+        }
+        const existing = getProviderKeys(ctx.config, id);
+        const merged = [...existing, ...keys];
+        ctx.config.apiKeys[id] = merged;
+      } else {
+        ctx.config.apiKeys[id] = meta.supportsKeyFallback ? keys : keys[0];
+      }
+      ctx.config.provider = id;
+      if (id === 'fireworks') ctx.config.fireworksApiKey = keys[0];
+      writeConfig(ctx.config);
+      return `Provider set to ${meta.displayName}. Restart ArqZero to apply.`;
+    }
+
+    // /provider <id> — switch only, key must already be configured
+    const id = sub as ProviderId;
+    if (!isValidProviderId(id)) {
+      return `Unknown provider "${id}". Run /provider to see available options.`;
+    }
+    const meta = getProviderMeta(id);
+    if (meta.requiresKey) {
+      const keys = getProviderKeys(ctx.config, id);
+      if (keys.length === 0) {
+        return `No API key for ${meta.displayName}. Add one with: /provider set ${id} <key>`;
+      }
+    }
+    ctx.config.provider = id;
+    writeConfig(ctx.config);
+    return `Provider set to ${meta.displayName}. Restart ArqZero to apply.`;
+  },
+};
+
 export const builtinCommands: SlashCommand[] = [
   helpCommand,
   modelCommand,
@@ -657,5 +758,6 @@ export const builtinCommands: SlashCommand[] = [
   loginCommand,
   logoutCommand,
   upgradeCommand,
+  providerCommand,
   ...pluginCommands,
 ];

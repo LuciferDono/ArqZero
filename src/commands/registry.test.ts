@@ -46,6 +46,8 @@ function createMockConfig(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
     provider: 'fireworks',
     model: 'accounts/fireworks/models/glm-4p7',
+    apiKeys: { fireworks: 'test-key' },
+    baseURLs: {},
     fireworksApiKey: 'test-key',
     maxTokens: 8192,
     permissions: {
@@ -449,8 +451,8 @@ describe('Built-in commands', () => {
   });
 
   describe('builtinCommands array', () => {
-    it('should contain all 28 built-in commands', () => {
-      assert.equal(builtinCommands.length, 28);
+    it('should contain all 29 built-in commands', () => {
+      assert.equal(builtinCommands.length, 29);
     });
 
     it('should have unique names', () => {

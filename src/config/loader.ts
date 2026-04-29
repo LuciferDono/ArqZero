@@ -38,12 +38,16 @@ export function loadConfig(): AppConfig {
     throw new Error(`Config validation failed:\n${issues}`);
   }
 
-  // Merge env var overrides
-  if (process.env.FIREWORKS_API_KEY && !result.data.fireworksApiKey) {
-    result.data.fireworksApiKey = process.env.FIREWORKS_API_KEY;
+  // Merge env var overrides for the active provider's API key, if not
+  // already present in apiKeys. Preserves legacy fireworksApiKey behavior
+  // and extends to all registered providers.
+  const data = result.data;
+  if (process.env.FIREWORKS_API_KEY && !data.apiKeys.fireworks) {
+    data.apiKeys.fireworks = process.env.FIREWORKS_API_KEY;
+    if (!data.fireworksApiKey) data.fireworksApiKey = process.env.FIREWORKS_API_KEY;
   }
 
-  return result.data;
+  return data;
 }
 
 export function writeConfig(config: AppConfig): void {
